@@ -1,6 +1,7 @@
 package bn;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 
 import bn.nodeInterfaces.BNNodeI;
@@ -9,19 +10,54 @@ public class BayesNet
 {
 	public BayesNet(){}
 	
-	public DiscreteBNNode addDiscreteNode(String name, int cardinality) throws BNException
+	public void addDiscreteNode(String name, int cardinality) throws BNException
 	{
 		if(this.nodes.get(name)!=null)
 			throw new BNException("Attempted to add nodes with existing name : " + name);
 		DiscreteBNNode node = new DiscreteBNNode(cardinality);
 		this.nodes.put(name, node);
-		return node;
+	}
+	
+	public void addEdge(String from, String to) throws BNException
+	{
+		try
+		{
+			nodes.get(from).addChild(nodes.get(to));
+			nodes.get(to).addParent(nodes.get(from));
+		} catch(BNException e) {
+			throw new BNException("Error making connection " + from + " => " + to,e);
+		}
 	}
 
 	public void validate() throws BNException
 	{
+		HashSet<BNNodeI> marks = new HashSet<BNNodeI>();
+		HashSet<BNNodeI> ancestors = new HashSet<BNNodeI>(); // Can we replace this, we don't need value..
+		
 		for(BNNodeI node : nodes.values())
+		{
+			// Depth first search to make sure we've no cycles.
+			if(!marks.contains(node))
+					this.dfs_cycle_detect(marks,ancestors,node);
+				
+			// Node should validate its CPT matches its parents, etc.
 			node.validate();
+		}
+	}
+	
+	private void dfs_cycle_detect(HashSet<BNNodeI> marks, HashSet<BNNodeI> ancestors, BNNodeI current) throws BNException
+	{
+		ancestors.add(current);
+		Iterator<BNNodeI> children = current.getChildren();
+		while(children.hasNext())
+		{
+			BNNodeI child = children.next();
+			if(ancestors.contains(child))
+				throw new BNException("Bayesian network is cyclic!");
+			dfs_cycle_detect(marks, ancestors, child);
+		}
+		marks.add(current);
+		ancestors.remove(current);
 	}
 	
 	public Iterator<String> getNodeNames()

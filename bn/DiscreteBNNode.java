@@ -26,16 +26,32 @@ public class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, 
 				throw new BNException("Error while validating, CPT dimension " + i + " is of incorrect size.");
 	}
 	
-	public void addParent(DiscreteBNNode parent)
+	protected void addParentI(BNNodeI parent) throws BNException
 	{
-		this.addParentI(parent);
-		this.ds_parents.add(parent);
+		if(!(parent instanceof DiscreteBNNode))
+			throw new BNException("Parent of discrete node must also be a discrete node.");
+		this.ds_parents.add((DiscreteBNNode)parent);
 	}
 	
-	public void addChild(DiscreteParentSubscriber child)
+	protected void removeParentI(BNNodeI parent) throws BNException
 	{
-		this.addChildI(child);
-		this.ds_children.add(child);
+		if(!(parent instanceof DiscreteBNNode))
+			throw new BNException("Attempted to remove a parent from discrete node that isn't discrete!");
+		this.ds_parents.remove((DiscreteBNNode)parent);
+	}
+	
+	protected void addChildI(BNNodeI child) throws BNException
+	{
+		if(!(child instanceof DiscreteParentSubscriber))
+			throw new BNException("Child of discrete node must be able to handle discrete parents.");
+		this.ds_children.add((DiscreteParentSubscriber)child);
+	}
+	
+	protected void removeChildI(BNNodeI child) throws BNException
+	{
+		if(!(child instanceof DiscreteParentSubscriber))
+			throw new BNException("Attempted to remove child from parent who could never have been a child!");
+		this.ds_children.remove((DiscreteParentSubscriber)child);
 	}
 	
 	public void setDistribution(DiscreteDistribution distribution) throws BNException

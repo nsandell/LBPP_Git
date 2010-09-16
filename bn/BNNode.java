@@ -14,16 +14,35 @@ import bn.nodeInterfaces.BNNodeI;
 public abstract class BNNode implements BNNodeI
 {
 	protected BNNode(){}
-
-	protected final void addChildI(BNNodeI child)
+	
+	public final void addChild(BNNodeI child) throws BNException
 	{
+		this.addChildI(child);
 		this.children.add(child);
 	}
-	
-	protected final void addParentI(BNNodeI parent)
+
+	public final void removeChild(BNNodeI child) throws BNException
 	{
+		this.removeChildI(child);
+		this.children.remove(child);
+	}
+	
+	public final void addParent(BNNodeI parent) throws BNException
+	{
+		this.addParentI(parent);
 		this.parents.add(parent);
 	}
+	
+	public final void removeParent(BNNodeI parent) throws BNException
+	{
+		this.removeParentI(parent);
+		this.parents.remove(parent);
+	}
+	
+	protected abstract void addChildI(BNNodeI child) throws BNException;
+	protected abstract void removeChildI(BNNodeI child) throws BNException;
+	protected abstract void addParentI(BNNodeI parent) throws BNException;
+	protected abstract void removeParentI(BNNodeI parent) throws BNException;
 	
 	public final Iterator<BNNodeI> getChildren()
 	{

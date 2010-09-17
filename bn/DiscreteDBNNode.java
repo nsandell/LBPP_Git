@@ -1,6 +1,5 @@
 package bn;
 
-import bn.BayesNet.BNException;
 import bn.distributions.DiscreteDistribution;
 import bn.interfaces.DiscreteDBNNodeI;
 import bn.messages.DiscreteMessage;

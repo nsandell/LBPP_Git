@@ -2,7 +2,7 @@ package bn.distributions;
 
 import java.util.HashMap;
 
-import bn.BayesNet.BNException;
+import bn.BNException;
 
 public class NoisyOr extends DiscreteDistribution
 {

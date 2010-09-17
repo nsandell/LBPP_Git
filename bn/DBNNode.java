@@ -5,7 +5,6 @@ import java.util.Vector;
 
 import util.IterableWrapper;
 
-import bn.BayesNet.BNException;
 import bn.interfaces.DBNNodeI;
 
 abstract class DBNNode<InnerType extends BNNode> implements DBNNodeI

@@ -1,6 +1,6 @@
 package bn.messages;
 
-import bn.BayesNet.BNException;
+import bn.BNException;
 
 public class DiscreteMessage
 {

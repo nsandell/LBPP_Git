@@ -1,9 +1,10 @@
 package bn;
 
 import java.util.ArrayList;
+
 import java.util.Iterator;
 
-import bn.BayesNet.BNException;
+import bn.BNException;
 import bn.interfaces.BNNodeI;
 
 /**

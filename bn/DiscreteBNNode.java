@@ -1,9 +1,9 @@
 package bn;
 
 import java.util.ArrayList;
+
 import java.util.HashMap;
 
-import bn.BayesNet.BNException;
 import bn.distributions.DiscreteDistribution;
 import bn.interfaces.BNNodeI;
 import bn.interfaces.DiscreteBNNodeI;

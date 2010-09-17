@@ -1,6 +1,6 @@
 package bn.distributions;
 
-import bn.BayesNet.BNException;
+import bn.BNException;
 
 public class DiscreteCPTUC extends DiscreteDistribution
 {

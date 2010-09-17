@@ -1,7 +1,5 @@
 package bn;
 
-import bn.BayesNet.BNException;
-
 public class DynamicBayesNetwork {
 	
 	public DynamicBayesNetwork(int T){this.T = T;}

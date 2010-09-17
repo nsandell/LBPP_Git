@@ -3,7 +3,7 @@ package bn.distributions;
 import java.util.HashMap;
 import java.util.Iterator;
 
-import bn.BayesNet.BNException;
+import bn.BNException;
 
 public class SparseDiscreteCPT extends DiscreteDistribution
 {

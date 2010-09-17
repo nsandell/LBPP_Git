@@ -2,7 +2,8 @@ package bn.tests;
 
 import bn.BayesNet;
 
-import bn.BayesNet.BNException;
+
+import bn.BNException;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.interfaces.DiscreteBNNodeI;

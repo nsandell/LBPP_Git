@@ -1,40 +1,66 @@
 package bn;
 
 import java.util.HashMap;
+
 import java.util.HashSet;
 import java.util.Iterator;
 
-import bn.nodeInterfaces.BNNodeI;
+import bn.interfaces.BNNodeI;
+import bn.interfaces.BayesNetI;
+import bn.interfaces.DiscreteBNNodeI;
 
-public class BayesNet
+public class BayesNet implements BayesNetI
 {
 	public BayesNet(){}
 	
-	public void addDiscreteNode(String name, int cardinality) throws BNException
+	public void addEdge(String from, String to) throws BNException
 	{
-		if(this.nodes.get(name)!=null)
-			throw new BNException("Attempted to add nodes with existing name : " + name);
-		DiscreteBNNode node = new DiscreteBNNode(cardinality);
-		this.nodes.put(name, node);
+		BNNode fromN = this.nodes.get(from);
+		BNNode toN = this.nodes.get(to);
+		if(fromN==null || toN==null)
+			throw new BNException("Attempted to add to nonexistant node, either " + to + " or " + from);
+		this.addEdgeI(fromN,toN);
 	}
 	
-	public void addEdge(String from, String to) throws BNException
+	public void addEdge(BNNodeI from, BNNodeI to) throws BNException
+	{
+		if(!(from instanceof BNNode) || !(to instanceof BNNode))
+			throw new BNException("Attempted to connect nodes of unknown type...");
+		this.addEdgeI((BNNode)from,(BNNode)to);
+	}
+	
+	private void addEdgeI(BNNode fromN, BNNode toN) throws BNException
 	{
 		try
 		{
-			nodes.get(from).addChild(nodes.get(to));
-			nodes.get(to).addParent(nodes.get(from));
+			fromN.addChild(toN);
 		} catch(BNException e) {
-			throw new BNException("Error making connection " + from + " => " + to,e);
+			throw new BNException("Failed to add child : ",e);
+		}	
+		try
+		{
+			toN.addParent(fromN);
+		} catch(BNException e) {
+			fromN.removeChild(toN);
+			throw new BNException("Failed to add parent : ",e);
 		}
 	}
-
+	
+	public DiscreteBNNode addDiscreteNode(String name, int cardinality) throws BNException
+	{
+		if(this.nodes.get(name)!=null)
+			throw new BNException("Attempted to add nodes with existing name : " + name);
+		DiscreteBNNode node = new DiscreteBNNode(this,cardinality);
+		this.nodes.put(name, node);
+		return node;
+	}
+	
 	public void validate() throws BNException
 	{
 		HashSet<BNNodeI> marks = new HashSet<BNNodeI>();
 		HashSet<BNNodeI> ancestors = new HashSet<BNNodeI>(); // Can we replace this, we don't need value..
 		
-		for(BNNodeI node : nodes.values())
+		for(BNNode node : nodes.values())
 		{
 			// Depth first search to make sure we've no cycles.
 			if(!marks.contains(node))
@@ -48,7 +74,7 @@ public class BayesNet
 	private void dfs_cycle_detect(HashSet<BNNodeI> marks, HashSet<BNNodeI> ancestors, BNNodeI current) throws BNException
 	{
 		ancestors.add(current);
-		Iterator<BNNodeI> children = current.getChildren();
+		Iterator<BNNodeI> children = current.getChildren().iterator();
 		while(children.hasNext())
 		{
 			BNNodeI child = children.next();
@@ -72,7 +98,7 @@ public class BayesNet
 	
 	public void run(int max_iterations, double convergence) throws BNException
 	{
-		for(BNNodeI node : nodes.values())
+		for(BNNode node : nodes.values())
 			node.sendInitialMessages();
 		
 		double err = Double.POSITIVE_INFINITY;
@@ -83,7 +109,7 @@ public class BayesNet
 			err = 0;
 			for(String nodeName: nodes.keySet())
 			{
-				BNNodeI node = nodes.get(nodeName);
+				BNNode node = nodes.get(nodeName);
 				try{err = Math.max(err,node.updateMessages());}
 				catch(BNException e){throw new BNException("Node " + nodeName + " threw an exception while updating : ",e);}
 			}
@@ -91,7 +117,7 @@ public class BayesNet
 		System.out.println("Converged after " + i + " iterations with max change " + err);
 	}
 	
-	HashMap<String,BNNodeI> nodes = new HashMap<String, BNNodeI>();
+	HashMap<String,BNNode> nodes = new HashMap<String, BNNode>();
 	
 	public static class BNException extends Exception {
 

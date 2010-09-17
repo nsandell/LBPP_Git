@@ -1,4 +1,4 @@
-package bn.nodeInterfaces;
+package bn.interfaces;
 
 import bn.messages.DiscreteMessage;
 

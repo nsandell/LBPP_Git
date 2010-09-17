@@ -11,9 +11,13 @@ public class DynamicBayesNetwork {
 		
 	}
 	
+	public int getT()
+	{
+		return this.T;
+	}
+	
 	protected int T;
 	protected BayesNet unrolled_network = new BayesNet();
-	
 	
 	public static class DBNNode
 	{

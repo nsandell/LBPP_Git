@@ -5,49 +5,50 @@ import java.util.HashMap;
 
 import bn.BayesNet.BNException;
 import bn.distributions.DiscreteDistribution;
+import bn.interfaces.BNNodeI;
+import bn.interfaces.DiscreteBNNodeI;
+import bn.interfaces.DiscreteChildSubscriber;
+import bn.interfaces.DiscreteParentSubscriber;
 import bn.messages.DiscreteMessage;
-import bn.nodeInterfaces.BNNodeI;
-import bn.nodeInterfaces.DiscreteChildSubscriber;
-import bn.nodeInterfaces.DiscreteParentSubscriber;
 
-public class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, DiscreteChildSubscriber
+class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, DiscreteChildSubscriber, DiscreteBNNodeI
 {
 	
-	DiscreteBNNode(int cardinality){this.cardinality = cardinality;}
+	DiscreteBNNode(BayesNet net, int cardinality){super(net);this.cardinality = cardinality;}
 	
 	public void validate() throws BNException
 	{
 		if(this.cpt==null) throw new BNException("Error while validating, no CPT set!");
 		int[] dimensions = this.cpt.getConditionDimensions();
-		if(dimensions.length!=this.parents.size())
+		if(dimensions.length!=this.ds_parents.size())
 			throw new BNException("Error while validating, CPT has incorrect number of conditions.");
-		for(int i = 0; i < this.parents.size(); i++)
-			if(((DiscreteBNNode)this.parents.get(i)).cardinality!=dimensions[i])
+		for(int i = 0; i < this.ds_parents.size(); i++)
+			if(((DiscreteBNNode)this.ds_parents.get(i)).cardinality!=dimensions[i])
 				throw new BNException("Error while validating, CPT dimension " + i + " is of incorrect size.");
 	}
 	
-	protected void addParentI(BNNodeI parent) throws BNException
+	protected void addParentI(BNNode parent) throws BNException
 	{
 		if(!(parent instanceof DiscreteBNNode))
 			throw new BNException("Parent of discrete node must also be a discrete node.");
 		this.ds_parents.add((DiscreteBNNode)parent);
 	}
 	
-	protected void removeParentI(BNNodeI parent) throws BNException
+	protected void removeParentI(BNNode parent) throws BNException
 	{
 		if(!(parent instanceof DiscreteBNNode))
 			throw new BNException("Attempted to remove a parent from discrete node that isn't discrete!");
 		this.ds_parents.remove((DiscreteBNNode)parent);
 	}
 	
-	protected void addChildI(BNNodeI child) throws BNException
+	protected void addChildI(BNNode child) throws BNException
 	{
 		if(!(child instanceof DiscreteParentSubscriber))
 			throw new BNException("Child of discrete node must be able to handle discrete parents.");
 		this.ds_children.add((DiscreteParentSubscriber)child);
 	}
 	
-	protected void removeChildI(BNNodeI child) throws BNException
+	protected void removeChildI(BNNode child) throws BNException
 	{
 		if(!(child instanceof DiscreteParentSubscriber))
 			throw new BNException("Attempted to remove child from parent who could never have been a child!");
@@ -166,7 +167,7 @@ public class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, 
 			DiscreteBNNode zeroParent = null;
 			for(int i = 0; i < indices.length; i++)
 			{
-				double value = this.incomingPiMessages.get(this.parents.get(i)).getValue(indices[i]);
+				double value = this.incomingPiMessages.get(this.ds_parents.get(i)).getValue(indices[i]);
 				if(value==0 && zeroParent==null)
 					zeroParent = this.ds_parents.get(i);
 				else if(value==0){pi_product = 0;break;}
@@ -182,7 +183,7 @@ public class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, 
 				{
 					double local_pi_product = pi_product;
 					if(local_pi_product > 0 && zeroParent==null)
-						local_pi_product /= this.incomingPiMessages.get(this.parents.get(j)).getValue(indices[j]);
+						local_pi_product /= this.incomingPiMessages.get(this.ds_parents.get(j)).getValue(indices[j]);
 					
 					dms[j].setValue(indices[j], dms[j].getValue(indices[j]) + p*local_pi_product*this.local_lambda.getValue(i));
 				}

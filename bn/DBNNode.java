@@ -20,7 +20,7 @@ abstract class DBNNode<InnerType extends BNNode> implements IDynBayesNode
 		this.intraParentSet = new IterableWrapper<IDynBayesNode>(this.intraParents);
 		this.childrenSet = new IterableWrapper<IBayesNode>(this.intraChildren);
 		this.parentSet = new IterableWrapper<IBayesNode>(this.intraParents);
-		this.nodeInstances = new Vector<InnerType>(net.T);
+		this.nodeInstances = new Vector<InnerType>(net.getT());
 	}
 	
 	public final String getName()

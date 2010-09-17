@@ -9,8 +9,8 @@ class StaticBayesianNetwork extends BayesianNetwork<IBayesNode,BNNode> implement
 	
 	public void addEdge(String from, String to) throws BNException
 	{
-		BNNode fromN = this.nodes.get(from);
-		BNNode toN = this.nodes.get(to);
+		BNNode fromN = this.getNode(from);
+		BNNode toN = this.getNode(to);
 		if(fromN==null || toN==null)
 			throw new BNException("Attempted to add to nonexistant node, either " + to + " or " + from);
 		this.addEdgeI(fromN,toN);
@@ -42,10 +42,10 @@ class StaticBayesianNetwork extends BayesianNetwork<IBayesNode,BNNode> implement
 	
 	public DiscreteBNNode addDiscreteNode(String name, int cardinality) throws BNException
 	{
-		if(this.nodes.get(name)!=null)
+		if(this.getNode(name)!=null)
 			throw new BNException("Attempted to add nodes with existing name : " + name);
 		DiscreteBNNode node = new DiscreteBNNode(this,name,cardinality);
-		this.nodes.put(name, node);
+		this.addNodeI(node);
 		return node;
 	}
 	
@@ -55,11 +55,4 @@ class StaticBayesianNetwork extends BayesianNetwork<IBayesNode,BNNode> implement
 		for(BNNode child : node.getChildrenI())
 			child.removeParent(node);
 	}
-	
-	public IBayesNode getNode(String name)
-	{
-		return this.nodes.get(name);
-	}
-	
-
 }

@@ -41,7 +41,7 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		ancestors.remove(current);
 	}
 	
-	public BaseInterface getNode(String name)
+	public final BaseNodeType getNode(String name)
 	{
 		return this.nodes.get(name);
 	}
@@ -59,6 +59,13 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 			this.removeNodeI(node);
 			this.nodes.remove(name);
 		}
+	}
+	
+	protected final void addNodeI(BaseNodeType node) throws BNException
+	{
+		if(this.nodes.get(node.getName())!=null)
+			throw new BNException("Attempted to add node with name " + node.getName() + " where it already exists.");
+		nodes.put(node.getName(), node);
 	}
 	
 	public Iterator<String> getNodeNames()
@@ -86,7 +93,7 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		}
 		System.out.println("Converged after " + i + " iterations with max change " + err);
 	}
-
+	
 	protected abstract void removeNodeI(BaseNodeType node) throws BNException;
-	HashMap<String, BaseNodeType> nodes = new HashMap<String, BaseNodeType>();
+	private HashMap<String, BaseNodeType> nodes = new HashMap<String, BaseNodeType>();
 }

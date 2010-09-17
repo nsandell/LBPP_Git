@@ -1,8 +1,7 @@
 package tests;
 
-import bn.BayesNet;
-
-
+import bn.BayesNetworkFactory;
+import bn.interfaces.BayesNetI;
 import bn.BNException;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
@@ -14,7 +13,7 @@ public class SimplesTest {
 		try
 		{
 			double[][] cpt_values = {{.9, .1},{.25, .75}};
-			BayesNet bn = new BayesNet();
+			BayesNetI bn = BayesNetworkFactory.getStaticNetwork();
 			DiscreteBNNodeI root = bn.addDiscreteNode("root", 2);
 			root.setDistribution(new DiscreteCPTUC(new double[]{.7, .3}));
 			DiscreteBNNodeI child = bn.addDiscreteNode("child", 2);

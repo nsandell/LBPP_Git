@@ -8,7 +8,7 @@ import java.util.Iterator;
 import bn.interfaces.BNNodeI;
 import bn.interfaces.BayesNetI;
 
-public class BayesNet implements BayesNetI
+class BayesNet implements BayesNetI
 {
 	public BayesNet(){}
 	

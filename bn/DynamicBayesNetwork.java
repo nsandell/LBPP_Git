@@ -1,6 +1,6 @@
 package bn;
 
-public class DynamicBayesNetwork {
+class DynamicBayesNetwork {
 	
 	public DynamicBayesNetwork(int T){this.T = T;}
 	

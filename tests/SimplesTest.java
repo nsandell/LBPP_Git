@@ -1,4 +1,4 @@
-package bn.tests;
+package tests;
 
 import bn.BayesNet;
 

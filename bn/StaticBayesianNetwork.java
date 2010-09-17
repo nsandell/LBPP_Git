@@ -8,9 +8,9 @@ import java.util.Iterator;
 import bn.interfaces.BNNodeI;
 import bn.interfaces.BayesNetI;
 
-class BayesNet implements BayesNetI
+class StaticBayesianNetwork implements BayesNetI
 {
-	public BayesNet(){}
+	public StaticBayesianNetwork(){}
 	
 	public void addEdge(String from, String to) throws BNException
 	{
@@ -77,6 +77,8 @@ class BayesNet implements BayesNetI
 		while(children.hasNext())
 		{
 			BNNodeI child = children.next();
+			if(marks.contains(child))
+				continue;
 			if(ancestors.contains(child))
 				throw new BNException("Bayesian network is cyclic!");
 			dfs_cycle_detect(marks, ancestors, child);

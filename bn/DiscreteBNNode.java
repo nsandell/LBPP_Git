@@ -14,7 +14,7 @@ import bn.messages.DiscreteMessage;
 class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, DiscreteChildSubscriber, DiscreteBNNodeI
 {
 	
-	DiscreteBNNode(BayesNet net, int cardinality){super(net);this.cardinality = cardinality;}
+	DiscreteBNNode(StaticBayesianNetwork net, int cardinality){super(net);this.cardinality = cardinality;}
 	
 	public void validate() throws BNException
 	{

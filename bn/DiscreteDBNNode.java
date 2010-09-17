@@ -6,7 +6,7 @@ import bn.messages.DiscreteMessage;
 
 class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements DiscreteDBNNodeI {
 	
-	public DiscreteDBNNode(DynamicBayesNetwork bn, BayesNet unrolled, String basename, int cardinality) throws BNException
+	public DiscreteDBNNode(DynamicBayesianNetwork bn, StaticBayesianNetwork unrolled, String basename, int cardinality) throws BNException
 	{
 		super(bn);
 		for(int t = 0; t < bn.getT(); t++)

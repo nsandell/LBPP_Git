@@ -14,7 +14,7 @@ import bn.interfaces.BNNodeI;
  */
 abstract class BNNode implements BNNodeI
 {
-	protected BNNode(BayesNet net)
+	protected BNNode(StaticBayesianNetwork net)
 	{
 		this.bnet = net;
 		this.parentSet = new BNNodeSet(parents);
@@ -64,7 +64,7 @@ abstract class BNNode implements BNNodeI
 		return this.parentSet;
 	}
 	
-	protected BayesNet bnet;
+	protected StaticBayesianNetwork bnet;
 	
 	private BNNodeSet childrenSet;
 	private BNNodeSet parentSet;

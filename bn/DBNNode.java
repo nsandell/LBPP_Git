@@ -9,7 +9,7 @@ import bn.interfaces.DBNNodeI;
 
 abstract class DBNNode<InnerType extends BNNode> implements DBNNodeI
 {
-	protected DBNNode(DynamicBayesNetwork net)
+	protected DBNNode(DynamicBayesianNetwork net)
 	{
 		this.bayesNet = net;
 		this.interChildrenSet = new IterableWrapper<DBNNodeI>(this.interChildren);
@@ -80,14 +80,11 @@ abstract class DBNNode<InnerType extends BNNode> implements DBNNodeI
 		return this.nodeInstances.get(t);
 	}
 	
-	/*public abstract void addInterParentI(DBNNode parent);
-	public abstract void addIntraParentI(DBNNode parent);
-	public abstract void addInterChildI(DBNNode child);
-	public abstract void addIntraChildI(DBNNode child);
-	public abstract void removeInterParentI(DBNNode parent);
-	public abstract void removeIntraParentI(DBNNode parent);
-	public abstract void removeInterChildI(DBNNode child);
-	public abstract void removeIntraChildI(DBNNode child);*/
+	public void validate() throws BNException
+	{
+		for(InnerType nd : this.nodeInstances)
+			nd.validate();
+	}
 	
 	public Iterable<DBNNodeI> getInterChildren()
 	{
@@ -121,5 +118,5 @@ abstract class DBNNode<InnerType extends BNNode> implements DBNNodeI
 	private IterableWrapper<DBNNodeI> interParentSet;
 	private IterableWrapper<DBNNodeI> intraParentSet;
 	
-	DynamicBayesNetwork bayesNet;
+	DynamicBayesianNetwork bayesNet;
 }

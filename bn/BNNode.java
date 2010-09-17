@@ -46,7 +46,6 @@ abstract class BNNode implements BNNodeI
 	
 	public abstract void sendInitialMessages() throws BNException;
 	public abstract double updateMessages() throws BNException;
-	
 	public abstract void validate() throws BNException;
 	
 	protected abstract void addChildI(BNNode child) throws BNException;

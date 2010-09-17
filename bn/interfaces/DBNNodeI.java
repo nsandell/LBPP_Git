@@ -1,13 +1,11 @@
 package bn.interfaces;
 
-public interface DBNNodeI<InnerND extends BNNodeI>
+public interface DBNNodeI
 {
-	DBNNodeISet getInterChildren();
-	DBNNodeISet getInterParents();
-	DBNNodeISet getIntraChildren();
-	DBNNodeISet getIntraParents();
+	Iterable<DBNNodeI> getInterChildren();
+	Iterable<DBNNodeI> getIntraChildren();
+	Iterable<DBNNodeI> getInterParents();
+	Iterable<DBNNodeI> getIntraParents();
 	
-	InnerND getInstance(int t);
-	
-	static interface DBNNodeISet extends Iterable<DBNNodeI<?>>{};
+	BNNodeI getInstance(int t);
 }

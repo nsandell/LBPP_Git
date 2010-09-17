@@ -4,7 +4,7 @@ import bn.distributions.DiscreteDistribution;
 import bn.interfaces.DiscreteDBNNodeI;
 import bn.messages.DiscreteMessage;
 
-public class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements DiscreteDBNNodeI {
+class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements DiscreteDBNNodeI {
 	
 	public DiscreteDBNNode(DynamicBayesNetwork bn, BayesNet unrolled, String basename, int cardinality) throws BNException
 	{

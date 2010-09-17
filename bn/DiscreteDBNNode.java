@@ -1,14 +1,14 @@
 package bn;
 
 import bn.distributions.DiscreteDistribution;
-import bn.interfaces.DiscreteDBNNodeI;
+import bn.interfaces.IDiscreteDynBayesNode;
 import bn.messages.DiscreteMessage;
 
-class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements DiscreteDBNNodeI {
+class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBayesNode {
 	
 	public DiscreteDBNNode(DynamicBayesianNetwork bn, StaticBayesianNetwork unrolled, String basename, int cardinality) throws BNException
 	{
-		super(bn);
+		super(bn,basename);
 		for(int t = 0; t < bn.getT(); t++)
 			this.nodeInstances.set(t,unrolled.addDiscreteNode(basename+"["+t+"]", cardinality));
 	}
@@ -46,5 +46,19 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements DiscreteDBNNode
 			throw new BNException("Attempted to set sequence of values out of boounds ("+t0+","+tmax+")");
 		for(int t = t0; t <= tmax; t++)
 			this.nodeInstances.get(t).setValue(values[t-t0]);
+	}
+
+	@Override
+	public void sendInitialMessages() throws BNException {
+		for(DiscreteBNNode nd : this.nodeInstances)
+			nd.sendInitialMessages();
+	}
+
+	@Override
+	public double updateMessages() throws BNException {
+		double max = 0;
+		for(DiscreteBNNode nd : this.nodeInstances)
+			max = Math.max(max, nd.updateMessages());
+		return max;
 	}
 }

@@ -2,7 +2,7 @@ package bn.interfaces;
 
 import bn.messages.DiscreteMessage;
 
-public interface DiscreteParentSubscriber extends BNNodeI
+public interface DiscreteParentSubscriber extends IBayesNode
 {
-	void handlePi(BNNodeI parent, DiscreteMessage dm);
+	void handlePi(IBayesNode parent, DiscreteMessage dm);
 }

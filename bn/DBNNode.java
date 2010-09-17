@@ -5,18 +5,27 @@ import java.util.Vector;
 
 import util.IterableWrapper;
 
-import bn.interfaces.DBNNodeI;
+import bn.interfaces.IBayesNode;
+import bn.interfaces.IDynBayesNode;
 
-abstract class DBNNode<InnerType extends BNNode> implements DBNNodeI
+abstract class DBNNode<InnerType extends BNNode> implements IDynBayesNode
 {
-	protected DBNNode(DynamicBayesianNetwork net)
+	protected DBNNode(DynamicBayesianNetwork net,String name)
 	{
 		this.bayesNet = net;
-		this.interChildrenSet = new IterableWrapper<DBNNodeI>(this.interChildren);
-		this.interParentSet = new IterableWrapper<DBNNodeI>(this.interParents);
-		this.intraChildrenSet = new IterableWrapper<DBNNodeI>(this.intraChildren);
-		this.intraParentSet = new IterableWrapper<DBNNodeI>(this.intraParents);
+		this.name = name;
+		this.interChildrenSet = new IterableWrapper<IDynBayesNode>(this.interChildren);
+		this.interParentSet = new IterableWrapper<IDynBayesNode>(this.interParents);
+		this.intraChildrenSet = new IterableWrapper<IDynBayesNode>(this.intraChildren);
+		this.intraParentSet = new IterableWrapper<IDynBayesNode>(this.intraParents);
+		this.childrenSet = new IterableWrapper<IBayesNode>(this.intraChildren);
+		this.parentSet = new IterableWrapper<IBayesNode>(this.intraParents);
 		this.nodeInstances = new Vector<InnerType>(net.T);
+	}
+	
+	public final String getName()
+	{
+		return this.name;
 	}
 	
 	public final void addInterChild(DBNNode<?> child) throws BNException
@@ -86,24 +95,54 @@ abstract class DBNNode<InnerType extends BNNode> implements DBNNodeI
 			nd.validate();
 	}
 	
-	public Iterable<DBNNodeI> getInterChildren()
+	public Iterable<IDynBayesNode> getInterChildren()
 	{
 		return this.interChildrenSet;
 	}
 	
-	public Iterable<DBNNodeI> getInterParents()
+	public Iterable<IDynBayesNode> getInterParents()
 	{
 		return this.interParentSet;
 	}
 	
-	public Iterable<DBNNodeI> getIntraChildren()
+	public Iterable<IBayesNode> getChildren()
+	{
+		return this.childrenSet;
+	}
+	
+	public Iterable<IBayesNode> getParents()
+	{
+		return this.parentSet;
+	}
+	
+	public Iterable<IDynBayesNode> getIntraChildren()
 	{
 		return this.intraChildrenSet;
 	}
 	
-	public Iterable<DBNNodeI> getIntraParents()
+	public Iterable<IDynBayesNode> getIntraParents()
 	{
 		return this.intraParentSet;
+	}
+	
+	public Iterable<DBNNode<?>> getInterParentsI()
+	{
+		return this.interParents;
+	}
+	
+	public Iterable<DBNNode<?>> getIntraParentsI()
+	{
+		return this.intraParents;
+	}
+	
+	public Iterable<DBNNode<?>> getInterChildrenI()
+	{
+		return this.interChildren;
+	}
+	
+	public Iterable<DBNNode<?>> getIntraChildrenI()
+	{
+		return this.intraChildren;
 	}
 	
 	Vector<InnerType> nodeInstances;
@@ -112,11 +151,14 @@ abstract class DBNNode<InnerType extends BNNode> implements DBNNodeI
 	private ArrayList<DBNNode<?>> intraChildren = new ArrayList<DBNNode<?>>();
 	private ArrayList<DBNNode<?>> interParents = new ArrayList<DBNNode<?>>();
 	private ArrayList<DBNNode<?>> intraParents= new ArrayList<DBNNode<?>>();
-	
-	private IterableWrapper<DBNNodeI> interChildrenSet;
-	private IterableWrapper<DBNNodeI> intraChildrenSet;
-	private IterableWrapper<DBNNodeI> interParentSet;
-	private IterableWrapper<DBNNodeI> intraParentSet;
+
+	private IterableWrapper<IBayesNode> childrenSet;
+	private IterableWrapper<IBayesNode> parentSet;
+	private IterableWrapper<IDynBayesNode> interChildrenSet;
+	private IterableWrapper<IDynBayesNode> intraChildrenSet;
+	private IterableWrapper<IDynBayesNode> interParentSet;
+	private IterableWrapper<IDynBayesNode> intraParentSet;
 	
 	DynamicBayesianNetwork bayesNet;
+	String name;
 }

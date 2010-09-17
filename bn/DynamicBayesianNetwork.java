@@ -1,10 +1,11 @@
 package bn;
 
 import java.util.HashMap;
-import java.util.HashSet;
-import bn.interfaces.DBNNodeI;
 
-class DynamicBayesianNetwork {
+import bn.interfaces.IDynBayesNode;
+import bn.interfaces.IDynBayesNet;
+
+class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> implements IDynBayesNet{
 	
 	public DynamicBayesianNetwork(int T){this.T = T;}
 	
@@ -17,51 +18,74 @@ class DynamicBayesianNetwork {
 		return nd;
 	}
 	
-	private void addInterEdgeI(DBNNode<?> from, DBNNode<?> to) throws BNException
+	public void addInterEdge(String fromname, String toname) throws BNException
 	{
+		DBNNode<?> from = nodes.get(fromname), to = nodes.get(toname);
+		if(from==null || to==null)
+			throw new BNException("Failed to add interconnection, either (or both) node " + from + " or node " + to + " doesn't exist.");
 		try
 		{
 			from.addInterChild(to);
-		} catch(BNException e) {}
+		} catch(BNException e) {throw new BNException("Whilst interconnecting "+from+"=>"+to+":",e);}
 		try
 		{
 			to.addInterParent(from);
-		} catch(BNException e) {}
-	}
-	
-	public void validate() throws BNException
-	{
-		HashSet<DBNNodeI> marks = new HashSet<DBNNodeI>();
-		HashSet<DBNNodeI> ancestors = new HashSet<DBNNodeI>();
-		for(String ndname : this.nodes.keySet())
-		{
-			DBNNodeI nd = this.nodes.get(ndname);
-			try{nd.validate();}
-			catch(BNException e){throw new BNException("Failed to validate node " + ndname,e);}
-			if(!marks.contains(nd))
-				dfs_cycle_detect(marks, ancestors, nd);
+		} catch(BNException e) {
+			from.removeInterChild(to);
+			throw new BNException("Whilst interconnecting "+from+"=>"+to+":",e);
 		}
 	}
 	
-	private void dfs_cycle_detect(HashSet<DBNNodeI> marks, HashSet<DBNNodeI> ancestors, 
-				DBNNodeI current) throws BNException
+	public void addInterEdge(IDynBayesNode from, IDynBayesNode to) throws BNException
 	{
-		ancestors.add(current);
-		for(DBNNodeI child : current.getIntraChildren())
+		if(from==null || to==null)
+			throw new BNException("Null argument passed to addInterEdge...");
+		this.addInterEdge(from.getName(), to.getName());
+	}
+	
+	public void addIntraEdge(String from, String to) throws BNException
+	{
+		this.addIntraEdgeI(nodes.get(from), nodes.get(to));
+	}
+	
+	public void addIntraEdge(IDynBayesNode from, IDynBayesNode to) throws BNException
+	{
+		this.addIntraEdge(nodes.get(from.getName()), nodes.get(to.getName()));
+	}
+	
+	private void addIntraEdgeI(DBNNode<?> from, DBNNode<?> to) throws BNException
+	{
+		if(from==null || to==null)
+			throw new BNException("Attempted to intraconnect a nonexistant node..");
+		try
 		{
-			if(marks.contains(child))
-				continue;
-			if(ancestors.contains(child))
-				throw new BNException("Bayesian network is cyclic!");
-			dfs_cycle_detect(marks, ancestors, child);
+			from.addIntraChild(to);
+		} catch(BNException e) {throw new BNException("Whilst intraconnecting "+from+"=>"+to+":",e);}
+		try
+		{
+			to.addIntraParent(from);
+		} catch(BNException e) {
+			from.removeIntraChild(to);
+			throw new BNException("Whilst intraconnecting "+from+"=>"+to+":",e);
 		}
-		marks.add(current);
-		ancestors.remove(current);
 	}
 	
 	public int getT()
 	{
 		return this.T;
+	}
+	
+	@Override
+	protected void removeNodeI(DBNNode<?> node) throws BNException
+	{
+		for(DBNNode<?> intrachild : node.getIntraChildrenI())
+			intrachild.removeIntraParent(node);
+		for(DBNNode<?> interchild : node.getInterChildrenI())
+			interchild.removeInterParent(node);
+		for(DBNNode<?> intraparent : node.getIntraParentsI())
+			intraparent.removeIntraChild(node);
+		for(DBNNode<?> interparent: node.getInterParentsI())
+			interparent.removeInterChild(node);
 	}
 	
 	protected int T;

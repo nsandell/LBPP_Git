@@ -4,7 +4,7 @@ import bn.BNException;
 import bn.distributions.DiscreteDistribution;
 import bn.messages.DiscreteMessage;
 
-public interface DiscreteDBNNodeI {
+public interface IDiscreteDynBayesNode {
 	public void setInitialDistribution(DiscreteDistribution dist) throws BNException;
 	public void setAdvanceDistribution(DiscreteDistribution dist) throws BNException;
 	public DiscreteMessage getMarginal(int t) throws BNException;

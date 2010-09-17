@@ -1,6 +1,6 @@
 package bn.interfaces;
 
-public interface ContinuousChildSubscriber extends BNNodeI 
+public interface ContinuousChildSubscriber extends IBayesNode 
 {
 
 }

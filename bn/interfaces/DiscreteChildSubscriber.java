@@ -2,7 +2,7 @@ package bn.interfaces;
 
 import bn.messages.DiscreteMessage;
 
-public interface DiscreteChildSubscriber extends BNNodeI
+public interface DiscreteChildSubscriber extends IBayesNode
 {
-	void handleLambda(BNNodeI child, DiscreteMessage dm); // note every iteration there will be messages thrown to GC
+	void handleLambda(IBayesNode child, DiscreteMessage dm); // note every iteration there will be messages thrown to GC
 }

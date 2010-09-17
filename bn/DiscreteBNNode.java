@@ -5,16 +5,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import bn.distributions.DiscreteDistribution;
-import bn.interfaces.BNNodeI;
-import bn.interfaces.DiscreteBNNodeI;
+import bn.interfaces.IBayesNode;
+import bn.interfaces.IDiscreteBayesNode;
 import bn.interfaces.DiscreteChildSubscriber;
 import bn.interfaces.DiscreteParentSubscriber;
 import bn.messages.DiscreteMessage;
 
-class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, DiscreteChildSubscriber, DiscreteBNNodeI
+class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, DiscreteChildSubscriber, IDiscreteBayesNode
 {
 	
-	DiscreteBNNode(StaticBayesianNetwork net, int cardinality){super(net);this.cardinality = cardinality;}
+	DiscreteBNNode(StaticBayesianNetwork net, String name, int cardinality){super(net,name);this.cardinality = cardinality;}
 	
 	public void validate() throws BNException
 	{
@@ -63,13 +63,13 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	}
 
 	@Override
-	public void handleLambda(BNNodeI child, DiscreteMessage dm)
+	public void handleLambda(IBayesNode child, DiscreteMessage dm)
 	{
 		this.incomingLambdaMessages.put(child, dm);
 	}
 
 	@Override
-	public void handlePi(BNNodeI parent, DiscreteMessage dm)
+	public void handlePi(IBayesNode parent, DiscreteMessage dm)
 	{
 		this.incomingPiMessages.put(parent, dm);
 	}
@@ -200,7 +200,7 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		int imin = 0; int imax = this.cardinality;
 		if(this.observed){imin = this.value; imax = this.value+1;}
 		
-		BNNodeI[] zeroNodes = new BNNodeI[imax-imin+1];
+		IBayesNode[] zeroNodes = new IBayesNode[imax-imin+1];
 		double[] lambda_prods = new double[imax-imin+1];
 		for(int i = imin; i < imax; i++)
 		{
@@ -210,7 +210,7 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		
 		for(int i = imin; i < imax; i++)
 		{
-			for(BNNodeI nd : this.incomingLambdaMessages.keySet())
+			for(IBayesNode nd : this.incomingLambdaMessages.keySet())
 			{
 				DiscreteMessage dm = this.incomingLambdaMessages.get(nd);
 				if(dm.getValue(i)!=0)	
@@ -273,6 +273,6 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	
 	ArrayList<DiscreteBNNode> ds_parents = new ArrayList<DiscreteBNNode>();
 	ArrayList<DiscreteParentSubscriber> ds_children = new ArrayList<DiscreteParentSubscriber>();
-	HashMap<BNNodeI, DiscreteMessage> incomingLambdaMessages = new HashMap<BNNodeI, DiscreteMessage>();
-	HashMap<BNNodeI, DiscreteMessage> incomingPiMessages = new HashMap<BNNodeI, DiscreteMessage>();
+	HashMap<IBayesNode, DiscreteMessage> incomingLambdaMessages = new HashMap<IBayesNode, DiscreteMessage>();
+	HashMap<IBayesNode, DiscreteMessage> incomingPiMessages = new HashMap<IBayesNode, DiscreteMessage>();
 }

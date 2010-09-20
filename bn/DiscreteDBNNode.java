@@ -1,6 +1,8 @@
 package bn;
 
 import bn.distributions.DiscreteDistribution;
+
+import bn.interfaces.IDiscreteBayesNode;
 import bn.interfaces.IDiscreteDynBayesNode;
 import bn.messages.DiscreteMessage;
 
@@ -10,7 +12,8 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 	{
 		super(bn,basename);
 		for(int t = 0; t < bn.getT(); t++)
-			this.nodeInstances.set(t,unrolled.addDiscreteNode(basename+"["+t+"]", cardinality));
+			this.nodeInstances.add(unrolled.addDiscreteNode(basename+"["+t+"]",cardinality));
+//			this.nodeInstances.set(t,unrolled.addDiscreteNode(basename+"["+t+"]", cardinality));
 	}
 
 	@Override
@@ -42,9 +45,9 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 	public void setValue(int[] values, int t0) throws BNException
 	{
 		int tmax = t0+values.length;
-		if(tmax >= this.bayesNet.getT() || t0 < 0)
+		if(tmax > this.bayesNet.getT() || t0 < 0)
 			throw new BNException("Attempted to set sequence of values out of boounds ("+t0+","+tmax+")");
-		for(int t = t0; t <= tmax; t++)
+		for(int t = t0; t < tmax; t++)
 			this.nodeInstances.get(t).setValue(values[t-t0]);
 	}
 
@@ -60,5 +63,10 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 		for(DiscreteBNNode nd : this.nodeInstances)
 			max = Math.max(max, nd.updateMessages());
 		return max;
+	}
+
+	@Override
+	public IDiscreteBayesNode getDiscreteInstance(int t) {
+		return this.nodeInstances.get(t);
 	}
 }

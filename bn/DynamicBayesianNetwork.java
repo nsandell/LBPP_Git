@@ -1,26 +1,24 @@
 package bn;
 
-import java.util.HashMap;
-
 import bn.interfaces.IDynBayesNode;
 import bn.interfaces.IDynBayesNet;
 
 class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> implements IDynBayesNet{
-	
+
 	public DynamicBayesianNetwork(int T){this.T = T;}
-	
+
 	public DiscreteDBNNode addDiscreteNode(String name, int cardinality) throws BNException
 	{
-		if(nodes.get(name)!=null)
+		if(this.getNode(name)!=null)
 			throw new BNException("Node " + name + " already exists in this DBN.");
 		DiscreteDBNNode nd = new DiscreteDBNNode(this, unrolled_network, name, cardinality);
-		this.nodes.put(name, nd);
+		this.addNodeI(nd);
 		return nd;
 	}
-	
+
 	public void addInterEdge(String fromname, String toname) throws BNException
 	{
-		DBNNode<?> from = nodes.get(fromname), to = nodes.get(toname);
+		DBNNode<?> from = this.getNode(fromname), to = this.getNode(toname);
 		if(from==null || to==null)
 			throw new BNException("Failed to add interconnection, either (or both) node " + from + " or node " + to + " doesn't exist.");
 		try
@@ -35,28 +33,19 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 			throw new BNException("Whilst interconnecting "+from+"=>"+to+":",e);
 		}
 	}
-	
+
 	public void addInterEdge(IDynBayesNode from, IDynBayesNode to) throws BNException
 	{
 		if(from==null || to==null)
 			throw new BNException("Null argument passed to addInterEdge...");
 		this.addInterEdge(from.getName(), to.getName());
 	}
-	
-	public void addIntraEdge(String from, String to) throws BNException
-	{
-		this.addIntraEdgeI(nodes.get(from), nodes.get(to));
-	}
-	
-	public void addIntraEdge(IDynBayesNode from, IDynBayesNode to) throws BNException
-	{
-		this.addIntraEdge(nodes.get(from.getName()), nodes.get(to.getName()));
-	}
-	
-	private void addIntraEdgeI(DBNNode<?> from, DBNNode<?> to) throws BNException
-	{
+
+	public void addIntraEdge(String fromname, String toname) throws BNException
+	{		
+		DBNNode<?> from = this.getNode(fromname), to = this.getNode(toname);
 		if(from==null || to==null)
-			throw new BNException("Attempted to intraconnect a nonexistant node..");
+			throw new BNException("Failed to add intraconnection, either (or both) node " + from + " or node " + to + " doesn't exist.");
 		try
 		{
 			from.addIntraChild(to);
@@ -69,12 +58,19 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 			throw new BNException("Whilst intraconnecting "+from+"=>"+to+":",e);
 		}
 	}
-	
+
+	public void addIntraEdge(IDynBayesNode from, IDynBayesNode to) throws BNException
+	{
+		if(from==null || to==null)
+			throw new BNException("Null argument passed to addIntraEdge...");
+		this.addIntraEdge(from.getName(), to.getName());
+	}
+
 	public int getT()
 	{
 		return this.T;
 	}
-	
+
 	@Override
 	protected void removeNodeI(DBNNode<?> node) throws BNException
 	{
@@ -87,8 +83,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		for(DBNNode<?> interparent: node.getInterParentsI())
 			interparent.removeInterChild(node);
 	}
-	
+
 	protected int T;
 	protected StaticBayesianNetwork unrolled_network = new StaticBayesianNetwork();
-	protected HashMap<String,DBNNode<?>> nodes = new HashMap<String, DBNNode<?>>();
 }

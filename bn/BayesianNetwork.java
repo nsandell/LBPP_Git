@@ -73,6 +73,11 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		return this.nodes.keySet().iterator();
 	}
 	
+	public void setNodeOrder(Iterable<String> nodeOrder)
+	{
+		this.nodeOrder = nodeOrder;
+	}
+	
 	public void run(int max_iterations, double convergence) throws BNException
 	{
 		for(BaseNodeType node : nodes.values())
@@ -84,6 +89,8 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		for(i = 0; i < max_iterations && err > convergence; i++)
 		{
 			err = 0;
+			if(nodeOrder==null)
+				nodeOrder = nodes.keySet();
 			for(String nodeName: nodes.keySet())
 			{
 				BaseNodeType node = nodes.get(nodeName);
@@ -95,5 +102,6 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 	}
 	
 	protected abstract void removeNodeI(BaseNodeType node) throws BNException;
+	private Iterable<String> nodeOrder = null;
 	private HashMap<String, BaseNodeType> nodes = new HashMap<String, BaseNodeType>();
 }

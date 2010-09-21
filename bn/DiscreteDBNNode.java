@@ -64,6 +64,21 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 			max = Math.max(max, nd.updateMessages());
 		return max;
 	}
+	
+	public double updateMessages(int tmin, int tmax) throws BNException
+	{
+		double max = 0;
+		DiscreteBNNode[] arr = this.nodeInstances.subList(tmin, tmax+1).toArray(new DiscreteBNNode[1]);
+		for(int t = 0; t < arr.length; t++)
+			max = Math.max(max, arr[t].updateMessages());
+		return max;
+		/*
+		for(int t = tmin; t <= tmax; t++)
+		{
+			max = Math.max(max, this.nodeInstances.get(t).updateMessages());
+		}
+		*/
+	}
 
 	@Override
 	public IDiscreteBayesNode getDiscreteInstance(int t) {

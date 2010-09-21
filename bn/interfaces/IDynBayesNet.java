@@ -12,4 +12,12 @@ public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 	IDiscreteDynBayesNode addDiscreteNode(String name, int cardinality) throws BNException;
 	
 	int getT();
+	
+	void run_parallel(int max_iteration, double tolerance, ParallelInferenceCallback callback) throws BNException;
+	
+	public static interface ParallelInferenceCallback
+	{
+		void callback(IDynBayesNet neet);
+		void error(IDynBayesNet net, String error);
+	}
 }

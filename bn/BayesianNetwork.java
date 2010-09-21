@@ -2,7 +2,6 @@ package bn;
 
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 
 import bn.interfaces.IBayesNode;
 
@@ -68,9 +67,14 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		nodes.put(node.getName(), node);
 	}
 	
-	public Iterator<String> getNodeNames()
+	public Iterable<String> getNodeNames()
 	{
-		return this.nodes.keySet().iterator();
+		return this.nodes.keySet();
+	}
+	
+	public Iterable<BaseNodeType> getNodes()
+	{
+		return this.nodes.values();
 	}
 	
 	public void setNodeOrder(Iterable<String> nodeOrder)
@@ -104,4 +108,6 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 	protected abstract void removeNodeI(BaseNodeType node) throws BNException;
 	private Iterable<String> nodeOrder = null;
 	private HashMap<String, BaseNodeType> nodes = new HashMap<String, BaseNodeType>();
+	
+	protected static int availableProcs = Runtime.getRuntime().availableProcessors();
 }

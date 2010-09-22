@@ -13,7 +13,6 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 		super(bn,basename);
 		for(int t = 0; t < bn.getT(); t++)
 			this.nodeInstances.add(unrolled.addDiscreteNode(basename+"["+t+"]",cardinality));
-//			this.nodeInstances.set(t,unrolled.addDiscreteNode(basename+"["+t+"]", cardinality));
 	}
 
 	@Override
@@ -65,19 +64,25 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 		return max;
 	}
 	
-	public double updateMessages(int tmin, int tmax) throws BNException
+	@Override
+	protected double updateMessagesI(int tmin, int tmax) throws BNException
 	{
 		double max = 0;
 		DiscreteBNNode[] arr = this.nodeInstances.subList(tmin, tmax+1).toArray(new DiscreteBNNode[1]);
 		for(int t = 0; t < arr.length; t++)
 			max = Math.max(max, arr[t].updateMessages());
 		return max;
-		/*
-		for(int t = tmin; t <= tmax; t++)
+	}
+	
+	public double getLogLikelihood() throws BNException
+	{
+		double ll = 0;
+		for(int i = 0; i < bayesNet.getT(); i++)
 		{
-			max = Math.max(max, this.nodeInstances.get(t).updateMessages());
+			if(this.nodeInstances.get(i).isObserved())
+				ll += Math.log(this.nodeInstances.get(i).likelihoodGivenPast());
 		}
-		*/
+		return ll;
 	}
 
 	@Override

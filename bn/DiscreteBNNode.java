@@ -119,6 +119,7 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	{
 		if(this.observed)
 		{
+			this.likelihoodGivenPast = 0;
 			double tmp = 1;
 			for(DiscreteParentSubscriber child : this.ds_children)
 				tmp *= this.incomingLambdaMessages.get(child).getValue(this.value);
@@ -143,19 +144,27 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		do
 		{
 			double tmp = 1;
+			double observation_ll_tmp = 1;
 			for(int j = 0; j < this.ds_parents.size(); j++)
+			{
 				tmp *= this.incomingPiMessages.get(this.ds_parents.get(j)).getValue(indices[j]);
+				if(this.observed)
+					observation_ll_tmp *= this.ds_parents.get(j).local_pi.getValue(indices[j]);
+			}
 			for(int i = 0; i < this.cardinality; i++)
 				this.local_pi.setValue(i, this.local_pi.getValue(i)+tmp*this.cpt.evaluate(indices, i));
+			if(this.observed)
+				this.likelihoodGivenPast += observation_ll_tmp*this.cpt.evaluate(indices, this.value);
 		}
 		while((indices = DiscreteDistribution.incrementIndices(indices, dims))!=null);
-		
+	
 		this.local_lambda.normalize();
 		this.local_pi.normalize();
 	}
 	
 	protected void updateLambdas() throws BNException
 	{
+		
 		int[] indices = this.cpt.initialIndices();
 		DiscreteMessage[] dms = new DiscreteMessage[this.ds_parents.size()];
 		int[] sizes = this.cpt.getConditionDimensions();
@@ -178,7 +187,7 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 			for(int i = 0; i < this.cardinality; i++)
 			{
 				double p = this.cpt.evaluate(indices, i);
-
+				
 				for(int j = 0; j < indices.length; j++)
 				{
 					double local_pi_product = pi_product;
@@ -260,6 +269,18 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		this.observed = true;
 		this.value = value;
 	}
+	
+	public boolean isObserved()
+	{
+		return this.observed;
+	}
+	
+	double likelihoodGivenPast()
+	{
+		return this.likelihoodGivenPast;
+	}
+	
+	private double likelihoodGivenPast = 0;
 
 	private boolean observed = false;
 	private int value;

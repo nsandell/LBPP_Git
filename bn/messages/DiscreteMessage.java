@@ -20,16 +20,17 @@ public class DiscreteMessage
 		this.isDelta = true;
 	}
 	
-	public void normalize()
+	public double normalize()
 	{
 		if(this.isDelta)
-			return;
+			return 1;
 		double sum = 0;
 		for(int i = 0; i < message_values.length; i++)
 			sum += message_values[i];
-		if(sum==0) return;
+		if(sum==0) return 0;
 		for(int i = 0; i < message_values.length; i++)
 			message_values[i] /= sum;
+		return sum;
 	}
 	
 	public DiscreteMessage divide(DiscreteMessage other) throws BNException

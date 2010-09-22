@@ -145,7 +145,12 @@ abstract class DBNNode<InnerType extends BNNode> implements IDynBayesNode
 		return this.intraChildren;
 	}
 	
-	public abstract double updateMessages(int tmin, int tmax) throws BNException;
+	public final double updateMessages(int tmin, int tmax) throws BNException
+	{
+		return this.updateMessagesI(tmin, tmax);
+	}
+	
+	protected abstract double updateMessagesI(int tmin, int tmax) throws BNException;
 
 	
 	protected Vector<InnerType> nodeInstances;

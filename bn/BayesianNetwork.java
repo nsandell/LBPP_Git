@@ -1,6 +1,7 @@
 package bn;
 
 import java.util.HashMap;
+
 import java.util.HashSet;
 
 import bn.interfaces.IBayesNode;
@@ -56,6 +57,7 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		if(node!=null)
 		{
 			this.removeNodeI(node);
+			//this.nodes_list.remove(node);
 			this.nodes.remove(name);
 		}
 	}

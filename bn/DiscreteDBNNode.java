@@ -1,5 +1,7 @@
 package bn;
 
+import java.util.ArrayList;
+
 import bn.distributions.DiscreteDistribution;
 
 import bn.interfaces.IDiscreteBayesNode;
@@ -11,8 +13,11 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 	public DiscreteDBNNode(DynamicBayesianNetwork bn, StaticBayesianNetwork unrolled, String basename, int cardinality) throws BNException
 	{
 		super(bn,basename);
+		ArrayList<DiscreteBNNode> instanceBuilder = new ArrayList<DiscreteBNNode>();
 		for(int t = 0; t < bn.getT(); t++)
-			this.nodeInstances.add(unrolled.addDiscreteNode(basename+"["+t+"]",cardinality));
+			instanceBuilder.add(unrolled.addDiscreteNode(basename+"["+t+"]",cardinality));
+		this.nodeInstances.addAll(instanceBuilder);
+			//this.nodeInstances.add(unrolled.addDiscreteNode(basename+"["+t+"]",cardinality));
 	}
 
 	@Override
@@ -68,9 +73,8 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 	protected double updateMessagesI(int tmin, int tmax) throws BNException
 	{
 		double max = 0;
-		DiscreteBNNode[] arr = this.nodeInstances.subList(tmin, tmax+1).toArray(new DiscreteBNNode[1]);
-		for(int t = 0; t < arr.length; t++)
-			max = Math.max(max, arr[t].updateMessages());
+		for(int t = tmin; t <= tmax; t++)
+			max = Math.max(max, this.nodeInstances.get(t).updateMessages());
 		return max;
 	}
 	

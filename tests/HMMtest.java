@@ -14,6 +14,7 @@ public class HMMtest {
 	public static void main(String[] args)
 	{
 		int length = Integer.parseInt(args[0]);
+		String parallel = args[1];
 		try
 		{
 			System.out.println("Seq length = " + length);
@@ -41,19 +42,24 @@ public class HMMtest {
 			y.setValue(obs, 0);
 
 			dbn.validate();
-			long begin = System.currentTimeMillis();
-			dbn.run(1000, 0);
-			long end = System.currentTimeMillis();
-			double runtime = ((double)(end-begin))/1000;
-			for(int i = 0; i < 2; ++i)
+			
+			if(parallel.compareTo("serial")==0)
 			{
-				IDiscreteBayesNode inst = x.getDiscreteInstance(i);
-				System.out.println(inst.getName()+": ["+x.getMarginal(i).getValue(0) +"," + x.getMarginal(i).getValue(1)+"]");
-			}
-			System.out.println("Converged in " + runtime + " seconds... X Probabilities");
-			System.out.println("Observation likelihood : " + y.getLogLikelihood());
 
-			dbn.run_parallel(100, 0, new CallbackClass(System.currentTimeMillis(),x,y));
+				long begin = System.currentTimeMillis();
+				dbn.run(100, 0);
+				long end = System.currentTimeMillis();
+				double runtime = ((double)(end-begin))/1000;
+				for(int i = 0; i < 2; ++i)
+				{
+					IDiscreteBayesNode inst = x.getDiscreteInstance(i);
+					System.out.println(inst.getName()+": ["+x.getMarginal(i).getValue(0) +"," + x.getMarginal(i).getValue(1)+"]");
+				}
+				System.out.println("Converged in " + runtime + " seconds... X Probabilities");
+				System.out.println("Observation likelihood : " + y.getLogLikelihood());
+			}
+			else
+				dbn.run_parallel(100, 0, new CallbackClass(System.currentTimeMillis(),x,y));
 		}
 		catch(BNException e) {
 			System.err.println("Error while running HMMtest : " + e.toString());

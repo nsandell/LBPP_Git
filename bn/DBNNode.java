@@ -1,7 +1,6 @@
 package bn;
 
-import java.util.ArrayList;
-import java.util.Vector;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import util.IterableWrapper;
 
@@ -14,13 +13,7 @@ abstract class DBNNode<InnerType extends BNNode> implements IDynBayesNode
 	{
 		this.bayesNet = net;
 		this.name = name;
-		this.interChildrenSet = new IterableWrapper<IDynBayesNode>(this.interChildren);
-		this.interParentSet = new IterableWrapper<IDynBayesNode>(this.interParents);
-		this.intraChildrenSet = new IterableWrapper<IDynBayesNode>(this.intraChildren);
-		this.intraParentSet = new IterableWrapper<IDynBayesNode>(this.intraParents);
-		this.childrenSet = new IterableWrapper<IBayesNode>(this.intraChildren);
-		this.parentSet = new IterableWrapper<IBayesNode>(this.intraParents);
-		this.nodeInstances = new Vector<InnerType>(net.getT());
+		this.nodeInstances = new CopyOnWriteArrayList<InnerType>();
 	}
 	
 	public final String getName()
@@ -97,32 +90,32 @@ abstract class DBNNode<InnerType extends BNNode> implements IDynBayesNode
 	
 	public Iterable<IDynBayesNode> getInterChildren()
 	{
-		return this.interChildrenSet;
+		return new IterableWrapper<IDynBayesNode>(this.interChildren);
 	}
 	
 	public Iterable<IDynBayesNode> getInterParents()
 	{
-		return this.interParentSet;
+		return new IterableWrapper<IDynBayesNode>(this.interParents);
 	}
 	
 	public Iterable<IBayesNode> getChildren()
 	{
-		return this.childrenSet;
+		return new IterableWrapper<IBayesNode>(this.intraChildren);
 	}
 	
 	public Iterable<IBayesNode> getParents()
 	{
-		return this.parentSet;
+		return new IterableWrapper<IBayesNode>(this.intraParents);
 	}
 	
 	public Iterable<IDynBayesNode> getIntraChildren()
 	{
-		return this.intraChildrenSet;
+		return new IterableWrapper<IDynBayesNode>(this.intraChildren);
 	}
 	
 	public Iterable<IDynBayesNode> getIntraParents()
 	{
-		return this.intraParentSet;
+		return new IterableWrapper<IDynBayesNode>(this.intraParents);
 	}
 	
 	public Iterable<DBNNode<?>> getInterParentsI()
@@ -151,22 +144,14 @@ abstract class DBNNode<InnerType extends BNNode> implements IDynBayesNode
 	}
 	
 	protected abstract double updateMessagesI(int tmin, int tmax) throws BNException;
+	
+	protected CopyOnWriteArrayList<InnerType> nodeInstances;
+	
+	private CopyOnWriteArrayList<DBNNode<?>> interChildren = new CopyOnWriteArrayList<DBNNode<?>>();
+	private CopyOnWriteArrayList<DBNNode<?>> intraChildren = new CopyOnWriteArrayList<DBNNode<?>>();
+	private CopyOnWriteArrayList<DBNNode<?>> interParents = new CopyOnWriteArrayList<DBNNode<?>>();
+	private CopyOnWriteArrayList<DBNNode<?>> intraParents = new CopyOnWriteArrayList<DBNNode<?>>();
 
-	
-	protected Vector<InnerType> nodeInstances;
-	
-	private ArrayList<DBNNode<?>> interChildren = new ArrayList<DBNNode<?>>();
-	private ArrayList<DBNNode<?>> intraChildren = new ArrayList<DBNNode<?>>();
-	private ArrayList<DBNNode<?>> interParents = new ArrayList<DBNNode<?>>();
-	private ArrayList<DBNNode<?>> intraParents= new ArrayList<DBNNode<?>>();
-
-	private IterableWrapper<IBayesNode> childrenSet;
-	private IterableWrapper<IBayesNode> parentSet;
-	private IterableWrapper<IDynBayesNode> interChildrenSet;
-	private IterableWrapper<IDynBayesNode> intraChildrenSet;
-	private IterableWrapper<IDynBayesNode> interParentSet;
-	private IterableWrapper<IDynBayesNode> intraParentSet;
-	
 	DynamicBayesianNetwork bayesNet;
 	String name;
 }

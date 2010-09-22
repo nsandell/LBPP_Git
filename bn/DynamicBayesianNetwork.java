@@ -1,7 +1,6 @@
 package bn;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 
 import bn.interfaces.IDynBayesNode;
 import bn.interfaces.IDynBayesNet;
@@ -90,12 +89,9 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 	
 	public void run_parallel(int max_iterations, double convergence, ParallelInferenceCallback callback) throws BNException
 	{
-		LinkedList<DBNNode<?>> nodelist = new LinkedList<DBNNode<?>>();
+		System.out.println("Sending initial messages!");
 		for(DBNNode<?> node : this.getNodes())
-		{
 			node.sendInitialMessages();
-			nodelist.add(node);
-		}
 		
 		/* Must reserve "boundary" nodes for single thread operation to avoid updating
 		 *  neighboring nodes simultaneously..
@@ -105,7 +101,8 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		 *  will take the remainder
 		 */
 		
-		ParallelStatus status = new ParallelStatus(this,convergence,max_iterations,callback,nodelist);
+		System.out.println("Parallel time!");
+		ParallelStatus status = new ParallelStatus(this,convergence,max_iterations,callback,this.getNodes());
 		parallel_iteration_regions(status);
 	}
 	
@@ -191,7 +188,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 				synchronized (threadsLock) {
 					this.threadsRunning--;
 					this.doneThreads++;
-					if(this.doneThreads==availableProcs)
+					if(this.doneThreads==maxThreads)
 					{
 						this.doneThreads = 0;
 						this.bn.parallel_iteration_borders(this);

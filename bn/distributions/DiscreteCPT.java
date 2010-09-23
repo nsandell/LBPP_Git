@@ -1,55 +1,68 @@
 package bn.distributions;
 
-import java.io.BufferedReader;
-
 import bn.BNException;
-import bn.BNDefinitionLoader.BNIOException;
 
 public class DiscreteCPT extends DiscreteDistribution
 {
 	public DiscreteCPT(int[] dimSizes, int cardinality, double[][] values) throws BNException
 	{
 		super(dimSizes.length,cardinality);
-		this.cardinality = cardinality;
-		this.innerConstructor(dimSizes, values);
-	}
-
-	public DiscreteCPT(BufferedReader input, int cardinality, int numdim, int[] dimsizes) throws BNIOException
-	{
-		super(numdim,cardinality);
-		try
-		{
-			this.cardinality = cardinality;
-			this.dimSizes = dimsizes;
-			int dimprod = 1;
-			for(int i = 0; i < dimsizes.length; i++)
-				dimprod *= dimsizes[i];
-			double[][] values = new double[dimprod][];
-			for(int i = 0; i < dimsizes.length; i++)
-				values[i] = new double[cardinality];
-			int numNZ = Integer.parseInt(input.readLine());
-			int[] indices = new int[numdim];
-			for(int i = 0; i < numNZ; i++)
-			{
-				String[] linebits = input.readLine().split(" ");
-				if(linebits.length!=(dimsizes.length+2)) 
-					throw new BNIOException("Insufficient conditions specified for CPT.");
-				for(int j = 0; j < dimsizes.length; j++)
-					indices[j] = Integer.parseInt(linebits[j]);
-				int index = getIndex(indices, dimsizes);
-				int value = Integer.parseInt(linebits[dimsizes.length]);
-				values[index][value] = Double.parseDouble(linebits[dimsizes.length+1]);
-			}
-			this.innerConstructor(dimsizes, values);
-		} catch(Exception e) {
-			throw new BNIOException("Failure to load CPT : " + e.toString(),e);
-		}
-	}
-
-	private void innerConstructor(int[] dimSizes, double[][] values) throws BNException
-	{
 		this.dimSizes = dimSizes;
 		this.values = values;
+		this.cardinality = cardinality;
+		this.validate();
+	}
+
+	DiscreteCPT(int cardinality, int numdim, int[] dimsizes)
+	{
+		super(numdim,cardinality);
+		this.beingConstructed = true;
+		this.dimSizes = dimsizes;
+		this.cardinality = cardinality;
+		this.dimSizes = dimsizes;
+		int dimprod = 1;
+		for(int i = 0; i < dimsizes.length; i++)
+			dimprod *= dimsizes[i];
+		values = new double[dimprod][];
+		for(int i = 0; i < dimprod; i++)
+			values[i] = new double[cardinality];
+	}
+
+	private boolean beingConstructed = false;
+	
+	protected boolean addLine(String line) throws BNException
+	{
+		if(!this.beingConstructed)
+			throw new BNException("Attempted to construct CPT that is not under construction!");
+		int[] indices = new int[this.dimSizes.length];
+		
+		String[] linebits = line.split(" ");
+		if(linebits.length!=(this.dimSizes.length+2)) 
+			throw new BNException("Insufficient number of conditions specified for CPT.");
+		try {
+			for(int j = 0; j < this.dimSizes.length; j++)
+				indices[j] = Integer.parseInt(linebits[j]);
+		} catch(NumberFormatException e) {
+			throw new BNException("Expected a integer index, got something else in " + line);
+		}
+		int index = getIndex(indices, this.dimSizes);
+		try {
+			int value = Integer.parseInt(linebits[this.dimSizes.length]);
+			values[index][value] = Double.parseDouble(linebits[this.dimSizes.length+1]);
+		} catch(NumberFormatException e) {
+			throw new BNException("Incorrect parameter type for variable value or probability...(" + line + ")");
+		}
+		return true;
+	}
+	
+	protected DiscreteCPT finish() throws BNException
+	{
+		this.validate();
+		return this;
+	}
+
+	private void validate() throws BNException
+	{
 		int[] indices = new int[this.dimSizes.length];
 		for(int i = 0; i < indices.length; i++)
 			indices[i] = 0;

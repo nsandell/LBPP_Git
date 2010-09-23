@@ -1,8 +1,5 @@
 package bn.distributions;
 
-import java.io.BufferedReader;
-
-import bn.BNDefinitionLoader.BNIOException;
 import bn.BNException;
 
 public abstract class DiscreteDistribution {
@@ -25,24 +22,52 @@ public abstract class DiscreteDistribution {
 	
 	public abstract int[] getConditionDimensions();
 	public abstract double evaluate(int[] indices, int value) throws BNException;
-
-	public DiscreteDistribution loadDistribution(BufferedReader reader, DiscreteDistributionType type, int numconditions,int[] dimensions) throws BNIOException
-	{
-		switch(type)
+	
+	
+	public static class DiscreteDistributionBuilder {
+		
+		public DiscreteDistributionBuilder(String type, int cardinality, int numconditions, int[] dimensions) throws BNException
 		{
+			switch(DiscreteDistributionType.valueOf(type))
+			{
 			case UnconditionedDiscrete:
-				return new DiscreteCPTUC(reader,cardinality,numconditions);
+				this.inner = new DiscreteCPTUC(cardinality);
+				break;
 			case CPT:
-				return new DiscreteCPT(reader,cardinality,numconditions,dimensions);
+				this.inner = new DiscreteCPT(cardinality,numconditions,dimensions);
+				break;
 			case SparseCPT:
-				return new SparseDiscreteCPT(reader,cardinality,numconditions,dimensions);
+				this.inner = new SparseDiscreteCPT(cardinality,numconditions,dimensions);
+				break;
 			case NoisyOr:
-				return new NoisyOr(reader,numconditions);
+				this.inner = new NoisyOr(numconditions);
+				break;
 			default:
-				throw new BNIOException("Unrecognized discrete distribution...");	
+				throw new BNException("Unrecognized discrete probability distribution type " + type);
+			}
 		}
+		
+		public boolean addLine(String line) throws BNException
+		{
+			return this.inner.addLine(line);
+		}
+		
+		public DiscreteDistribution getFinished() throws BNException
+		{
+			return this.inner.finish();
+		}
+		
+		private DiscreteDistribution inner;
 	}
 	
+	protected abstract boolean addLine(String line) throws BNException;
+	protected abstract DiscreteDistribution finish() throws BNException;
+	
+	public static DiscreteDistributionBuilder getDistributionBuilder(String type, int cardinality, int numconditions, int[] dimensions) throws BNException
+	{
+		return new DiscreteDistributionBuilder(type, cardinality, numconditions, dimensions);
+	}
+
 	public static enum DiscreteDistributionType
 	{
 		UnconditionedDiscrete,

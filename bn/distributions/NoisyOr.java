@@ -1,11 +1,7 @@
 package bn.distributions;
 
-import java.io.BufferedReader;
-import java.io.IOException;
 import java.util.HashMap;
-
 import bn.BNException;
-import bn.BNDefinitionLoader.BNIOException;
 
 public class NoisyOr extends DiscreteDistribution
 {
@@ -16,15 +12,32 @@ public class NoisyOr extends DiscreteDistribution
 		this.p = p;
 	}
 	
-	public NoisyOr(BufferedReader reader, int numconditions) throws BNIOException
+	public NoisyOr(int numconditions) 
 	{
 		super(numconditions,2);
+		this.beingConstructed = true;
+	}
+	
+	protected boolean addLine(String line) throws BNException
+	{
+		if(!beingConstructed)
+			throw new BNException("Attempted to construct Noisy-Or node not under construction!");
 		try {
-			this.p = Double.parseDouble(reader.readLine());
-			if(this.p < 0 || this.p > 1) throw new BNIOException("Attempted to specify noisy or with invalid p=" + p + "!");
-		} catch(Exception e) {
-			throw new BNIOException("Error loading noisy or CPD",e);
+			this.p = Double.parseDouble(line);
+		} catch(NumberFormatException e) {
+			throw new BNException("Expected probability for noisy-or parameter, got " + line);
 		}
+		if(this.p < 0 || this.p > 1) throw new BNException("Attempted to specify noisy or with invalid p=" + p + "!");
+		this.beingConstructed = false;
+		return false;
+	}
+	private boolean beingConstructed = false;
+	
+	protected NoisyOr finish() throws BNException
+	{
+		if(this.beingConstructed)
+			throw new BNException("Expected to get noisy-or parameter!");
+		else return this;
 	}
 	
 	public double evaluate(int[] indices, int value)

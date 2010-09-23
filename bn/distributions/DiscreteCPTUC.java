@@ -1,50 +1,68 @@
 package bn.distributions;
 
-import java.io.BufferedReader;
-
 import bn.BNException;
-import bn.BNDefinitionLoader.BNIOException;
 
 public class DiscreteCPTUC extends DiscreteDistribution
 {
 	public DiscreteCPTUC(double[] distr) throws BNException
 	{
 		super(0,distr.length);
-		this.innerConstructor(distr);
 		this.delta = false;
 		this.dist = distr;
 		this.index = -1;
+		this.validate();
 	}
 
-	public DiscreteCPTUC(BufferedReader input, int cardinality, int numcond) throws BNIOException
+	// For the line by line builder mode of doing things.
+	DiscreteCPTUC(int cardinality)
 	{
 		super(0,cardinality);
-		try
+		this.beingConstructed = true;
+		this.dist = new double[cardinality];
+		this.delta = false;
+		this.index = -1;
+	}
+	
+	private boolean beingConstructed = false;
+	
+	protected boolean addLine(String line) throws BNException
+	{
+		if(!this.beingConstructed)
+			throw new BNException("Attempted to load data line for DiscreteCPTUC that is not under construction!");
+		else
 		{
-			String[] probabilities = input.readLine().split(" ");
+			String[] probabilities = line.split(" ");
 			if(probabilities.length!=this.getCardinality())
-				throw new BNIOException(" - incorrect number of probabilities...");
-			double[] distr = new double[probabilities.length];
-			for(int i = 0; i < distr.length; i++)
-				distr[i] = Double.parseDouble(probabilities[i]);
-			this.innerConstructor(distr);
-			this.delta = false;
-			this.dist = distr;
-			this.index = -1;
-		} catch(Exception e)
-		{
-			throw new BNIOException("Erorr loading unconditional probability dist : " + e.toString(),e);
+				throw new BNException("Expected " + this.getCardinality() + " entries in the distribution, got " + probabilities.length);
+			try
+			{
+				for(int i = 0; i < dist.length; i++)
+					dist[i] = Double.parseDouble(probabilities[i]);
+			} catch(NumberFormatException e) {
+				throw new BNException("Line (" + line +") should contain only probabilities.");
+			}
+			this.validate();
+			this.beingConstructed = false;
 		}
+		return false;
+	}
+	
+	protected DiscreteCPTUC finish() throws BNException
+	{
+		if(this.beingConstructed)
+			throw new BNException("Distribution not fully specified!");
+		else
+			return this;
 	}
 
-	private final void innerConstructor(double[] distr) throws BNException
+	private final void validate() throws BNException
 	{
 		double sum = 0;
-		for(int i = 0; i < distr.length; i++)
+		for(int i = 0; i < dist.length; i++)
 		{
-			if(distr[i] < 0 || distr[i] > 1)
-				throw new BNException("Attempted to create pdist with invalid entry (" + distr[i] + ")");
-			sum += distr[i];
+			if(dist[i] < 0 || dist[i] > 1)
+				throw new BNException("Attempted to create pdist with invalid entry (" + dist[i] + ")");
+			sum += dist[i];
 		}
 
 		if(Math.abs(sum-1) > 1e-12)

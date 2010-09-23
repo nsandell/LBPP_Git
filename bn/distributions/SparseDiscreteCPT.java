@@ -1,13 +1,10 @@
 package bn.distributions;
 
-import java.io.BufferedReader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 
 import bn.BNException;
-import bn.BNDefinitionLoader.BNIOException;
 
 public class SparseDiscreteCPT extends DiscreteDistribution
 {
@@ -17,26 +14,26 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		public int value_index;
 		public double p;
 	}
-	
+
 	private static class IndexWrapper
 	{
 		public IndexWrapper(int[] indices)
 		{
 			this.indices = indices;
 		}
-		
+
 		@Override
 		public boolean equals(Object other)
 		{
 			return (other instanceof IndexWrapper) && this.equalsI((IndexWrapper)other);
 		}
-		
+
 		@Override
 		public int hashCode()
 		{
 			return Arrays.hashCode(this.indices);
 		}
-		
+
 		private boolean equalsI(IndexWrapper other)
 		{
 			if(this.indices.length!=other.indices.length)
@@ -51,54 +48,18 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 			}
 			return true;
 		}
-		
+
 		private int[] indices;
 	}
-	
+
 	public SparseDiscreteCPT(Iterator<Entry> entryTable, int[] dimSizes, int cardinality) throws BNException
 	{
 		super(dimSizes.length,cardinality);
-		this.innerConstructor(entryTable, cardinality, dimSizes);
-	}
-	
-	public SparseDiscreteCPT(BufferedReader br, int card, int numdim, int[] dims) throws BNIOException
-	{
-		super(numdim,card);
-		try
-		{
-			ArrayList<Entry> entrieslist =  new ArrayList<Entry>();
-			int numNZ = Integer.parseInt(br.readLine());
-			int[] indices = new int[numdim];
-			for(int i = 0; i < numNZ; i++)
-			{
-				String[] linebits = br.readLine().split(" ");
-				if(linebits.length!=(numdim+2))
-					throw new BNIOException("Insufficient number of condition indices set.");
-				for(int j = 0; j < numdim; j++)
-				{	
-					indices[j] = Integer.parseInt(linebits[j]);
-				}
-				int value = Integer.parseInt(linebits[numdim]);
-				double p = Double.parseDouble(linebits[numdim+1]);
-				Entry curr = new Entry();
-				curr.conditional_indices = indices.clone();
-				curr.value_index = value;
-				curr.p = p;
-				entrieslist.add(curr);
-			}
-			this.innerConstructor(entrieslist.iterator(), card, dims);
-		} catch(Exception e) {
-			throw new BNIOException("Error while loading Sparse CPT : " + e.toString(), e);
-		}
-	}
-	
-	private void innerConstructor(Iterator<Entry> entryTable, int cardinality, int[] dimSizes) throws BNException
-	{
-		
+
 		this.entries = new HashMap<IndexWrapper, HashMap<Integer,Double>>();
 		this.cardinality = cardinality;
 		this.dimSizes = dimSizes;
-		
+
 		while(entryTable.hasNext())
 		{
 			Entry next = entryTable.next();
@@ -114,25 +75,79 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 				throw new BNException("Duplicate entry specified for index " + indexString(next.conditional_indices));
 			entries.get(cur_indices).put(next.value_index, next.p);
 		}
-		int[] indices = new int[dimSizes.length];
+		this.validate();
+	}
+
+	public SparseDiscreteCPT(int card, int numdim, int[] dims)
+	{
+		super(numdim,card);
+		this.isBeingConstructed = true;
+		this.cardinality = card;
+		this.dimSizes = dims;
+	}
+	private boolean isBeingConstructed = false;
+
+	protected boolean addLine(String line) throws BNException
+	{
+		if(!this.isBeingConstructed)
+			throw new BNException("Attempted to construct Sparse CPT not under construction!");
+
+		String[] linebits = line.split(" ");
+		int[] indices = new int[this.dimSizes.length];
+		if(linebits.length!=(this.dimSizes.length+2))
+			throw new BNException("Insufficient number of condition indices set.");
+		try
+		{ 
+			for(int j = 0; j < this.dimSizes.length; j++)
+			{
+				indices[j] = Integer.parseInt(linebits[j]);
+				if(indices[j]>=this.dimSizes[j])
+					throw new BNException("Condition index " + j + " is out of range, should be less than " + this.dimSizes[j]);
+			}
+			int value = Integer.parseInt(linebits[this.dimSizes.length]);
+			if(value >= this.cardinality)
+				throw new BNException("Variable value " + value + " is out of range.");
+			double p = Double.parseDouble(linebits[this.dimSizes.length+1]);
+			if(p < 0 || p > 1)
+				throw new BNException("Invalid probability set (" + p + ")");
+			IndexWrapper wrap = new IndexWrapper(indices);
+			if(this.entries.get(wrap)==null)
+				this.entries.put(wrap, new HashMap<Integer, Double>());
+			this.entries.get(wrap).put(value, p);
+		} catch(NumberFormatException e) {
+			throw new BNException("Invalid numeric type, expected integer or double and got something else.");
+		}
+		return true;
+	}
+	
+	protected SparseDiscreteCPT finish() throws BNException
+	{
+		this.isBeingConstructed = false;
+		this.validate();
+		return this;
+	}
+
+	private void validate() throws BNException
+	{
+		int[] indices = new int[this.dimSizes.length];
 		for(int i = 0; i < indices.length; i++)
 			indices[i] = 0;
-		
+
 		do
 		{
 			HashMap<Integer,Double> ucdist = entries.get(new IndexWrapper(indices));
-			
+
 			double sum = 0;
 			Iterator<Double> values = ucdist.values().iterator();
 			while(values.hasNext())
 				sum += values.next();
-			
+
 			if(Math.abs(sum-1) > 1e-12)
 				throw new BNException("Failed to correctly specify distribution for indices " + indexString(indices));
-			
+
 		} while((indices = incrementIndices(indices, dimSizes))!=null);
 	}
-	
+
 	private final static boolean goodIndex(int[] indexes, int[] dimSizes)
 	{
 		if(indexes.length!=dimSizes.length)
@@ -144,22 +159,22 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		}
 		return true;
 	}
-	
+
 	public double evaluate(int[] indices,int value) throws BNException
 	{
 		if(!goodIndex(indices,this.dimSizes))
 			throw new BNException("Failure to evaluate CPT, invalid indices " + indexString(indices) + " for dimensions " + indexString(this.dimSizes));
 		if(value >= this.cardinality)
 			throw new BNException("Failure to evaluate CPT, bad value " + value + " where cardinality is " + this.cardinality);
-		
+
 		return this.entries.get(new IndexWrapper(indices)).get(value);
 	}
-	
+
 	public double evaluateFast(int[] indices,int value)
 	{
 		return this.entries.get(new IndexWrapper(indices)).get(value);
 	}
-	
+
 	public int getCardinality(){return this.cardinality;}
 	public int[] getConditionDimensions(){return this.dimSizes;}
 

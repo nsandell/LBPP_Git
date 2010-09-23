@@ -4,7 +4,6 @@ import java.util.ArrayList;
 
 import java.util.HashMap;
 
-import bn.BNDefinitionLoader.BNIOException;
 import bn.distributions.DiscreteDistribution;
 import bn.interfaces.IBayesNode;
 import bn.interfaces.IDiscreteBayesNode;
@@ -17,27 +16,15 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	
 	DiscreteBNNode(StaticBayesianNetwork net, String name, int cardinality){super(net,name);this.cardinality = cardinality;}
 	
-	public static void loadFromFile(StaticBayesianNetwork net, String name, String[] nodedata) throws BNIOException
-	{
-		try
-		{
-			if(nodedata.length!=3)
-				throw new BNIOException("Expected only cardinality for discrete node " + name + " definition.");
-			net.addDiscreteNode(name, Integer.parseInt(nodedata[2]));
-		} catch(Exception e) {
-			throw new BNIOException("Exception while loading discrete node " + name + " : " + e.toString(),e);
-		}
-	}
-	
 	public void validate() throws BNException
 	{
-		if(this.cpt==null) throw new BNException("Error while validating, no CPT set!");
+		if(this.cpt==null) throw new BNException("Error while validating node " + this.getName() + ", no CPT set!");
 		int[] dimensions = this.cpt.getConditionDimensions();
 		if(dimensions.length!=this.ds_parents.size())
-			throw new BNException("Error while validating, CPT has incorrect number of conditions.");
+			throw new BNException("Error while validating node " + this.getName() + ", CPT has incorrect number of conditions.");
 		for(int i = 0; i < this.ds_parents.size(); i++)
 			if(((DiscreteBNNode)this.ds_parents.get(i)).cardinality!=dimensions[i])
-				throw new BNException("Error while validating, CPT dimension " + i + " is of incorrect size.");
+				throw new BNException("Error while validating node " + this.getName() + ", CPT dimension " + i + " is of incorrect size.");
 	}
 	
 	protected void addParentI(BNNode parent) throws BNException

@@ -1,5 +1,8 @@
 package bn.distributions;
 
+import java.io.BufferedReader;
+
+import bn.BNDefinitionLoader.BNIOException;
 import bn.BNException;
 
 public abstract class DiscreteDistribution {
@@ -22,6 +25,31 @@ public abstract class DiscreteDistribution {
 	
 	public abstract int[] getConditionDimensions();
 	public abstract double evaluate(int[] indices, int value) throws BNException;
+
+	public DiscreteDistribution loadDistribution(BufferedReader reader, DiscreteDistributionType type, int numconditions,int[] dimensions) throws BNIOException
+	{
+		switch(type)
+		{
+			case UnconditionedDiscrete:
+				return new DiscreteCPTUC(reader,cardinality,numconditions);
+			case CPT:
+				return new DiscreteCPT(reader,cardinality,numconditions,dimensions);
+			case SparseCPT:
+				return new SparseDiscreteCPT(reader,cardinality,numconditions,dimensions);
+			case NoisyOr:
+				return new NoisyOr(reader,numconditions);
+			default:
+				throw new BNIOException("Unrecognized discrete distribution...");	
+		}
+	}
+	
+	public static enum DiscreteDistributionType
+	{
+		UnconditionedDiscrete,
+		CPT,
+		SparseCPT,
+		NoisyOr
+	}
 
 	protected final static int getIndex(int[] indices, int[] dimSizes) throws BNException
 	{

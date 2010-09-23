@@ -1,10 +1,13 @@
 package bn.distributions;
 
+import java.io.BufferedReader;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 
 import bn.BNException;
+import bn.BNDefinitionLoader.BNIOException;
 
 public class SparseDiscreteCPT extends DiscreteDistribution
 {
@@ -55,6 +58,42 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 	public SparseDiscreteCPT(Iterator<Entry> entryTable, int[] dimSizes, int cardinality) throws BNException
 	{
 		super(dimSizes.length,cardinality);
+		this.innerConstructor(entryTable, cardinality, dimSizes);
+	}
+	
+	public SparseDiscreteCPT(BufferedReader br, int card, int numdim, int[] dims) throws BNIOException
+	{
+		super(numdim,card);
+		try
+		{
+			ArrayList<Entry> entrieslist =  new ArrayList<Entry>();
+			int numNZ = Integer.parseInt(br.readLine());
+			int[] indices = new int[numdim];
+			for(int i = 0; i < numNZ; i++)
+			{
+				String[] linebits = br.readLine().split(" ");
+				if(linebits.length!=(numdim+2))
+					throw new BNIOException("Insufficient number of condition indices set.");
+				for(int j = 0; j < numdim; j++)
+				{	
+					indices[j] = Integer.parseInt(linebits[j]);
+				}
+				int value = Integer.parseInt(linebits[numdim]);
+				double p = Double.parseDouble(linebits[numdim+1]);
+				Entry curr = new Entry();
+				curr.conditional_indices = indices.clone();
+				curr.value_index = value;
+				curr.p = p;
+				entrieslist.add(curr);
+			}
+			this.innerConstructor(entrieslist.iterator(), card, dims);
+		} catch(Exception e) {
+			throw new BNIOException("Error while loading Sparse CPT : " + e.toString(), e);
+		}
+	}
+	
+	private void innerConstructor(Iterator<Entry> entryTable, int cardinality, int[] dimSizes) throws BNException
+	{
 		
 		this.entries = new HashMap<IndexWrapper, HashMap<Integer,Double>>();
 		this.cardinality = cardinality;

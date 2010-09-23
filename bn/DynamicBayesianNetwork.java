@@ -256,5 +256,6 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 
 	protected int T;
 	protected StaticBayesianNetwork unrolled_network = new StaticBayesianNetwork();
+	protected static int availableProcs = Runtime.getRuntime().availableProcessors();
 	HashMap<String, DBNNode<?>> dnodes = new HashMap<String, DBNNode<?>>();
 }

@@ -1,8 +1,11 @@
 package bn.distributions;
 
+import java.io.BufferedReader;
+import java.io.IOException;
 import java.util.HashMap;
 
 import bn.BNException;
+import bn.BNDefinitionLoader.BNIOException;
 
 public class NoisyOr extends DiscreteDistribution
 {
@@ -11,6 +14,17 @@ public class NoisyOr extends DiscreteDistribution
 		super(numparents,2); // We will consider this to mean (from 0 -> Infty)
 		if(p < 0 || p > 1) throw new BNException("Attempted to specify noisy or with invalid p ( " + p + ")");
 		this.p = p;
+	}
+	
+	public NoisyOr(BufferedReader reader, int numconditions) throws BNIOException
+	{
+		super(numconditions,2);
+		try {
+			this.p = Double.parseDouble(reader.readLine());
+			if(this.p < 0 || this.p > 1) throw new BNIOException("Attempted to specify noisy or with invalid p=" + p + "!");
+		} catch(Exception e) {
+			throw new BNIOException("Error loading noisy or CPD",e);
+		}
 	}
 	
 	public double evaluate(int[] indices, int value)

@@ -110,6 +110,4 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 	protected abstract void removeNodeI(BaseNodeType node) throws BNException;
 	private Iterable<String> nodeOrder = null;
 	private HashMap<String, BaseNodeType> nodes = new HashMap<String, BaseNodeType>();
-	
-	protected static int availableProcs = Runtime.getRuntime().availableProcessors();
 }

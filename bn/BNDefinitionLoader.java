@@ -2,14 +2,9 @@ package bn;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
-
-
-import java.io.FileReader;
 import java.util.regex.*;
-
 import util.Parser;
 import util.Parser.LineHandler;
 import util.Parser.ParserException;
@@ -207,7 +202,7 @@ public class BNDefinitionLoader
 	public static void interactiveStaticNetwork()
 	{
 		Parser parser = new Parser(	new BufferedReader(new InputStreamReader(System.in)),
-									new BufferedWriter(new OutputStreamWriter(System.out)),false,false);
+									new BufferedWriter(new OutputStreamWriter(System.out)),false,true);
 		
 		StaticBayesianNetwork bn = new StaticBayesianNetwork();
 		parser.setPrompt(">>");
@@ -224,13 +219,6 @@ public class BNDefinitionLoader
 	
 	public static StaticBayesianNetwork loadStaticNetworkFile(String filename)
 	{
-		StaticBayesianNetwork bn = new StaticBayesianNetwork();
-		BufferedReader input;
-		int lineno = 1;
-		try {
-			input = new BufferedReader(new FileReader(filename));
-			String line;
-		} catch(IOException e){}
 		return null;
 	}
 	

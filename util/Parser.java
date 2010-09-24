@@ -20,9 +20,9 @@ public class Parser {
 		public boolean parseLine(String line) throws ParserException; // Return true if you expect more lines...
 	}
 
-	public Parser(BufferedReader input, BufferedWriter output, boolean breakOnException, boolean printLineNoOnError)
+	public Parser(BufferedReader input, BufferedWriter output, BufferedWriter error_output, boolean breakOnException, boolean printLineNoOnError)
 	{
-		this.input = input; this.output = output; this.breakOnException = breakOnException; this.printLineNoOnError = printLineNoOnError;
+		this.input = input; this.output = output; this.breakOnException = breakOnException; this.printLineNoOnError = printLineNoOnError;this.error_output = error_output;
 	}
 
 	public void addHandler(String regexp, LineHandler handler)
@@ -40,6 +40,27 @@ public class Parser {
 	{
 		this.commentStr = commentStr;
 	}
+	
+	public boolean inputWaiting()
+	{
+		try {
+			this.input.mark(2048);
+			int chara;
+			while((chara=this.input.read())!=-1)
+			{
+				if(((char)chara)=='\n')
+				{
+					input.reset();
+					return true;
+				}
+			}
+			input.reset();
+			return false;
+		} catch(IOException e) {
+			System.err.println("Error trying to read input file.");
+			return false;
+		}
+	}
 
 	public void go()
 	{
@@ -47,11 +68,11 @@ public class Parser {
 		for(;;)
 		{
 			try {
-				if(this.prompt!=null)
+				if(!(this.input.ready() && this.input.markSupported() && this.inputWaiting()) && this.prompt!=null)
 				{
 					try {output.write(this.prompt); output.flush();}
 					catch(IOException e){
-						System.err.println("Error printing to output terminal: " + e.toString());
+						System.err.println("Error printing to output: " + e.toString());
 						break;
 					}
 				}
@@ -59,18 +80,18 @@ public class Parser {
 					break;
 			}
 			catch(Exception e) {
-				if(output!=null)
+				if(error_output!=null)
 				{
 					try
 					{
 						if(printLineNoOnError)
-							output.write("Error at line " + lineNumber + ": ");
+							error_output.write("Error at line " + lineNumber + ": ");
 						else
-							output.write("Error: ");
+							error_output.write("Error: ");
 
-						output.write(e.getMessage());
-						output.write("\n");
-						output.flush();
+						error_output.write(e.getMessage());
+						error_output.write("\n");
+						error_output.flush();
 					} catch(IOException e2) {
 						System.err.println("Error printing to output terminal: " + e.toString());
 						break;
@@ -81,6 +102,11 @@ public class Parser {
 			}
 			lineNumber++;
 		}
+		try
+		{
+			if(output!=null)
+				{this.output.write("\nExiting...\n\n");this.output.flush();}
+		} catch(IOException e) {}
 	}
 
 	private boolean readLine() throws ParserException, IOException
@@ -127,6 +153,7 @@ public class Parser {
 	private HashMap<String,LineHandler> handlers = new HashMap<String, Parser.LineHandler>();
 	private BufferedReader input;
 	private BufferedWriter output;
+	private BufferedWriter error_output;
 	private String prompt = null;
 	private String promptBackup;
 	private String commentStr = null;

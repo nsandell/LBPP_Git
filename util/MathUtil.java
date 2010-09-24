@@ -12,17 +12,6 @@ public class MathUtil
 		}
 	}
 	
-	public static void main(String[] args)
-	{
-
-		String matchtext = "Node1 -> Node2";
-		String regex  = "\\w+\\s*->\\s*\\w+";
-		if(matchtext.matches(regex))
-			System.out.println("MATCH");
-		else
-			System.out.println("NOMATCH");
-	}
-	
 	public static double logsum(double[] vals) throws MathUtilException
 	{
 		double max = Double.NEGATIVE_INFINITY;

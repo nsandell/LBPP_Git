@@ -14,6 +14,6 @@ public interface IDynBayesNode extends IBayesNode
 	 * @return The log likelihood desired.
 	 */
 	IBayesNode getInstance(int t);
-	
+	int getCardinality();
 	double getLogLikelihood() throws BNException;
 }

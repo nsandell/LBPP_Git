@@ -280,6 +280,14 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		return this.likelihoodGivenPast;
 	}
 	
+	int[] getParentDimensions()
+	{
+		int[] dims = new int[this.ds_parents.size()];
+		for(int i = 0; i < dims.length; i++)
+			dims[i] = this.ds_parents.get(i).getCardinality();
+		return dims;
+	}
+	
 	private double likelihoodGivenPast = 0;
 
 	private boolean observed = false;
@@ -292,8 +300,8 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	
 	private DiscreteMessage marginalDistribution = null;
 	
-	ArrayList<DiscreteBNNode> ds_parents = new ArrayList<DiscreteBNNode>();
-	ArrayList<DiscreteParentSubscriber> ds_children = new ArrayList<DiscreteParentSubscriber>();
-	HashMap<IBayesNode, DiscreteMessage> incomingLambdaMessages = new HashMap<IBayesNode, DiscreteMessage>();
-	HashMap<IBayesNode, DiscreteMessage> incomingPiMessages = new HashMap<IBayesNode, DiscreteMessage>();
+	private ArrayList<DiscreteBNNode> ds_parents = new ArrayList<DiscreteBNNode>();
+	private ArrayList<DiscreteParentSubscriber> ds_children = new ArrayList<DiscreteParentSubscriber>();
+	private HashMap<IBayesNode, DiscreteMessage> incomingLambdaMessages = new HashMap<IBayesNode, DiscreteMessage>();
+	private HashMap<IBayesNode, DiscreteMessage> incomingPiMessages = new HashMap<IBayesNode, DiscreteMessage>();
 }

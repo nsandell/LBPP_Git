@@ -44,6 +44,21 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 	{
 		this.nodeInstances.get(t).setValue(value);
 	}
+	
+	public int[] getSlice0ParentDim()
+	{
+		return this.nodeInstances.get(0).getParentDimensions();
+	}
+	
+	public int[] getSlice1ParentDim()
+	{
+		return this.nodeInstances.get(1).getParentDimensions();
+	}
+	
+	public int getCardinality()
+	{
+		return this.nodeInstances.get(0).getCardinality();
+	}
 
 	@Override
 	public void setValue(int[] values, int t0) throws BNException

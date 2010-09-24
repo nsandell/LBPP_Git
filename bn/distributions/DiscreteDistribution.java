@@ -28,25 +28,29 @@ public abstract class DiscreteDistribution {
 		
 		public DiscreteDistributionBuilder(String type, int cardinality, int numconditions, int[] dimensions) throws BNException
 		{
-			switch(DiscreteDistributionType.valueOf(type))
-			{
-			case UnconditionedDiscrete:
-				this.inner = new DiscreteCPTUC(cardinality);
-				break;
-			case CPT:
-				this.inner = new DiscreteCPT(cardinality,numconditions,dimensions);
-				break;
-			case SparseCPT:
-				this.inner = new SparseDiscreteCPT(cardinality,numconditions,dimensions);
-				break;
-			case NoisyOr:
-				this.inner = new NoisyOr(numconditions);
-				break;
-			default:
-				throw new BNException("Unrecognized discrete probability distribution type " + type);
+			try {
+				switch(DiscreteDistributionType.valueOf(type))
+				{
+				case PV:
+					this.inner = new DiscreteCPTUC(cardinality);
+					break;
+				case CPT:
+					this.inner = new DiscreteCPT(cardinality,numconditions,dimensions);
+					break;
+				case SparseCPT:
+					this.inner = new SparseDiscreteCPT(cardinality,numconditions,dimensions);
+					break;
+				case NoisyOr:
+					this.inner = new NoisyOr(numconditions);
+					break;
+				default:
+					throw new BNException("Unsupported discrete probability distribution type " + type);
+				}
+			} catch(IllegalArgumentException e) {
+				throw new BNException("Unrecognized discrete probabiltiy distribution type " + type);
 			}
 		}
-		
+
 		public boolean addLine(String line) throws BNException
 		{
 			return this.inner.addLine(line);
@@ -70,7 +74,7 @@ public abstract class DiscreteDistribution {
 
 	public static enum DiscreteDistributionType
 	{
-		UnconditionedDiscrete,
+		PV,
 		CPT,
 		SparseCPT,
 		NoisyOr

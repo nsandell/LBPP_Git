@@ -1,8 +1,13 @@
 package bn.distributions;
 
+import java.util.HashMap;
+import java.util.regex.Pattern;
+
+import util.Parser.LineHandler;
+import util.Parser.ParserException;
 import bn.BNException;
 
-public abstract class DiscreteDistribution {
+public abstract class DiscreteDistribution extends Distribution {
 
 	protected DiscreteDistribution(int numConditions, int cardinality)
 	{
@@ -24,14 +29,18 @@ public abstract class DiscreteDistribution {
 	public abstract double evaluate(int[] indices, int value) throws BNException;
 	
 	
-	public static class DiscreteDistributionBuilder {
+	public static class DiscreteDistributionBuilder implements DistributionBuilder{
 		
-		public DiscreteDistributionBuilder(String type, int cardinality, int numconditions, int[] dimensions) throws BNException
-		{
+		public DiscreteDistributionBuilder(String type, String name, int cardinality, int[] dimensions, HashMap<String,Distribution> distmap) throws ParserException {
 			try {
+				int numconditions = dimensions.length;
+				this.name = name;
+				this.distMap = distmap;
 				switch(DiscreteDistributionType.valueOf(type))
 				{
 				case PV:
+					if(numconditions!=0)
+						throw new ParserException("Specified a number of conditions for an unconditional PV");
 					this.inner = new DiscreteCPTUC(cardinality);
 					break;
 				case CPT:
@@ -44,40 +53,58 @@ public abstract class DiscreteDistribution {
 					this.inner = new NoisyOr(numconditions);
 					break;
 				default:
-					throw new BNException("Unsupported discrete probability distribution type " + type);
+					throw new ParserException("Unsupported discrete probability distribution type " + type);
 				}
 			} catch(IllegalArgumentException e) {
-				throw new BNException("Unrecognized discrete probabiltiy distribution type " + type);
+				throw new ParserException("Unrecognized discrete probabiltiy distribution type " + type);
 			}
 		}
 
-		public boolean addLine(String line) throws BNException
+		public LineHandler parseLine(String[] args) throws ParserException
 		{
-			return this.inner.addLine(line);
+			if(this.inner.parseLine(args))
+				return this;
+			this.distMap.put(this.name,this.inner.finish());
+			return null;
 		}
 		
-		public DiscreteDistribution getFinished() throws BNException
-		{
-			return this.inner.finish();
-		}
+		public DiscreteDistribution getFinished() throws ParserException {return this.inner.finish();}
 		
-		private DiscreteDistribution inner;
-	}
-	
-	protected abstract boolean addLine(String line) throws BNException;
-	protected abstract DiscreteDistribution finish() throws BNException;
-	
-	public static DiscreteDistributionBuilder getDistributionBuilder(String type, int cardinality, int numconditions, int[] dimensions) throws BNException
-	{
-		return new DiscreteDistributionBuilder(type, cardinality, numconditions, dimensions);
-	}
+		public int[] getGroups() {return this.inner.getRegExGroups();}
 
-	public static enum DiscreteDistributionType
+		public Pattern getRegEx(){return this.inner.getBuilderRegex();}
+
+		public String getPrompt() {return this.inner.getBuilderPrompt();}
+		
+		public void finish() throws ParserException
+		{
+			this.distMap.put(this.name, this.inner.finish());
+		}
+
+		private HashMap<String, Distribution> distMap;
+		private DiscreteDistribution inner;
+		String name;
+	}
+		
+	protected abstract String getBuilderPrompt();
+    protected abstract Pattern getBuilderRegex();
+    protected abstract int[] getRegExGroups();
+	
+	protected abstract boolean parseLine(String[] args) throws ParserException;
+	protected abstract DiscreteDistribution finish() throws ParserException;
+	
+	public static DiscreteDistributionBuilder getDiscreteDistributionBuilder(String type, String name, String args, HashMap<String, Distribution> distMap) throws ParserException
 	{
-		PV,
-		CPT,
-		SparseCPT,
-		NoisyOr
+		try {
+			String[] indexArgs = args.split(",");
+			int[] conditions = new int[indexArgs.length-1];
+			for(int i = 0; i < indexArgs.length-1; i++)
+				conditions[i] = Integer.parseInt(indexArgs[i]);
+			int card = Integer.parseInt(indexArgs[indexArgs.length-1]);
+			return new DiscreteDistributionBuilder(type, name, card, conditions, distMap);
+		} catch(NumberFormatException e) {
+			throw new ParserException("Invalid discrete distribution arguments..");
+		}
 	}
 
 	protected final static int getIndex(int[] indices, int[] dimSizes) throws BNException

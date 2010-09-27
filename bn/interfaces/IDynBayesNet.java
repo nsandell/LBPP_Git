@@ -1,6 +1,7 @@
 package bn.interfaces;
 
 import bn.BNException;
+import bn.distributions.Distribution;
 
 public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 {
@@ -13,7 +14,10 @@ public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 	
 	int getT();
 	
+	void setInitialDistribution(String nodeName, Distribution dist) throws BNException;
+	
 	void run_parallel(int max_iteration, double tolerance, ParallelInferenceCallback callback) throws BNException;
+	void run_parallel_block(int max_iteration, double tolerance) throws BNException;
 	
 	public static interface ParallelInferenceCallback
 	{

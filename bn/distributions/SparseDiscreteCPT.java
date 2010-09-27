@@ -3,6 +3,9 @@ package bn.distributions;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.regex.Pattern;
+
+import util.Parser.ParserException;
 
 import bn.BNException;
 
@@ -52,6 +55,24 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		private int[] indices;
 	}
 
+	private static final Pattern patt = Pattern.compile("\\s*(\\d+\\s+)+(0*(\\.\\d+)?)");
+	private static final int[] pattgroups = new int[]{1,2};
+	
+	protected String getBuilderPrompt()
+	{
+		return "Enter CPT row:";
+	}
+	
+	protected Pattern getBuilderRegex()
+	{
+		return patt;
+	}
+	
+	protected int[] getRegExGroups()
+	{
+		return pattgroups;
+	}	
+	
 	public SparseDiscreteCPT(Iterator<Entry> entryTable, int[] dimSizes, int cardinality) throws BNException
 	{
 		super(dimSizes.length,cardinality);
@@ -87,43 +108,44 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 	}
 	private boolean isBeingConstructed = false;
 
-	protected boolean addLine(String line) throws BNException
+	protected boolean parseLine(String[] args) throws ParserException
 	{
 		if(!this.isBeingConstructed)
-			throw new BNException("Attempted to construct Sparse CPT not under construction!");
+			throw new ParserException("Attempted to construct Sparse CPT not under construction!");
 
-		String[] linebits = line.split(" ");
+		String[] indexStrings = args[0].split(" ");
 		int[] indices = new int[this.dimSizes.length];
-		if(linebits.length!=(this.dimSizes.length+2))
-			throw new BNException("Insufficient number of condition indices set.");
+		if(indexStrings.length!=(this.dimSizes.length+1))
+			throw new ParserException("Insufficient number of condition indices set.");
 		try
 		{ 
 			for(int j = 0; j < this.dimSizes.length; j++)
 			{
-				indices[j] = Integer.parseInt(linebits[j]);
+				indices[j] = Integer.parseInt(indexStrings[j]);
 				if(indices[j]>=this.dimSizes[j])
-					throw new BNException("Condition index " + j + " is out of range, should be less than " + this.dimSizes[j]);
+					throw new ParserException("Condition index " + j + " is out of range, should be less than " + this.dimSizes[j]);
 			}
-			int value = Integer.parseInt(linebits[this.dimSizes.length]);
+			int value = Integer.parseInt(indexStrings[this.dimSizes.length]);
 			if(value >= this.cardinality)
-				throw new BNException("Variable value " + value + " is out of range.");
-			double p = Double.parseDouble(linebits[this.dimSizes.length+1]);
+				throw new ParserException("Variable value " + value + " is out of range.");
+			double p = Double.parseDouble(args[1]);
 			if(p < 0 || p > 1)
-				throw new BNException("Invalid probability set (" + p + ")");
+				throw new ParserException("Invalid probability set (" + p + ")");
 			IndexWrapper wrap = new IndexWrapper(indices);
 			if(this.entries.get(wrap)==null)
 				this.entries.put(wrap, new HashMap<Integer, Double>());
 			this.entries.get(wrap).put(value, p);
 		} catch(NumberFormatException e) {
-			throw new BNException("Invalid numeric type, expected integer or double and got something else.");
+			throw new ParserException("Invalid numeric type, expected integer or double and got something else.");
 		}
 		return true;
 	}
 	
-	protected SparseDiscreteCPT finish() throws BNException
+	protected SparseDiscreteCPT finish() throws ParserException
 	{
 		this.isBeingConstructed = false;
-		this.validate();
+		try{this.validate();}
+		catch(BNException e){throw new ParserException("Error creating sparse CPT: " + e.getMessage());}
 		return this;
 	}
 

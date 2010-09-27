@@ -1,5 +1,7 @@
 package bn;
 
+import bn.distributions.DiscreteDistribution;
+import bn.distributions.Distribution;
 import bn.interfaces.IBayesNode;
 import bn.interfaces.IStaticBayesNet;
 
@@ -21,6 +23,15 @@ class StaticBayesianNetwork extends BayesianNetwork<IBayesNode,BNNode> implement
 		if(!(from instanceof BNNode) || !(to instanceof BNNode))
 			throw new BNException("Attempted to connect nodes of unknown type...");
 		this.addEdgeI((BNNode)from,(BNNode)to);
+	}
+	
+	public void setDistribution(String nodeName, Distribution dist) throws BNException
+	{
+		BNNode node = this.getNode(nodeName);
+		if(node instanceof DiscreteBNNode && dist instanceof DiscreteDistribution)
+			((DiscreteBNNode)node).setDistribution((DiscreteDistribution)dist);
+		else
+			throw new BNException("Unsupported node/distribution pair.");
 	}
 	
 	private void addEdgeI(BNNode fromN, BNNode toN) throws BNException

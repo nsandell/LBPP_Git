@@ -7,48 +7,103 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.util.HashMap;
 import java.util.regex.*;
 
 import util.Parser;
 import util.Parser.LineHandler;
 import util.Parser.ParserException;
 
-import bn.distributions.DiscreteDistribution;
+import bn.distributions.Distribution;
 import bn.interfaces.IDynBayesNet;
-import bn.interfaces.IDynBayesNet.ParallelInferenceCallback;
 
 public class DynamicNetCommandInterpreter
 {
-	static String dynamicNodeRegex = "^\\w+\\s*:\\s*\\w+(\\((\\w+(,\\w+)*)?\\))?\\s*$";
-	static String dynamicInterEdgeRegex1 = "\\w+\\s*->\\s*\\w+";
-	static String dynamicInterEdgeRegex2 = "\\w+\\s*<-\\s*\\w+";
-	static String dynamicIntraEdgeRegex1 = "\\w+\\s*=>\\s*\\w+";
-	static String dynamicIntraEdgeRegex2 = "\\w+\\s*<=\\s*\\w+";
-	static String dynamicInitialCPDRegex = "\\w+~~\\w+";
-	static String dynamicSubseqCPDRegex = "\\w+~\\w+";
-	static String dynamicRunRegex = "^run\\(\\d+,[\\d\\.e-]+\\)$";
-	static String dynamicRunParallelRegex = "^runp\\(\\d+,[\\d\\.e-]+\\)$";
-	static String marginalRegex = "^query\\(\\w+(,[0-9]+,[0-9]+)?\\)$";
+	static class InterEdgeHandler extends Parser.MethodWrapperHandler<Object>
+	{
+		InterEdgeHandler(IDynBayesNet bn) throws Exception
+		{
+			super(bn,IDynBayesNet.class.getMethod("addInterEdge", new Class<?>[]{String.class,String.class}),new String[]{"from node","to node"},null);
+		}
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+		private static int[] groups = new int[]{1,2};
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)=>(\\w+)\\s*$");
+	}
+	
+	static class IntraEdgeHandler extends Parser.MethodWrapperHandler<Object>
+	{
+		IntraEdgeHandler(IDynBayesNet bn) throws Exception
+		{
+			super(bn,IDynBayesNet.class.getMethod("addIntraEdge", new Class<?>[]{String.class,String.class}),new String[]{"from node","to node"},null);
+		}
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+		private static int[] groups = new int[]{1,2};
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)->(\\w+)\\s*$");
+	}
+	
+	static class DiscreteNodeAdder extends Parser.MethodWrapperHandler<Object>
+	{
+		DiscreteNodeAdder(IDynBayesNet bn) throws Exception
+		{
+			super(bn,IDynBayesNet.class.getMethod("addDiscreteNode", new Class<?>[]{String.class,int.class}),new String[]{"node name","node cardinality"},null);
+		}
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+		private static int[] groups = new int[]{1,2};
+		private static Pattern patt = Pattern.compile("^(\\w+):Discrete\\((\\d+)\\)$");
+	}
+	
+	static class InitialDistSetter  extends Parser.MethodWrapperHandler<Distribution>
+	{
+		InitialDistSetter(IDynBayesNet bn, HashMap<String,Distribution> distMap) throws Exception
+		{
+			super(bn,IDynBayesNet.class.getMethod("setInitialDistribution", new Class<?>[]{String.class,Distribution.class}),new String[]{"node name","distribution name"},distMap);
+		}
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+		private static int[] groups = new int[]{1,2};
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)~~(\\w+)\\s*$");
+	}
+	
+	static class ParallelRunner extends Parser.MethodWrapperHandler<Object>
+	{
+		public ParallelRunner(IDynBayesNet bn) throws Exception
+		{
+			super(bn,IDynBayesNet.class.getMethod("run_parallel_block", new Class<?>[]{int.class,double.class}),new String[]{"max iterations","tolerance"},null);
+		}
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+		private static int[] groups = new int[]{1,2};
+		private static Pattern patt = Pattern.compile("^runp\\((\\d+),([\\.e\\-0-9]+)\\)$");
+	}
 
 	static class MarginalHandler implements Parser.LineHandler
 	{
+		
 		public MarginalHandler(DynamicBayesianNetwork net)
 		{
 			this.net = net;
 		}
 
-		DynamicBayesianNetwork net;
-
 		public String getPrompt() {return null;}
-		public boolean parseLine(String line) throws ParserException {
-			Pattern namePatt = Pattern.compile("\\(.+\\)");
-			Matcher match = namePatt.matcher(line);
-			match.find();
-			String arguments = line.substring(match.start()+1,match.end()-1);
-			String[] args = arguments.split(",");
+		public void finish(){}
+		public int[] getGroups(){return groups;}
+		public Pattern getRegEx(){return patt;}
+		
+		private static Pattern patt = Pattern.compile("^query\\((\\w+)(,(\\d+),(\\d+))?\\)");
+		private static int[] groups = new int[]{1,3,4};
+		
+		public LineHandler parseLine(String[] args) throws ParserException {
 			String nodeName = args[0];
 			int t0 = 0, te = this.net.getT()-1;
-			if(args.length > 1)
+			if(args[1]!=null)
 			{
 				t0 = Integer.parseInt(args[1]);
 				te = Integer.parseInt(args[2]);
@@ -75,275 +130,12 @@ public class DynamicNetCommandInterpreter
 				System.out.println();
 			}
 			System.out.println();
-			return false;
-		}
-	}
-
-	static class DynamicNewNodeHandler implements Parser.LineHandler
-	{
-		public DynamicNewNodeHandler(DynamicBayesianNetwork net)
-		{
-			nodeNamePatt = Pattern.compile("^\\w+");
-			nodeTypePatt = Pattern.compile(":\\s*\\w+");
-			argsPatt = Pattern.compile("(\\((\\w+(,\\w+)*)?\\))");
-			this.net = net;
-		}
-
-		public String getPrompt() {return null;}
-
-		public boolean parseLine(String line) throws ParserException {
-
-			Matcher matcher = nodeNamePatt.matcher(line);
-			matcher.find();
-			String nodeName = line.substring(0, matcher.end());
-			matcher = nodeTypePatt.matcher(line); matcher.find();
-			String nodeType = line.substring(matcher.start()+1,matcher.end());
-			nodeType = nodeType.trim();
-			matcher = argsPatt.matcher(line); 
-			String[] args = null;
-			if(matcher.find())
-			{
-				String argstr = line.substring(matcher.start()+1,matcher.end()-1);
-				args = argstr.split(",");
-			}
-			try
-			{
-				switch(NodeTypes.valueOf(nodeType))
-				{
-				case Discrete:
-				{
-					if(args==null || args[0].compareTo("")==0)
-						throw new ParserException("Node " + nodeName + " is discrete but has no cardinality set.");
-					if(args.length > 1)
-						throw new ParserException("Discrete node " + nodeName + " only expects one argument (cardinality.");
-					try {
-						net.addDiscreteNode(nodeName, Integer.parseInt(args[0]));
-					} catch(NumberFormatException e) {
-						throw new ParserException("Invalid node cardinality ('"+args[0]+"')");
-					} catch(BNException e) {
-						throw new ParserException(e.getMessage());
-					}
-					break;
-				}
-				default:
-					throw new ParserException("Unrecognized node type '"+nodeType+"'");
-				}
-			} catch(IllegalArgumentException e) {
-				throw new ParserException("Unrecognized node type '"+nodeType+"'");
-			}
-			return false;
+			return null;
 		}
 
 		DynamicBayesianNetwork net;
-		Pattern nodeNamePatt, nodeTypePatt, argsPatt;
-	}
-
-	public static class EdgeHandler implements LineHandler
-	{
-
-		public EdgeHandler(DynamicBayesianNetwork net)
-		{
-			this.net = net;
-		}
-
-		public String getPrompt() {return null;}
-
-		public boolean parseLine(String line) throws ParserException {
-			try
-			{	
-				if(line.contains("->"))
-				{
-					String [] names = line.split("\\s*->\\s*");
-					net.addIntraEdge(names[0], names[1]);
-				}
-				else if(line.contains("<-"))
-				{
-					String [] names = line.split("\\s*<-\\s*");
-					net.addIntraEdge(names[1], names[0]);
-				}
-				else if(line.contains("=>"))
-				{
-					String [] names = line.split("\\s*=>\\s*");
-					net.addInterEdge(names[0], names[1]);
-				}
-				else
-				{
-					String [] names = line.split("\\s*<=\\s*");
-					net.addInterEdge(names[1], names[0]);
-				}
-			}
-			catch(BNException e)
-			{
-				throw new ParserException(e.getMessage());
-			}
-			return false;
-		}		
-		DynamicBayesianNetwork net;
-	}
-
-	public static class DynamicRunner implements LineHandler
-	{
-		public DynamicRunner(DynamicBayesianNetwork bn){this.net = bn;}
-
-		DynamicBayesianNetwork net;
-
-		public String getPrompt() {return null;}
-
-		public boolean parseLine(String line) throws ParserException {
-
-			Pattern argsPatt = Pattern.compile("\\(.+\\)");
-			Matcher matcher = argsPatt.matcher(line);
-			matcher.find();
-			String[] args = line.substring(matcher.start()+1, matcher.end()-1).split(",");
-
-			long start = System.currentTimeMillis();
-			try {
-				net.validate();
-				net.run(Integer.parseInt(args[0]),Double.parseDouble(args[1]));
-			} catch(BNException e) {
-				throw new ParserException("Error running net : " + e.getMessage());
-			} catch(NumberFormatException e) {
-				throw new ParserException("Invalid argument to run command.");
-			}
-			long end = System.currentTimeMillis();
-			System.out.println("Serial running of static network finished in " + ((double)(end-start))/1000.0 + " seconds.");
-			return false;
-		}
-	}
-
-	public static class ParallelDynamicRunner implements LineHandler, ParallelInferenceCallback
-	{
-		public ParallelDynamicRunner(DynamicBayesianNetwork bn){this.net = bn;}
-
-		DynamicBayesianNetwork net;
-
-		public String getPrompt() {return null;}
-
-		public boolean parseLine(String line) throws ParserException {
-
-			Pattern argsPatt = Pattern.compile("\\(.+\\)");
-			Matcher matcher = argsPatt.matcher(line);
-			matcher.find();
-			String[] args = line.substring(matcher.start()+1, matcher.end()-1).split(",");
-
-			long start;
-			try {
-				net.validate();
-				start = System.currentTimeMillis();
-				net.run_parallel(Integer.parseInt(args[0]),Double.parseDouble(args[1]),this);
-				while(this.done==false)
-				{
-					try
-					{
-						Thread.sleep(200);
-					} catch(InterruptedException e){}
-				}
-			} catch(BNException e) {
-				throw new ParserException("Error running net : " + e.getMessage());
-			} catch(NumberFormatException e) {
-				throw new ParserException("Invalid argument to run command.");
-			}
-			System.out.println("Serial running of static network finished in " + ((double)(doneTime-start))/1000.0 + " seconds.");
-			return false;
-		}
-		
-		public boolean done;
-		public long doneTime;
-		public boolean hadError;
-		public String errorMsg;
-
-		public void callback(IDynBayesNet neet) {
-			doneTime = System.currentTimeMillis();
-			this.done = true;
-		}
-
-		public void error(IDynBayesNet net, String error) {
-			this.done = true;
-			this.hadError = true;
-			this.errorMsg = error;
-		}
 	}
 	
-	public static class DynamicCPDHandler implements LineHandler
-	{
-		public DynamicCPDHandler(DynamicBayesianNetwork bn){this.net = bn;}
-
-		public String getPrompt() {return "CPD " + type + " Parameter: ";}
-
-		public boolean parseLine(String line) throws ParserException {
-			if(builder==null) // We're just starting a build, will need to change these conditions with nondiscrete nodes/cpds
-			{
-				this.first = false;
-				String[] bits = line.split("~[~]?");
-				if(line.contains("~~"))
-					this.first = true;
-				String name = bits[0]; String cpdtype = bits[1];
-				DBNNode<?> node = net.getNode(name);
-				if((node instanceof DiscreteDBNNode))
-				{
-					dnode = (DiscreteDBNNode)node;
-					int[] dims;
-					if(this.first)
-						dims = dnode.getSlice0ParentDim();
-					else
-						dims = dnode.getSlice1ParentDim();
-					
-					try
-					{
-						this.builder = DiscreteDistribution.getDistributionBuilder(cpdtype, dnode.getCardinality(), dims.length, dims);
-						this.type = cpdtype;
-					} catch(BNException exc) {
-						throw new ParserException("Error creating CPD: " + exc.getMessage());
-					}
-				}
-				return true;
-			}
-			else
-			{
-				if(line.matches("\\s*\\*+\\s*"))
-				{
-					try
-					{
-						if(this.first)
-							this.dnode.setInitialDistribution(this.builder.getFinished());
-						else
-							this.dnode.setAdvanceDistribution(this.builder.getFinished());
-					} catch(BNException e) {
-						throw new ParserException("Failed to add CPD: " + e.getMessage());
-					}
-					this.builder = null;
-					this.dnode = null;
-					return false;
-				}
-				else
-				{
-					try
-					{
-						boolean cont = this.builder.addLine(line);
-						if(!cont)
-						{
-							try { 
-								if(this.first)
-									this.dnode.setInitialDistribution(this.builder.getFinished());
-								else
-									this.dnode.setAdvanceDistribution(this.builder.getFinished());
-							}	catch(BNException e) {throw new ParserException("Failed to add CPD: " + e.getMessage());}
-							this.builder = null;
-							this.dnode = null;
-						}
-						return cont;
-					} catch(BNException e) {throw new ParserException("Error: " + e.getMessage());}
-				}
-			}
-		}
-
-		boolean first = false;
-		DiscreteDBNNode dnode = null;
-		String type;
-		DiscreteDistribution.DiscreteDistributionBuilder builder = null;
-		DynamicBayesianNetwork net;
-	}
-
 	public static void main(String[] args)
 	{
 		interactiveDynamicNetwork();
@@ -351,22 +143,28 @@ public class DynamicNetCommandInterpreter
 	
 	private static Parser getParser(BufferedReader input, BufferedWriter output, BufferedWriter error, boolean breakOnExc, boolean printLineOnError, DynamicBayesianNetwork bn)
 	{
-		Parser parser = new Parser(input,output,error,breakOnExc,printLineOnError);
-		parser.setCommentString("\\s*%\\s*");
-		parser.addHandler(dynamicNodeRegex, new DynamicNewNodeHandler(bn));
-		EdgeHandler eh = new EdgeHandler(bn);
-		parser.addHandler(dynamicInterEdgeRegex1,eh);
-		parser.addHandler(dynamicInterEdgeRegex2,eh);
-		parser.addHandler(dynamicIntraEdgeRegex1,eh);
-		parser.addHandler(dynamicIntraEdgeRegex2,eh);
-		DynamicCPDHandler cpdh = new DynamicCPDHandler(bn);
-		parser.addHandler(dynamicInitialCPDRegex,cpdh);
-		parser.addHandler(dynamicSubseqCPDRegex,cpdh);
-		parser.addHandler(dynamicRunRegex, new DynamicRunner(bn));
-		parser.addHandler(dynamicRunParallelRegex, new ParallelDynamicRunner(bn));
-		parser.addHandler(marginalRegex, new MarginalHandler(bn));
+		try
+		{
+			HashMap<String, Distribution> distMap = new HashMap<String, Distribution>();
+			Parser parser = new Parser(input,output,error,breakOnExc,printLineOnError);
+			parser.setCommentString("\\s*%\\s*");
+			parser.addHandler(new StaticNetCommandInterpreter.CPDCreator(distMap));
+			parser.addHandler(new StaticNetCommandInterpreter.BNValidate(bn));
+			parser.addHandler(new StaticNetCommandInterpreter.BNRunner(bn));
+			parser.addHandler(new StaticNetCommandInterpreter.CPDAssigner(bn, distMap));
+			parser.addHandler(new InterEdgeHandler(bn));
+			parser.addHandler(new IntraEdgeHandler(bn));
+			parser.addHandler(new DiscreteNodeAdder(bn));
+			parser.addHandler(new InitialDistSetter(bn, distMap));
+			parser.addHandler(new ParallelRunner(bn));
+			parser.addHandler(new MarginalHandler(bn));
 		
 		return parser;
+		}
+		catch(Exception e) {
+			System.err.println("Error initializing parser: " + e.getMessage());
+			return null;
+		}
 	}
 
 	public static DynamicBayesianNetwork loadNetwork(String file) throws BNException
@@ -411,8 +209,4 @@ public class DynamicNetCommandInterpreter
 		} catch(IOException e) {}
 	}
 	
-	public static enum NodeTypes
-	{
-		Discrete,
-	}
 }

@@ -1,6 +1,10 @@
 package bn.distributions;
 
 import java.util.HashMap;
+import java.util.regex.Pattern;
+
+import util.Parser.ParserException;
+
 import bn.BNException;
 
 public class NoisyOr extends DiscreteDistribution
@@ -18,25 +22,32 @@ public class NoisyOr extends DiscreteDistribution
 		this.beingConstructed = true;
 	}
 	
-	protected boolean addLine(String line) throws BNException
+	protected boolean parseLine(String[] args) throws ParserException
 	{
 		if(!beingConstructed)
-			throw new BNException("Attempted to construct Noisy-Or node not under construction!");
+			throw new ParserException("Attempted to construct Noisy-Or node not under construction!");
 		try {
-			this.p = Double.parseDouble(line);
+			this.p = Double.parseDouble(args[0]);
 		} catch(NumberFormatException e) {
-			throw new BNException("Expected probability for noisy-or parameter, got " + line);
+			throw new ParserException("Expected probability for noisy-or parameter, got " + args[0]);
 		}
-		if(this.p < 0 || this.p > 1) throw new BNException("Attempted to specify noisy or with invalid p=" + p + "!");
+		if(this.p < 0 || this.p > 1) throw new ParserException("Attempted to specify noisy or with invalid p=" + p + "!");
 		this.beingConstructed = false;
 		return false;
 	}
-	private boolean beingConstructed = false;
 	
-	protected NoisyOr finish() throws BNException
+	protected Pattern getBuilderRegex(){return argumentPattern;}
+	protected int[] getRegExGroups(){return argGroups;}
+	protected String getBuilderPrompt(){return "Enter activation probability:";};
+	
+	private boolean beingConstructed = false;
+	private static Pattern argumentPattern = Pattern.compile("0*(\\.\\d+)?");
+	private static int[] argGroups = new int[]{0};
+	
+	protected NoisyOr finish() throws ParserException
 	{
 		if(this.beingConstructed)
-			throw new BNException("Expected to get noisy-or parameter!");
+			throw new ParserException("Expected to get noisy-or parameter!");
 		else return this;
 	}
 	

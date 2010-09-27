@@ -4,9 +4,15 @@ import java.io.BufferedReader;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Parser {
+	
 
 	public static class ParserException extends Exception
 	{
@@ -16,8 +22,69 @@ public class Parser {
 
 	public static interface LineHandler
 	{
+		public int[] getGroups();
+		public Pattern getRegEx();
 		public String getPrompt();
-		public boolean parseLine(String line) throws ParserException; // Return true if you expect more lines...
+		public void finish() throws ParserException;
+		public LineHandler parseLine(String[] args) throws ParserException; // Return a line handler if expect more, else null
+	}
+	
+	public static abstract class MethodWrapperHandler<EnvObj> implements LineHandler
+	{
+		public MethodWrapperHandler(Object obj, Method method, String[] argumentNames, HashMap<String, EnvObj> environmentObjects) throws Exception
+		{
+			if(this.getGroups().length!=argumentNames.length || this.getGroups().length!=method.getParameterTypes().length)
+				throw new Exception("Failed MethodWrapper instantiation for "+ method.getName() +" ..");
+			this.obj = obj;
+			this.method = method;
+			this.environmentObjects = environmentObjects;
+			this.argumentNames = argumentNames;
+		}
+		
+		public void finish(){}
+
+		public LineHandler parseLine(String[] args) throws ParserException
+		{
+			Object[] objargs = new Object[args.length];
+			Class<?>[] parametersTypes = this.method.getParameterTypes();
+			if(parametersTypes.length!=args.length)
+				throw new ParserException("Method takes more arguments than specified...");
+			int i = 0;
+			try
+			{
+				while(i < args.length)
+				{
+					if(String.class.equals(parametersTypes[i]))
+						objargs[i] = args[i]; 
+					else if(Integer.class.equals(parametersTypes[i]) || int.class.equals(parametersTypes[i]))
+						objargs[i] = Integer.parseInt(args[i]); 
+					else if(Double.class.equals(parametersTypes[i]) || double.class.equals(parametersTypes[i]))
+						objargs[i] = Double.parseDouble(args[i]);
+					else if(environmentObjects!=null)
+					{
+						EnvObj arg = this.environmentObjects.get(args[i]);
+						if(arg!=null) 
+							objargs[i] = arg;
+						else if(arg==null)
+							throw new ParserException("Object '" + args[i] + "' not recognized.");
+					}
+					i++;
+				}
+				this.method.invoke(this.obj, objargs);
+			} catch(IllegalArgumentException e) {
+				throw new ParserException("Invalid type for the '"+ argumentNames[i] + "' argument.");
+			} catch(InvocationTargetException e) {
+				throw new ParserException(e.getCause().getMessage());
+			} catch(IllegalAccessException e) {
+				throw new ParserException("Failed to invoke method.");
+			}
+			return null;
+		}
+	
+		String[] argumentNames;
+		Object obj;
+		Method method;
+		HashMap<String,EnvObj> environmentObjects;
 	}
 
 	public Parser(BufferedReader input, BufferedWriter output, BufferedWriter error_output, boolean breakOnException, boolean printLineNoOnError)
@@ -25,9 +92,9 @@ public class Parser {
 		this.input = input; this.output = output; this.breakOnException = breakOnException; this.printLineNoOnError = printLineNoOnError;this.error_output = error_output;
 	}
 
-	public void addHandler(String regexp, LineHandler handler)
+	public void addHandler(LineHandler handler)
 	{
-		this.handlers.put(regexp, handler);
+		this.handlers.add(handler);
 	}
 
 	public void setPrompt(String prompt)
@@ -113,33 +180,53 @@ public class Parser {
 	{
 		String line = input.readLine();
 
-		if(line==null) return false;
-
+		if(line==null)
+			return false;
 		if(line.matches("\\s*"))
 			return true;
-
 		if(this.commentStr!=null)
 			line = line.split(this.commentStr)[0];
-
-		if(this.expectMore)
-			this.expectMore = this.lastHandler.parseLine(line);
+		
+		LineHandler handler = null;
+		Matcher matcher = null;
+		if(this.lastHandler!=null && line.matches("\\s*\\**\\s*"))
+		{
+			this.lastHandler.finish();
+			this.lastHandler = null;
+			this.prompt = this.promptBackup;
+			return true;
+		}
+		
+		if(this.lastHandler!=null)
+		{
+			handler = this.lastHandler;
+			matcher = handler.getRegEx().matcher(line);
+			if(!matcher.find())
+				throw new ParserException("Syntax error.");
+		}
 		else
 		{
-			boolean found = false;
-			for(String regex : handlers.keySet())
+			for(LineHandler handlertmp : this.handlers)
 			{
-				if(line.matches(regex))
+				matcher = handlertmp.getRegEx().matcher(line);
+				if(matcher.find())
 				{
-					this.lastHandler = handlers.get(regex);
-					this.expectMore = this.lastHandler.parseLine(line);
-					found = true;
+					handler = handlertmp;
 					break;
 				}
 			}
-			if(!found)
-				throw new ParserException("Unknown command.");
+			if(handler==null)
+				throw new ParserException("Unrecognized command.");
 		}
-		if(this.expectMore)
+		
+		int[] groups = handler.getGroups();
+		String[] arguments = new String[groups.length];
+		for(int i = 0; i < groups.length; i++)
+			arguments[i] = matcher.group(groups[i]);
+		
+		this.lastHandler = handler.parseLine(arguments);
+		
+		if(this.lastHandler!=null)
 			this.prompt = this.lastHandler.getPrompt();
 		else
 			this.prompt = this.promptBackup;
@@ -147,10 +234,10 @@ public class Parser {
 		return true;
 	}
 
-	private boolean expectMore = false;
 	private LineHandler lastHandler = null;
-
-	private HashMap<String,LineHandler> handlers = new HashMap<String, Parser.LineHandler>();
+	
+	private ArrayList<LineHandler> handlers = new ArrayList<LineHandler>();
+	
 	private BufferedReader input;
 	private BufferedWriter output;
 	private BufferedWriter error_output;

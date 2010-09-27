@@ -1,5 +1,9 @@
 package bn.distributions;
 
+import java.util.regex.Pattern;
+
+import util.Parser.ParserException;
+
 import bn.BNException;
 
 public class DiscreteCPT extends DiscreteDistribution
@@ -30,34 +34,53 @@ public class DiscreteCPT extends DiscreteDistribution
 
 	private boolean beingConstructed = false;
 	
-	protected boolean addLine(String line) throws BNException
+	protected boolean parseLine(String[] args) throws ParserException
 	{
 		if(!this.beingConstructed)
-			throw new BNException("Attempted to construct CPT that is not under construction!");
+			throw new ParserException("Attempted to construct CPT that is not under construction!");
 		int[] indices = new int[this.dimSizes.length];
 		
-		String[] linebits = line.split(" ");
-		if(linebits.length!=(this.dimSizes.length+2)) 
-			throw new BNException("Insufficient number of conditions specified for CPT.");
+		String[] indexStrings = args[0].split(" ");
+		if(indexStrings.length!=(this.dimSizes.length+1)) 
+			throw new ParserException("Insufficient number of conditions specified for CPT.");
 		try {
 			for(int j = 0; j < this.dimSizes.length; j++)
-				indices[j] = Integer.parseInt(linebits[j]);
+				indices[j] = Integer.parseInt(indexStrings[j]);
 		} catch(NumberFormatException e) {
-			throw new BNException("Expected a integer index, got something else in " + line);
+			throw new ParserException("Expected a integer index, got something else.");
 		}
-		int index = getIndex(indices, this.dimSizes);
 		try {
-			int value = Integer.parseInt(linebits[this.dimSizes.length]);
-			values[index][value] = Double.parseDouble(linebits[this.dimSizes.length+1]);
+			int index = getIndex(indices, this.dimSizes);
+			int value = Integer.parseInt(indexStrings[this.dimSizes.length]);
+			values[index][value] = Double.parseDouble(args[1]);
 		} catch(NumberFormatException e) {
-			throw new BNException("Incorrect parameter type for variable value or probability...(" + line + ")");
-		}
+			throw new ParserException("Incorrect parameter type for variable value or probability...");
+		} catch(BNException e){throw new ParserException("Indexing exception : " + e.getMessage());}
 		return true;
 	}
 	
-	protected DiscreteCPT finish() throws BNException
+	private static final Pattern patt = Pattern.compile("^\\s*((\\d+\\s+)+)(0*(\\.\\d+)?)$");
+	private static final int[] pattgroups = new int[]{1,3};
+	
+	protected String getBuilderPrompt()
 	{
-		this.validate();
+		return "Enter CPT row:";
+	}
+	
+	protected Pattern getBuilderRegex()
+	{
+		return patt;
+	}
+	
+	protected int[] getRegExGroups()
+	{
+		return pattgroups;
+	}
+	
+	protected DiscreteCPT finish() throws ParserException
+	{
+		try{this.validate();}
+		catch(BNException e){throw new ParserException("Error creating CPT: " + e.getMessage());}
 		return this;
 	}
 

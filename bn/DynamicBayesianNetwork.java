@@ -2,6 +2,8 @@ package bn;
 
 import java.util.HashMap;
 
+import bn.distributions.DiscreteDistribution;
+import bn.distributions.Distribution;
 import bn.interfaces.IDynBayesNode;
 import bn.interfaces.IDynBayesNet;
 
@@ -85,6 +87,58 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 			intraparent.removeIntraChild(node);
 		for(DBNNode<?> interparent: node.getInterParentsI())
 			interparent.removeInterChild(node);
+	}
+	
+	public void setDistribution(String nodeName, Distribution dist) throws BNException
+	{
+		DBNNode<?> node = this.getNode(nodeName);
+		if(node instanceof DiscreteDBNNode && dist instanceof DiscreteDistribution)
+			((DiscreteDBNNode)node).setAdvanceDistribution((DiscreteDistribution)dist);
+		else
+			throw new BNException("Unsupported node/distribution pair.");
+	}
+	
+	public void setInitialDistribution(String nodeName, Distribution dist) throws BNException
+	{	
+		DBNNode<?> node = this.getNode(nodeName);
+		if(node instanceof DiscreteDBNNode && dist instanceof DiscreteDistribution)
+			((DiscreteDBNNode)node).setInitialDistribution((DiscreteDistribution)dist);
+		else
+			throw new BNException("Unsupported node/distribution pair.");
+	}
+	
+	private static class BlockCallback implements ParallelInferenceCallback
+	{
+		public void callback(IDynBayesNet neet) {
+			this.done = true;
+		}
+
+		public void error(IDynBayesNet net, String error) {
+			this.done = true;
+			this.error = error;
+		}
+	
+		long start_time;
+		boolean done = false;
+		String error = null;
+	}
+	
+	public void run_parallel_block(int max_iterations, double convergence) throws BNException
+	{
+		BlockCallback cb = new BlockCallback();
+		cb.start_time = System.currentTimeMillis();
+		
+		this.run_parallel(max_iterations, convergence, cb);
+		while(!(cb.done))
+		{
+			try{
+			Thread.sleep(500);
+			}catch(InterruptedException e){}
+		}
+		double elapsed_seconds = ((double)(System.currentTimeMillis()-cb.start_time))/1000.0;
+		if(cb.error!=null)
+			throw new BNException(cb.error);
+		System.out.println("Parellel inference has converged after " + elapsed_seconds + " seconds.");
 	}
 	
 	public void run_parallel(int max_iterations, double convergence, ParallelInferenceCallback callback) throws BNException

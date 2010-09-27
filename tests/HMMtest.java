@@ -47,7 +47,7 @@ public class HMMtest {
 			{
 
 				long begin = System.currentTimeMillis();
-				dbn.run(100, 0);
+				dbn.run(100, 0.0);
 				long end = System.currentTimeMillis();
 				double runtime = ((double)(end-begin))/1000;
 				for(int i = 0; i < 2; ++i)

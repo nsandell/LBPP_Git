@@ -1,8 +1,5 @@
 package bn.distributions;
 
-import java.util.regex.Pattern;
-
-import util.Parser.ParserException;
 import bn.BNException;
 
 public class DiscreteCPTUC extends DiscreteDistribution
@@ -14,60 +11,6 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		this.dist = distr;
 		this.index = -1;
 		this.validate();
-	}
-
-	// For the line by line builder mode of doing things.
-	DiscreteCPTUC(int cardinality)
-	{
-		super(0,cardinality);
-		this.beingConstructed = true;
-		this.dist = new double[cardinality];
-		this.delta = false;
-		this.index = -1;
-	}
-	
-	private boolean beingConstructed = false;
-	private static Pattern regex = Pattern.compile("\\[?\\s*((0*(\\.\\d+)?\\s*)+)\\]?");
-	private int[] regexgroup = new int[]{1};
-	
-	protected Pattern getBuilderRegex(){return regex;}
-	protected String getBuilderPrompt(){return "Enter probability vector:";}
-	protected int[] getRegExGroups(){return regexgroup;}
-	
-	protected boolean parseLine(String[] args) throws ParserException
-	{
-		if(!this.beingConstructed)
-			throw new ParserException("Attempted to load data line for DiscreteCPTUC that is not under construction!");
-		else
-		{
-			String[] probabilities = args[0].split("\\s+");
-			if(probabilities.length!=this.getCardinality())
-				throw new ParserException("Expected " + this.getCardinality() + " entries in the distribution, got " + probabilities.length);
-			try
-			{
-				for(int i = 0; i < dist.length; i++)
-					dist[i] = Double.parseDouble(probabilities[i]);
-			} catch(NumberFormatException e) {
-				String errMsg = "Parameters ( ";
-				for(int i = 0; i < args.length; i++)
-					errMsg += args[i] + " ";
-				errMsg += " )";
-				throw new ParserException(errMsg);
-			}
-			try {
-				this.validate();
-			} catch(BNException e) {throw new ParserException(e.getMessage());}
-			this.beingConstructed = false;
-		}
-		return false;
-	}
-	
-	protected DiscreteCPTUC finish() throws ParserException
-	{
-		if(this.beingConstructed)
-			throw new ParserException("Distribution not fully specified!");
-		else
-			return this;
 	}
 
 	private final void validate() throws BNException

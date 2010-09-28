@@ -1,11 +1,10 @@
 package bn.distributions;
 
 import java.util.Arrays;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.regex.Pattern;
-
-import util.Parser.ParserException;
 
 import bn.BNException;
 
@@ -97,56 +96,6 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 			entries.get(cur_indices).put(next.value_index, next.p);
 		}
 		this.validate();
-	}
-
-	public SparseDiscreteCPT(int card, int numdim, int[] dims)
-	{
-		super(numdim,card);
-		this.isBeingConstructed = true;
-		this.cardinality = card;
-		this.dimSizes = dims;
-	}
-	private boolean isBeingConstructed = false;
-
-	protected boolean parseLine(String[] args) throws ParserException
-	{
-		if(!this.isBeingConstructed)
-			throw new ParserException("Attempted to construct Sparse CPT not under construction!");
-
-		String[] indexStrings = args[0].split(" ");
-		int[] indices = new int[this.dimSizes.length];
-		if(indexStrings.length!=(this.dimSizes.length+1))
-			throw new ParserException("Insufficient number of condition indices set.");
-		try
-		{ 
-			for(int j = 0; j < this.dimSizes.length; j++)
-			{
-				indices[j] = Integer.parseInt(indexStrings[j]);
-				if(indices[j]>=this.dimSizes[j])
-					throw new ParserException("Condition index " + j + " is out of range, should be less than " + this.dimSizes[j]);
-			}
-			int value = Integer.parseInt(indexStrings[this.dimSizes.length]);
-			if(value >= this.cardinality)
-				throw new ParserException("Variable value " + value + " is out of range.");
-			double p = Double.parseDouble(args[1]);
-			if(p < 0 || p > 1)
-				throw new ParserException("Invalid probability set (" + p + ")");
-			IndexWrapper wrap = new IndexWrapper(indices);
-			if(this.entries.get(wrap)==null)
-				this.entries.put(wrap, new HashMap<Integer, Double>());
-			this.entries.get(wrap).put(value, p);
-		} catch(NumberFormatException e) {
-			throw new ParserException("Invalid numeric type, expected integer or double and got something else.");
-		}
-		return true;
-	}
-	
-	protected SparseDiscreteCPT finish() throws ParserException
-	{
-		this.isBeingConstructed = false;
-		try{this.validate();}
-		catch(BNException e){throw new ParserException("Error creating sparse CPT: " + e.getMessage());}
-		return this;
 	}
 
 	private void validate() throws BNException

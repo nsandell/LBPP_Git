@@ -1,6 +1,5 @@
-package bn.interfaces;
+package bn;
 
-import bn.BNException;
 import bn.distributions.DiscreteDistribution;
 import bn.messages.DiscreteMessage;
 

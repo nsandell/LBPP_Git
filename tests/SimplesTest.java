@@ -1,11 +1,11 @@
 package tests;
 
-import bn.BayesNetworkFactory;
-import bn.interfaces.IStaticBayesNet;
+import bn.impl.BayesNetworkFactory;
 import bn.BNException;
+import bn.IDiscreteBayesNode;
+import bn.IStaticBayesNet;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
-import bn.interfaces.IDiscreteBayesNode;
 
 public class SimplesTest {
 

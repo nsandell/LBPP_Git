@@ -1,11 +1,12 @@
-package bn;
+package bn.impl;
 
 import java.util.HashMap;
 
+import bn.BNException;
+import bn.IDynBayesNet;
+import bn.IDynBayesNode;
 import bn.distributions.DiscreteDistribution;
 import bn.distributions.Distribution;
-import bn.interfaces.IDynBayesNode;
-import bn.interfaces.IDynBayesNet;
 
 class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> implements IDynBayesNet{
 

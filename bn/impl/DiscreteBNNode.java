@@ -1,12 +1,13 @@
-package bn;
+package bn.impl;
 
 import java.util.ArrayList;
 
 import java.util.HashMap;
 
+import bn.BNException;
+import bn.IBayesNode;
+import bn.IDiscreteBayesNode;
 import bn.distributions.DiscreteDistribution;
-import bn.interfaces.IBayesNode;
-import bn.interfaces.IDiscreteBayesNode;
 import bn.interfaces.DiscreteChildSubscriber;
 import bn.interfaces.DiscreteParentSubscriber;
 import bn.messages.DiscreteMessage;

@@ -12,10 +12,10 @@ import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import util.Parser;
 import bn.BNException;
-import bn.BayesNetworkFactory;
+import bn.IStaticBayesNet;
 import bn.commandline.distributions.CPDCreator;
 import bn.distributions.Distribution;
-import bn.interfaces.IStaticBayesNet;
+import bn.impl.BayesNetworkFactory;
 
 public class StaticNetCommandLine
 {

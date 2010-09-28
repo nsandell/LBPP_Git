@@ -1,7 +1,7 @@
-package bn;
+package bn.impl;
 
-import bn.interfaces.IDynBayesNet;
-import bn.interfaces.IStaticBayesNet;
+import bn.IDynBayesNet;
+import bn.IStaticBayesNet;
 
 public class BayesNetworkFactory {
 	public static IStaticBayesNet getStaticNetwork(){return new StaticBayesianNetwork();}

@@ -7,10 +7,10 @@ import util.Parser;
 import util.Parser.ParserException;
 import util.Parser.ParserFunction;
 import bn.BNException;
+import bn.IDiscreteDynBayesNode;
+import bn.IDynBayesNet;
+import bn.IDynBayesNode;
 import bn.distributions.Distribution;
-import bn.interfaces.IDiscreteDynBayesNode;
-import bn.interfaces.IDynBayesNet;
-import bn.interfaces.IDynBayesNode;
 
 public class DynamicCommandHandlers
 {

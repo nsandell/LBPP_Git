@@ -1,11 +1,12 @@
-package bn;
+package bn.impl;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import util.IterableWrapper;
 
-import bn.interfaces.IBayesNode;
-import bn.interfaces.IDynBayesNode;
+import bn.BNException;
+import bn.IBayesNode;
+import bn.IDynBayesNode;
 
 abstract class DBNNode<InnerType extends BNNode> implements IDynBayesNode
 {

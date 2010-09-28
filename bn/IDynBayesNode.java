@@ -1,6 +1,5 @@
-package bn.interfaces;
+package bn;
 
-import bn.BNException;
 
 public interface IDynBayesNode extends IBayesNode
 {

@@ -12,10 +12,10 @@ import java.io.OutputStreamWriter;
 import java.util.HashMap;
 import util.Parser;
 import bn.BNException;
-import bn.BayesNetworkFactory;
+import bn.IDynBayesNet;
 import bn.commandline.distributions.CPDCreator;
 import bn.distributions.Distribution;
-import bn.interfaces.IDynBayesNet;
+import bn.impl.BayesNetworkFactory;
 
 public class DynamicCommandLine
 {

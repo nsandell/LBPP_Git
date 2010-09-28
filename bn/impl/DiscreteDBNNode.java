@@ -1,11 +1,12 @@
-package bn;
+package bn.impl;
 
 import java.util.ArrayList;
 
+import bn.BNException;
+import bn.IDiscreteBayesNode;
+import bn.IDiscreteDynBayesNode;
 import bn.distributions.DiscreteDistribution;
 
-import bn.interfaces.IDiscreteBayesNode;
-import bn.interfaces.IDiscreteDynBayesNode;
 import bn.messages.DiscreteMessage;
 
 class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBayesNode {

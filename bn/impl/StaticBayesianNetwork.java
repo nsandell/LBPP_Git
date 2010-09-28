@@ -1,9 +1,10 @@
-package bn;
+package bn.impl;
 
+import bn.BNException;
+import bn.IBayesNode;
+import bn.IStaticBayesNet;
 import bn.distributions.DiscreteDistribution;
 import bn.distributions.Distribution;
-import bn.interfaces.IBayesNode;
-import bn.interfaces.IStaticBayesNet;
 
 class StaticBayesianNetwork extends BayesianNetwork<IBayesNode,BNNode> implements IStaticBayesNet
 {

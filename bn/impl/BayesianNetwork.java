@@ -1,10 +1,11 @@
-package bn;
+package bn.impl;
 
 import java.util.HashMap;
 
 import java.util.HashSet;
 
-import bn.interfaces.IBayesNode;
+import bn.BNException;
+import bn.IBayesNode;
 
 abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType extends BaseInterface> {
 	

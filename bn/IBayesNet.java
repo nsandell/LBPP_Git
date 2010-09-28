@@ -1,6 +1,5 @@
-package bn.interfaces;
+package bn;
 
-import bn.BNException;
 import bn.distributions.Distribution;
 
 public interface IBayesNet<BaseInterface>

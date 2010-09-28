@@ -6,9 +6,9 @@ import util.Parser;
 import util.Parser.MethodWrapperHandler;
 import util.Parser.ParserException;
 import util.Parser.ParserFunction;
-import bn.interfaces.IBayesNode;
-import bn.interfaces.IDiscreteBayesNode;
-import bn.interfaces.IStaticBayesNet;
+import bn.IBayesNode;
+import bn.IDiscreteBayesNode;
+import bn.IStaticBayesNet;
 
 class StaticCommandHandlers {
 	static class DiscreteNodeAdder extends Parser.MethodWrapperHandler<Object>

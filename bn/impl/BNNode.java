@@ -1,11 +1,11 @@
-package bn;
+package bn.impl;
 
 import java.util.ArrayList;
 
 import util.IterableWrapper;
 
 import bn.BNException;
-import bn.interfaces.IBayesNode;
+import bn.IBayesNode;
 
 /**
  * Bayes node root class.  Simply has parents and children so we can

@@ -2,13 +2,13 @@ package tests;
 
 
 import bn.BNException;
-import bn.BayesNetworkFactory;
+import bn.IDiscreteBayesNode;
+import bn.IDiscreteDynBayesNode;
+import bn.IDynBayesNet;
+import bn.IDynBayesNet.ParallelInferenceCallback;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
-import bn.interfaces.IDiscreteBayesNode;
-import bn.interfaces.IDiscreteDynBayesNode;
-import bn.interfaces.IDynBayesNet;
-import bn.interfaces.IDynBayesNet.ParallelInferenceCallback;
+import bn.impl.BayesNetworkFactory;
 
 public class HMMtest {
 	public static void main(String[] args)

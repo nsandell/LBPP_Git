@@ -1,5 +1,6 @@
 package bn.interfaces;
 
+import bn.IBayesNode;
 import bn.messages.DiscreteMessage;
 
 public interface DiscreteParentSubscriber extends IBayesNode

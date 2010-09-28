@@ -4,8 +4,8 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import util.Parser.MethodWrapperHandler;
+import bn.IBayesNet;
 import bn.distributions.Distribution;
-import bn.interfaces.IBayesNet;
 
 public class UniversalCommandHandlers {
 	

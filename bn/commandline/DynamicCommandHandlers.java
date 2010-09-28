@@ -1,24 +1,18 @@
-package bn;
+package bn.commandline;
 
-import java.io.BufferedReader;
-
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.util.HashMap;
-import java.util.regex.*;
+import java.util.regex.Pattern;
 
 import util.Parser;
-import util.Parser.ParserFunction;
 import util.Parser.ParserException;
-
+import util.Parser.ParserFunction;
+import bn.BNException;
 import bn.distributions.Distribution;
+import bn.interfaces.IDiscreteDynBayesNode;
 import bn.interfaces.IDynBayesNet;
+import bn.interfaces.IDynBayesNode;
 
-public class DynamicNetCommandInterpreter
+public class DynamicCommandHandlers
 {
 	static class InterEdgeHandler extends Parser.MethodWrapperHandler<Object>
 	{
@@ -88,7 +82,7 @@ public class DynamicNetCommandInterpreter
 	static class MarginalHandler implements Parser.ParserFunction
 	{
 		
-		public MarginalHandler(DynamicBayesianNetwork net)
+		public MarginalHandler(IDynBayesNet net)
 		{
 			this.net = net;
 		}
@@ -113,10 +107,10 @@ public class DynamicNetCommandInterpreter
 				if(te >= net.getT() || t0 < 0)
 					throw new ParserException("Requested range outside of [0,"+net.getT()+"]");
 			}
-			DBNNode<?> node = net.getNode(nodeName);
-			if(!(node instanceof DiscreteDBNNode))
+			IDynBayesNode node = net.getNode(nodeName);
+			if(!(node instanceof IDiscreteDynBayesNode))
 				throw new ParserException("Node specified is non-discrete, cannot print marginal.");
-			DiscreteDBNNode dnode = (DiscreteDBNNode)node;
+			IDiscreteDynBayesNode dnode = (IDiscreteDynBayesNode)node;
 			for(int i = 0; i < dnode.getCardinality(); i++)
 			{
 				System.out.print(nodeName + " Marginal("+i+"): ");
@@ -134,80 +128,6 @@ public class DynamicNetCommandInterpreter
 			return null;
 		}
 
-		DynamicBayesianNetwork net;
+		IDynBayesNet net;
 	}
-	
-	public static void main(String[] args)
-	{
-		interactiveDynamicNetwork();
-	}
-	
-	private static Parser getParser(BufferedReader input, BufferedWriter output, BufferedWriter error, boolean breakOnExc, boolean printLineOnError, DynamicBayesianNetwork bn)
-	{
-		try
-		{
-			HashMap<String, Distribution> distMap = new HashMap<String, Distribution>();
-			Parser parser = new Parser(input,output,error,breakOnExc,printLineOnError);
-			parser.setCommentString("\\s*%\\s*");
-			parser.addHandler(new StaticNetCommandInterpreter.CPDCreator(distMap));
-			parser.addHandler(new StaticNetCommandInterpreter.BNValidate(bn));
-			parser.addHandler(new StaticNetCommandInterpreter.BNRunner(bn));
-			parser.addHandler(new StaticNetCommandInterpreter.CPDAssigner(bn, distMap));
-			parser.addHandler(new InterEdgeHandler(bn));
-			parser.addHandler(new IntraEdgeHandler(bn));
-			parser.addHandler(new DiscreteNodeAdder(bn));
-			parser.addHandler(new InitialDistSetter(bn, distMap));
-			parser.addHandler(new ParallelRunner(bn));
-			parser.addHandler(new MarginalHandler(bn));
-		
-		return parser;
-		}
-		catch(Exception e) {
-			System.err.println("Error initializing parser: " + e.getMessage());
-			return null;
-		}
-	}
-
-	public static DynamicBayesianNetwork loadNetwork(String file) throws BNException
-	{
-		try
-		{
-			BufferedReader input = new BufferedReader(new FileReader(file));
-			int T = Integer.parseInt(input.readLine());
-			DynamicBayesianNetwork bn = new DynamicBayesianNetwork(T);
-			Parser parser = getParser(new BufferedReader(new FileReader(file)), null, null, true, true, bn);
-			parser.go();
-			return bn;
-		} catch(FileNotFoundException e) {
-			throw new BNException("Could not find file " + file);
-		} catch(IOException e) {
-			throw new BNException("Error reading first line for number of slices.");
-		} catch(NumberFormatException e) {
-			throw new BNException("First line of definition file must be the dynamic network time slice number.");
-		}
-	}
-
-	public static void interactiveDynamicNetwork()
-	{	
-		int T = 0;
-		BufferedReader input = new BufferedReader(new InputStreamReader(System.in));
-		try
-		{
-			while(T < 2)
-			{
-				System.out.print("Enter Number of Time Slices : " );
-				String firstLine = input.readLine();
-				try{T = Integer.parseInt(firstLine);}
-				catch(NumberFormatException e){System.err.println("Invalid entry.");}
-				if(T < 2)
-					System.err.println("Error, number of slices must be at least 2.");
-			}
-			DynamicBayesianNetwork bn = new DynamicBayesianNetwork(T);
-			Parser parser = getParser(input, new BufferedWriter(new OutputStreamWriter(System.out)),
-					new BufferedWriter(new OutputStreamWriter(System.err)), false, true, bn);
-			parser.setPrompt("D>>");
-			parser.go();
-		} catch(IOException e) {}
-	}
-	
 }

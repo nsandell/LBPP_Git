@@ -1,5 +1,8 @@
 package bn;
 
+import bn.commandline.DynamicCommandLine;
+import bn.commandline.StaticNetCommandLine;
+
 public class MainWrapper {
 	
 	public static void main(String[] args)
@@ -14,9 +17,9 @@ public class MainWrapper {
 		String statics = "static";
 		
 		if(dynamic.startsWith(args[0]))
-			return;//TODO return this to normal //DynamicNetCommandInterpreter.interactiveDynamicNetwork();
+			DynamicCommandLine.interactiveDynamicNetwork();
 		else if(statics.startsWith(args[0]))
-			StaticNetCommandInterpreter.interactiveStaticNetwork();
+			StaticNetCommandLine.interactiveStaticNetwork();
 		else
 			System.err.println("Unrecognized mode, must either be 'static' or 'dynamic'");
 	}

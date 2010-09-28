@@ -1,5 +1,6 @@
 package bn.distributions;
 
+import bn.distributions.SparseDiscreteCPT.Entry;
 import java.util.regex.Pattern;
 
 import util.Parser.ParserException;
@@ -14,6 +15,25 @@ public class DiscreteCPT extends DiscreteDistribution
 		this.dimSizes = dimSizes;
 		this.values = values;
 		this.cardinality = cardinality;
+		this.validate();
+	}
+	
+	public DiscreteCPT(int[] dimSizes, int cardinality, Iterable<SparseDiscreteCPT.Entry> entries) throws BNException
+	{
+		super(dimSizes.length, cardinality);
+		this.dimSizes = dimSizes;
+		this.cardinality = cardinality;
+		int dimprod = 1;
+		for(int i = 0; i < dimSizes.length; i++)
+			dimprod *= dimSizes[i];
+		this.values = new double[dimprod][];
+		for(int i = 0; i < dimprod; i++)
+			this.values[i] = new double[cardinality];
+		for(Entry entry : entries)
+		{
+			int index = getIndex(entry.conditional_indices, dimSizes);
+			values[index][entry.value_index] = entry.p;
+		}
 		this.validate();
 	}
 

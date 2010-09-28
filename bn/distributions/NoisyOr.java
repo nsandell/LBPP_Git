@@ -13,7 +13,7 @@ public class NoisyOr extends DiscreteDistribution
 	{
 		super(numparents,2); // We will consider this to mean (from 0 -> Infty)
 		if(p < 0 || p > 1) throw new BNException("Attempted to specify noisy or with invalid p ( " + p + ")");
-		this.p = p;
+		this.p = 1-p;
 	}
 	
 	public NoisyOr(int numconditions) 
@@ -55,7 +55,7 @@ public class NoisyOr extends DiscreteDistribution
 	{
 		int numact = 0;
 		for(int i = 0; i< indices.length; i++)
-			numact += indices[i]-1;
+			numact += indices[i];
 		if(value==1)
 			return getProbability1(numact);
 		else

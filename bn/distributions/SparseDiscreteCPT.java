@@ -189,7 +189,14 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		if(value >= this.cardinality)
 			throw new BNException("Failure to evaluate CPT, bad value " + value + " where cardinality is " + this.cardinality);
 
-		return this.entries.get(new IndexWrapper(indices)).get(value);
+
+		try
+		{
+			return this.entries.get(new IndexWrapper(indices)).get(value);
+		} catch(NullPointerException e)
+		{
+			return 0;
+		}
 	}
 
 	public double evaluateFast(int[] indices,int value)

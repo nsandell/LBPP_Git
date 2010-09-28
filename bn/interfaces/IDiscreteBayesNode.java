@@ -6,6 +6,7 @@ import bn.messages.DiscreteMessage;
 
 public interface IDiscreteBayesNode extends IBayesNode
 {
+	int getCardinality();
 	void setDistribution(DiscreteDistribution dist) throws BNException;
 	void setValue(int o) throws BNException;
 	DiscreteMessage getMarginal();

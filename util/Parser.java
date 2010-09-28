@@ -186,7 +186,7 @@ public class Parser {
 			return true;
 		if(this.commentStr!=null)
 			line = line.split(this.commentStr)[0];
-		
+
 		ParserFunction handler = null;
 		Matcher matcher = null;
 		if(this.lastHandler!=null && line.matches("\\s*\\**\\s*"))

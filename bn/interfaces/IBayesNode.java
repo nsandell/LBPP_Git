@@ -11,4 +11,5 @@ public interface IBayesNode
 	
 	void sendInitialMessages() throws BNException;
 	double updateMessages() throws BNException;
+	double getLogLikelihood() throws BNException;
 }

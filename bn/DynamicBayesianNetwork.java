@@ -196,6 +196,22 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		}
 	}
 	
+	public void setDiscreteEvidence(String nodename, int t0, int[] obs) throws BNException
+	{
+		DBNNode<?> node = this.getNode(nodename);
+		if(!(node instanceof DiscreteDBNNode))
+			throw new BNException("Attempted to add discrete evidence to non-discrete node.");
+		((DiscreteDBNNode)node).setValue(obs, t0);
+	}
+	
+	public double nodeLogLikelihood(String name) throws BNException
+	{
+		DBNNode<?> node = this.getNode(name);
+		if(node==null)
+			throw new BNException("Attempted to get log likelihood of a node that does not exist!");
+		return node.getLogLikelihood();
+	}
+	
 	private static class ParallelStatus
 	{
 		

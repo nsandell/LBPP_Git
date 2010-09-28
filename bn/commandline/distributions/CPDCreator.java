@@ -51,5 +51,5 @@ public class CPDCreator implements ParserFunction
 	private HashMap<String,ICPDCreator> creators = new HashMap<String, ICPDCreator>();
 	private HashMap<String,Distribution> distmap;
 	private static int[] groups = new int[]{1,2,3};
-	private static Pattern patt = Pattern.compile("^(\\w+)=(\\w+)\\((.*)\\)");
+	private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*<\\s*(\\w+)\\((.*)\\)\\s*$");
 }

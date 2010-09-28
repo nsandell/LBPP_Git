@@ -14,6 +14,7 @@ public interface IBayesNet<BaseInterface>
 	public BaseInterface getNode(String name);
 	
 	public void validate() throws BNException;
+	public double nodeLogLikelihood(String nodeName) throws BNException;
 	
 	public void run(int max_iterations, double convergence) throws BNException;
 }

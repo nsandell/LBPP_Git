@@ -66,4 +66,21 @@ class StaticBayesianNetwork extends BayesianNetwork<IBayesNode,BNNode> implement
 		for(BNNode child : node.getChildrenI())
 			child.removeParent(node);
 	}
+	
+	public double nodeLogLikelihood(String nodename) throws BNException
+	{
+		BNNode node = this.getNode(nodename);
+		if(node==null)
+			throw new BNException("Node " + nodename + " does not exist.");
+		return node.getLogLikelihood();
+	}
+	
+	public void addDiscreteEvidence(String nodename, int evidence) throws BNException
+	{
+		BNNode node = this.getNode(nodename);
+		if(!(node instanceof DiscreteBNNode))
+			throw new BNException("Attempted to add discrete evidence to non-discrete node.");
+		else
+			((DiscreteBNNode)node).setValue(evidence);
+	}
 }

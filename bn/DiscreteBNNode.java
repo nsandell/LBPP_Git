@@ -275,10 +275,6 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		return this.observed;
 	}
 	
-	double likelihoodGivenPast()
-	{
-		return this.likelihoodGivenPast;
-	}
 	
 	int[] getParentDimensions()
 	{
@@ -286,6 +282,11 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		for(int i = 0; i < dims.length; i++)
 			dims[i] = this.ds_parents.get(i).getCardinality();
 		return dims;
+	}
+	
+	public double getLogLikelihood()
+	{
+		return this.likelihoodGivenPast;
 	}
 	
 	private double likelihoodGivenPast = 0;

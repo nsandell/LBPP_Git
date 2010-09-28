@@ -93,13 +93,13 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 		return max;
 	}
 	
-	public double getLogLikelihood() throws BNException
+	public double getLogLikelihood() 
 	{
 		double ll = 0;
 		for(int i = 0; i < bayesNet.getT(); i++)
 		{
 			if(this.nodeInstances.get(i).isObserved())
-				ll += Math.log(this.nodeInstances.get(i).likelihoodGivenPast());
+				ll += Math.log(this.nodeInstances.get(i).getLogLikelihood());
 		}
 		return ll;
 	}

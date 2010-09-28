@@ -3,6 +3,7 @@ package util;
 import java.io.BufferedReader;
 
 import java.io.BufferedWriter;
+import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -42,6 +43,8 @@ public class Parser {
 		}
 		
 		public void finish(){}
+		
+		protected void handleReturn(){}
 
 		public ParserFunction parseLine(String[] args) throws ParserException
 		{
@@ -70,7 +73,12 @@ public class Parser {
 					}
 					i++;
 				}
-				this.method.invoke(this.obj, objargs);
+				if(this.method.getReturnType()!=void.class)
+				{
+					retObj = this.method.invoke(this.obj, objargs);
+					this.handleReturn();
+				}
+				else this.method.invoke(this.obj, objargs);
 			} catch(IllegalArgumentException e) {
 				throw new ParserException("Invalid type for the '"+ argumentNames[i] + "' argument.");
 			} catch(InvocationTargetException e) {
@@ -81,10 +89,11 @@ public class Parser {
 			return null;
 		}
 	
-		String[] argumentNames;
-		Object obj;
-		Method method;
-		HashMap<String,EnvObj> environmentObjects;
+		protected Object retObj;
+		private String[] argumentNames;
+		private Object obj;
+		private Method method;
+		private HashMap<String,EnvObj> environmentObjects;
 	}
 
 	public Parser(BufferedReader input, BufferedWriter output, BufferedWriter error_output, boolean breakOnException, boolean printLineNoOnError)
@@ -143,7 +152,7 @@ public class Parser {
 						break;
 					}
 				}
-				if(!readLine())
+				if(!readLine(this.input))
 					break;
 			}
 			catch(Exception e) {
@@ -175,10 +184,14 @@ public class Parser {
 				{this.output.write("\nExiting...\n\n");this.output.flush();}
 		} catch(IOException e) {}
 	}
-
-	private boolean readLine() throws ParserException, IOException
+	
+	private boolean readLine(BufferedReader fileInput) throws ParserException, IOException
 	{
-		String line = input.readLine();
+		String line = fileInput.readLine();
+		
+		String fileName = null;
+		BufferedReader newFileInput = null;
+		int internal_lineno = 1;
 
 		if(line==null)
 			return false;
@@ -186,6 +199,24 @@ public class Parser {
 			return true;
 		if(this.commentStr!=null)
 			line = line.split(this.commentStr)[0];
+		
+		if(line.contains("<<"))
+		{
+			String[] bits = line.split("\\s*<<\\s*");
+			if(bits.length>2)
+				throw new ParserException("Error, multiple file inputs on one line.");
+			fileName = bits[1];
+			String firstCommandBit = bits[0];
+			try
+			{
+				newFileInput = new BufferedReader(new FileReader(fileName));
+				line = firstCommandBit + newFileInput.readLine();
+			} catch(IOException e) {
+				throw new ParserException("Failure getting input from file " + fileName);
+			} catch(Exception e) {
+				throw new ParserException("File ("+fileName+") Line " + internal_lineno);
+			}
+		}
 
 		ParserFunction handler = null;
 		Matcher matcher = null;
@@ -230,6 +261,17 @@ public class Parser {
 			this.prompt = this.lastHandler.getPrompt();
 		else
 			this.prompt = this.promptBackup;
+		
+		try
+		{
+			if(newFileInput!=null)
+				while(this.readLine(newFileInput));
+		}
+		catch(Exception e) {
+			this.lastHandler = null;
+			this.prompt = this.promptBackup;
+			throw new ParserException("File (" + fileName + ") Line Number " + internal_lineno + ": " + e.getMessage());
+		}
 
 		return true;
 	}
@@ -237,7 +279,7 @@ public class Parser {
 	private ParserFunction lastHandler = null;
 	
 	private ArrayList<ParserFunction> handlers = new ArrayList<ParserFunction>();
-	
+
 	private BufferedReader input;
 	private BufferedWriter output;
 	private BufferedWriter error_output;

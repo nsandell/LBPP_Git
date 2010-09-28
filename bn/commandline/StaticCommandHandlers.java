@@ -21,7 +21,7 @@ class StaticCommandHandlers {
 		public Pattern getRegEx() {return patt;}
 		public String getPrompt() {return null;}
 		private static int[] groups = new int[]{1,2};
-		private static Pattern patt = Pattern.compile("^(\\w+):Discrete\\((\\d+)\\)$");
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*:\\s*Discrete\\(\\s*(\\d+)\\s*\\)\\s*$");
 	}
 	
 	static class StaticEdgeHandler extends MethodWrapperHandler<Object>
@@ -37,7 +37,7 @@ class StaticCommandHandlers {
 
 		private static int[] groups = new int[]{1,2};
 		private static String[] argnames = new String[]{"from node","to node"};
-		private static Pattern patt = Pattern.compile("(\\w+)\\s*->\\s*(\\w+)");
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*->\\s*(\\w+)\\s*$");
 	}
 	
 	static class MarginalHandler implements ParserFunction
@@ -68,7 +68,23 @@ class StaticCommandHandlers {
 		}
 		
 		private IStaticBayesNet net;
-		private static Pattern patt = Pattern.compile("^query\\((\\w+)\\)\\s*$");
+		private static Pattern patt = Pattern.compile("^\\s*query\\((\\w+)\\)\\s*$");
 		private static int[] groups = new int[]{1};
+	}
+	
+	static class ObservationHandler extends MethodWrapperHandler<Object>
+	{
+		public ObservationHandler(IStaticBayesNet bn) throws Exception
+		{
+			super(bn,IStaticBayesNet.class.getMethod("addDiscreteEvidence", new Class<?>[]{String.class,int.class}),
+					new String[]{"node name","observation"},null);
+		}
+		
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+
+		private static int[] groups = new int[]{1,2};
+		private static Pattern patt = Pattern.compile("\\s*(\\w+)\\s*=\\s*(\\d+)\\s*");
 	}
 }

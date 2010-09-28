@@ -24,7 +24,7 @@ public class DynamicCommandHandlers
 		public Pattern getRegEx() {return patt;}
 		public String getPrompt() {return null;}
 		private static int[] groups = new int[]{1,2};
-		private static Pattern patt = Pattern.compile("^\\s*(\\w+)=>(\\w+)\\s*$");
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*=>\\s*(\\w+)\\s*$");
 	}
 	
 	static class IntraEdgeHandler extends Parser.MethodWrapperHandler<Object>
@@ -37,7 +37,7 @@ public class DynamicCommandHandlers
 		public Pattern getRegEx() {return patt;}
 		public String getPrompt() {return null;}
 		private static int[] groups = new int[]{1,2};
-		private static Pattern patt = Pattern.compile("^\\s*(\\w+)->(\\w+)\\s*$");
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*->\\s*(\\w+)\\s*$");
 	}
 	
 	static class DiscreteNodeAdder extends Parser.MethodWrapperHandler<Object>
@@ -50,7 +50,7 @@ public class DynamicCommandHandlers
 		public Pattern getRegEx() {return patt;}
 		public String getPrompt() {return null;}
 		private static int[] groups = new int[]{1,2};
-		private static Pattern patt = Pattern.compile("^(\\w+):Discrete\\((\\d+)\\)$");
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*:\\s*Discrete\\((\\d+)\\)\\s*$");
 	}
 	
 	static class InitialDistSetter  extends Parser.MethodWrapperHandler<Distribution>
@@ -63,7 +63,7 @@ public class DynamicCommandHandlers
 		public Pattern getRegEx() {return patt;}
 		public String getPrompt() {return null;}
 		private static int[] groups = new int[]{1,2};
-		private static Pattern patt = Pattern.compile("^\\s*(\\w+)~~(\\w+)\\s*$");
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*~~\\s*(\\w+)\\s*$");
 	}
 	
 	static class ParallelRunner extends Parser.MethodWrapperHandler<Object>
@@ -76,7 +76,7 @@ public class DynamicCommandHandlers
 		public Pattern getRegEx() {return patt;}
 		public String getPrompt() {return null;}
 		private static int[] groups = new int[]{1,2};
-		private static Pattern patt = Pattern.compile("^runp\\((\\d+),([\\.e\\-0-9]+)\\)$");
+		private static Pattern patt = Pattern.compile("^\\s*runp\\(\\s*(\\d+)\\s*,\\s*([\\.e\\-0-9]+)\\s*\\)\\s*$");
 	}
 
 	static class MarginalHandler implements Parser.ParserFunction
@@ -92,7 +92,7 @@ public class DynamicCommandHandlers
 		public int[] getGroups(){return groups;}
 		public Pattern getRegEx(){return patt;}
 		
-		private static Pattern patt = Pattern.compile("^query\\((\\w+)(,(\\d+),(\\d+))?\\)");
+		private static Pattern patt = Pattern.compile("^\\s*query\\(\\s*(\\w+)\\s*(,\\s*(\\d+)\\s*,\\s*(\\d+))?\\s*\\)\\s*$");
 		private static int[] groups = new int[]{1,3,4};
 		
 		public ParserFunction parseLine(String[] args) throws ParserException {
@@ -129,5 +129,38 @@ public class DynamicCommandHandlers
 		}
 
 		IDynBayesNet net;
+	}
+	
+	static class ObservationHandler implements ParserFunction
+	{
+		public ObservationHandler(IDynBayesNet bn) throws Exception
+		{
+			this.bn = bn;
+		}
+		
+		public ParserFunction parseLine(String[] args) throws ParserException
+		{
+			try
+			{
+				int t0 = Integer.parseInt(args[1]);
+				String [] obsStr = args[2].split("\\s+");
+				int[] data = new int[obsStr.length];
+				for(int i = 0; i < obsStr.length; i++)
+					data[i] = Integer.parseInt(obsStr[i]);
+				bn.setDiscreteEvidence(args[0], t0, data);
+			} catch(NumberFormatException e) {throw new ParserException("Number formating error.");}
+			catch(BNException e){throw new ParserException(e.getMessage());}
+			return null;
+		}
+		
+		public void finish(){}
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+
+		private static int[] groups = new int[]{1,3,4};
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)(\\((\\d+)\\))?\\s*=\\s*\\[?\\s*((\\d+\\s*)+)\\]?\\s*$");
+		
+		IDynBayesNet bn;
 	}
 }

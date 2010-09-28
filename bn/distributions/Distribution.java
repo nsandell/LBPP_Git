@@ -2,12 +2,13 @@ package bn.distributions;
 
 import java.util.HashMap;
 
-import util.Parser.LineHandler;
+
+import util.Parser.ParserFunction;
 import util.Parser.ParserException;
 
 public class Distribution
 {
-	public static interface DistributionBuilder extends LineHandler
+	public static interface DistributionBuilder extends ParserFunction
 	{
 		public Distribution getFinished() throws ParserException;
 	}

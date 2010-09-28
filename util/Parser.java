@@ -20,16 +20,16 @@ public class Parser {
 		public ParserException(String message){super(message);}
 	}
 
-	public static interface LineHandler
+	public static interface ParserFunction
 	{
 		public int[] getGroups();
 		public Pattern getRegEx();
 		public String getPrompt();
 		public void finish() throws ParserException;
-		public LineHandler parseLine(String[] args) throws ParserException; // Return a line handler if expect more, else null
+		public ParserFunction parseLine(String[] args) throws ParserException; // Return a line handler if expect more, else null
 	}
 	
-	public static abstract class MethodWrapperHandler<EnvObj> implements LineHandler
+	public static abstract class MethodWrapperHandler<EnvObj> implements ParserFunction
 	{
 		public MethodWrapperHandler(Object obj, Method method, String[] argumentNames, HashMap<String, EnvObj> environmentObjects) throws Exception
 		{
@@ -43,7 +43,7 @@ public class Parser {
 		
 		public void finish(){}
 
-		public LineHandler parseLine(String[] args) throws ParserException
+		public ParserFunction parseLine(String[] args) throws ParserException
 		{
 			Object[] objargs = new Object[args.length];
 			Class<?>[] parametersTypes = this.method.getParameterTypes();
@@ -92,7 +92,7 @@ public class Parser {
 		this.input = input; this.output = output; this.breakOnException = breakOnException; this.printLineNoOnError = printLineNoOnError;this.error_output = error_output;
 	}
 
-	public void addHandler(LineHandler handler)
+	public void addHandler(ParserFunction handler)
 	{
 		this.handlers.add(handler);
 	}
@@ -187,7 +187,7 @@ public class Parser {
 		if(this.commentStr!=null)
 			line = line.split(this.commentStr)[0];
 		
-		LineHandler handler = null;
+		ParserFunction handler = null;
 		Matcher matcher = null;
 		if(this.lastHandler!=null && line.matches("\\s*\\**\\s*"))
 		{
@@ -206,7 +206,7 @@ public class Parser {
 		}
 		else
 		{
-			for(LineHandler handlertmp : this.handlers)
+			for(ParserFunction handlertmp : this.handlers)
 			{
 				matcher = handlertmp.getRegEx().matcher(line);
 				if(matcher.find())
@@ -234,9 +234,9 @@ public class Parser {
 		return true;
 	}
 
-	private LineHandler lastHandler = null;
+	private ParserFunction lastHandler = null;
 	
-	private ArrayList<LineHandler> handlers = new ArrayList<LineHandler>();
+	private ArrayList<ParserFunction> handlers = new ArrayList<ParserFunction>();
 	
 	private BufferedReader input;
 	private BufferedWriter output;

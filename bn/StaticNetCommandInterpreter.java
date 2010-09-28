@@ -2,6 +2,7 @@ package bn;
 
 import java.io.BufferedReader;
 
+
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -11,7 +12,7 @@ import java.util.HashMap;
 import java.util.regex.*;
 
 import util.Parser;
-import util.Parser.LineHandler;
+import util.Parser.ParserFunction;
 import util.Parser.MethodWrapperHandler;
 import util.Parser.ParserException;
 
@@ -67,7 +68,7 @@ public class StaticNetCommandInterpreter
 		private static Pattern patt = Pattern.compile("\\s*(\\w+)\\s*~\\s*(\\w+)");
 	}
 
-	static class CPDCreator implements LineHandler
+	static class CPDCreator implements ParserFunction
 	{
 		public CPDCreator(HashMap<String, Distribution> distMap)
 		{
@@ -80,7 +81,7 @@ public class StaticNetCommandInterpreter
 		public Pattern getRegEx() {return this.patt;}
 		public String getPrompt() {return null;}
 
-		public LineHandler parseLine(String[] args) throws ParserException
+		public ParserFunction parseLine(String[] args) throws ParserException
 		{
 			return Distribution.getDistributionBuilder(args[1], args[0], args[2], distMap);
 		}
@@ -124,7 +125,7 @@ public class StaticNetCommandInterpreter
 		private static int[] groups = new int[]{1,3};
 	}
 	
-	static class MarginalHandler implements LineHandler
+	static class MarginalHandler implements ParserFunction
 	{
 		public MarginalHandler(StaticBayesianNetwork net)
 		{
@@ -135,7 +136,7 @@ public class StaticNetCommandInterpreter
 		public Pattern getRegEx() {return patt;}
 		public String getPrompt() {return null;}
 		public void finish() throws ParserException {}
-		public LineHandler parseLine(String[] args) throws ParserException
+		public ParserFunction parseLine(String[] args) throws ParserException
 		{
 			BNNode node = net.getNode(args[0]);
 			if(node==null)

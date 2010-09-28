@@ -1,10 +1,11 @@
 package bn.distributions;
 
 import java.util.HashMap;
+
 import java.util.regex.Pattern;
 
-import util.Parser.LineHandler;
 import util.Parser.ParserException;
+import util.Parser.ParserFunction;
 import bn.BNException;
 
 public abstract class DiscreteDistribution extends Distribution {
@@ -60,7 +61,7 @@ public abstract class DiscreteDistribution extends Distribution {
 			}
 		}
 
-		public LineHandler parseLine(String[] args) throws ParserException
+		public ParserFunction parseLine(String[] args) throws ParserException
 		{
 			if(this.inner.parseLine(args))
 				return this;

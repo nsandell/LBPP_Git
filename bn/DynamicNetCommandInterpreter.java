@@ -1,6 +1,7 @@
 package bn;
 
 import java.io.BufferedReader;
+
 import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -11,7 +12,7 @@ import java.util.HashMap;
 import java.util.regex.*;
 
 import util.Parser;
-import util.Parser.LineHandler;
+import util.Parser.ParserFunction;
 import util.Parser.ParserException;
 
 import bn.distributions.Distribution;
@@ -84,7 +85,7 @@ public class DynamicNetCommandInterpreter
 		private static Pattern patt = Pattern.compile("^runp\\((\\d+),([\\.e\\-0-9]+)\\)$");
 	}
 
-	static class MarginalHandler implements Parser.LineHandler
+	static class MarginalHandler implements Parser.ParserFunction
 	{
 		
 		public MarginalHandler(DynamicBayesianNetwork net)
@@ -100,7 +101,7 @@ public class DynamicNetCommandInterpreter
 		private static Pattern patt = Pattern.compile("^query\\((\\w+)(,(\\d+),(\\d+))?\\)");
 		private static int[] groups = new int[]{1,3,4};
 		
-		public LineHandler parseLine(String[] args) throws ParserException {
+		public ParserFunction parseLine(String[] args) throws ParserException {
 			String nodeName = args[0];
 			int t0 = 0, te = this.net.getT()-1;
 			if(args[1]!=null)

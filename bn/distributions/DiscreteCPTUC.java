@@ -1,15 +1,16 @@
 package bn.distributions;
 
+import java.util.Vector;
+
 import bn.BNException;
+import bn.messages.DiscreteMessage;
 
 public class DiscreteCPTUC extends DiscreteDistribution
 {
 	public DiscreteCPTUC(double[] distr) throws BNException
 	{
-		super(0,distr.length);
-		this.delta = false;
+		super(distr.length);
 		this.dist = distr;
-		this.index = -1;
 		this.validate();
 	}
 
@@ -35,25 +36,19 @@ public class DiscreteCPTUC extends DiscreteDistribution
 
 	public DiscreteCPTUC(int index,int card)
 	{
-		super(0,card);
+		super(card);
 		this.dist = null;
-		this.delta = true;
-		this.index = index;
 	}
 
 	public DiscreteCPTUC(DiscreteCPTUC orig)
 	{
-		super(0,orig.getCardinality());
+		super(orig.getCardinality());
 		if(orig.dist==null)
 		{
 			this.dist = null;
-			this.delta = true;
-			this.index = orig.index;
 		}
 		else
 		{
-			this.delta = false;
-			this.index = -1;
 			this.dist = new double[orig.dist.length];
 			for(int i = 0; i < this.dist.length; i++)
 				this.dist[i] = orig.dist[i];
@@ -68,6 +63,12 @@ public class DiscreteCPTUC extends DiscreteDistribution
 			uniform[i] = value;
 		return new DiscreteCPTUC(uniform);
 	}
+	
+	public void validateConditionDimensions(int[] dims) throws BNException
+	{
+		if(dims.length!=0)
+			throw new BNException("Probability vector should not have conditions..");
+	}
 
 	public double evaluate(int[] indices, int value) throws BNException
 	{
@@ -75,8 +76,19 @@ public class DiscreteCPTUC extends DiscreteDistribution
 			throw new BNException("Passed conditions into unconditional distribution.");
 		return dist[value];
 	}
-
-	public final boolean delta;
-	public final int index;
-	public final double[] dist;
+	
+	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException
+	{
+		for(int i = 0; i < local_pi.getCardinality(); i++)
+			local_pi.setValue(i, dist[i]);
+		if(value!=null)
+			return dist[value];
+		else
+			return 0;
+	}
+	
+	// Should have no parents, so...
+	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer value) throws BNException{}
+	
+	private final double[] dist;
 }

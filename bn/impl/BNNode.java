@@ -51,7 +51,6 @@ abstract class BNNode implements IBayesNode
 		return this.name;
 	}
 	
-	public abstract void sendInitialMessages() throws BNException;
 	public abstract double updateMessages() throws BNException;
 	public abstract void validate() throws BNException;
 	

@@ -1,6 +1,6 @@
 package bn.impl;
 
-import java.util.ArrayList;
+import java.util.Vector;
 
 import java.util.HashMap;
 
@@ -15,45 +15,79 @@ import bn.messages.DiscreteMessage;
 class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, DiscreteChildSubscriber, IDiscreteBayesNode
 {
 	
-	DiscreteBNNode(StaticBayesianNetwork net, String name, int cardinality){super(net,name);this.cardinality = cardinality;}
+	DiscreteBNNode(StaticBayesianNetwork net, String name, int cardinality)
+	{
+		super(net,name);
+		this.cardinality = cardinality;
+		this.local_pi = new DiscreteMessage(cardinality);
+		this.local_lambda = new DiscreteMessage(cardinality);
+	}
 	
 	public void validate() throws BNException
 	{
 		if(this.cpt==null) throw new BNException("Error while validating node " + this.getName() + ", no CPT set!");
-		int[] dimensions = this.cpt.getConditionDimensions();
-		if(dimensions.length!=this.ds_parents.size())
-			throw new BNException("Error while validating node " + this.getName() + ", CPT has incorrect number of conditions.");
-		for(int i = 0; i < this.ds_parents.size(); i++)
-			if(((DiscreteBNNode)this.ds_parents.get(i)).cardinality!=dimensions[i])
-				throw new BNException("Error while validating node " + this.getName() + ", CPT dimension " + i + " is of incorrect size.");
+		try
+		{
+			this.cpt.validateConditionDimensions(this.getParentDimensions());
+		} catch(BNException e) {
+			throw new BNException("Error while validating node " + this.getName() + ", CPT has incorrect number of conditions: " + e.getMessage());
+		}
 	}
 	
 	protected void addParentI(BNNode parent) throws BNException
 	{
 		if(!(parent instanceof DiscreteBNNode))
 			throw new BNException("Parent of discrete node must also be a discrete node.");
+		if(this.parentMap.get(parent)!=null)
+			return;
+		this.parentMap.put(parent, this.numParents);
 		this.ds_parents.add((DiscreteBNNode)parent);
+		//this.incomingPiMessages.add(DiscreteMessage.allOnesMessage(this.getCardinality())); 
+		this.incomingPiMessages.add(DiscreteMessage.allOnesMessage(((DiscreteBNNode)parent).getCardinality())); 
+		this.parents_local_pis.add(((DiscreteBNNode)parent).local_pi);
+		//this.outgoing_lambdas.add(DiscreteMessage.allOnesMessage(this.getCardinality()));
+		this.outgoing_lambdas.add(DiscreteMessage.allOnesMessage(((DiscreteBNNode)parent).getCardinality()));
+		this.parent_dims = null;
+		this.numParents++;
 	}
 	
 	protected void removeParentI(BNNode parent) throws BNException
 	{
 		if(!(parent instanceof DiscreteBNNode))
 			throw new BNException("Attempted to remove a parent from discrete node that isn't discrete!");
-		this.ds_parents.remove((DiscreteBNNode)parent);
+		Integer parentIndex = this.parentMap.get(parent);
+		if(parentIndex==null)
+			return;
+		this.parentMap.remove(parent);
+		this.incomingPiMessages.remove(parentIndex);
+		this.outgoing_lambdas.remove(parentIndex);
+		this.ds_parents.remove(parentIndex);
+		this.parents_local_pis.remove(parentIndex);
+		this.parent_dims = null;
+		this.numParents--;
 	}
 	
 	protected void addChildI(BNNode child) throws BNException
 	{
 		if(!(child instanceof DiscreteParentSubscriber))
 			throw new BNException("Child of discrete node must be able to handle discrete parents.");
+		this.childMap.put((DiscreteParentSubscriber)child,this.numChildren);
+		this.incomingLambdaMessages.add(DiscreteMessage.allOnesMessage(this.getCardinality())); 
 		this.ds_children.add((DiscreteParentSubscriber)child);
+		this.numChildren++;
 	}
 	
 	protected void removeChildI(BNNode child) throws BNException
 	{
 		if(!(child instanceof DiscreteParentSubscriber))
 			throw new BNException("Attempted to remove child from parent who could never have been a child!");
-		this.ds_children.remove((DiscreteParentSubscriber)child);
+		Integer childIndex = this.childMap.get((DiscreteParentSubscriber)child);
+		if(childIndex==null)
+			return;
+		this.childMap.remove((DiscreteParentSubscriber)child);
+		this.incomingLambdaMessages.remove(childIndex);
+		this.ds_children.remove(childIndex);
+		this.numChildren--;
 	}
 	
 	public void setDistribution(DiscreteDistribution distribution) throws BNException
@@ -66,29 +100,13 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	@Override
 	public void handleLambda(IBayesNode child, DiscreteMessage dm)
 	{
-		this.incomingLambdaMessages.put(child, dm);
+		this.incomingLambdaMessages.set(this.childMap.get(child), dm);
 	}
 
 	@Override
 	public void handlePi(IBayesNode parent, DiscreteMessage dm)
 	{
-		this.incomingPiMessages.put(parent, dm);
-	}
-
-	@Override
-	public void sendInitialMessages()
-	{
-		this.local_lambda = new DiscreteMessage(this.cardinality);
-		this.local_pi = new DiscreteMessage(this.cardinality);
-		for(int i = 0; i < this.cardinality; i++)
-		{
-			this.local_lambda.setValue(i, 0);
-			this.local_pi.setValue(i, 0);
-		}
-		for(DiscreteBNNode parent : ds_parents)
-			parent.handleLambda(this, DiscreteMessage.allOnesMessage(parent.cardinality));
-		for(DiscreteParentSubscriber child : ds_children)
-			child.handlePi(this, DiscreteMessage.allOnesMessage(this.cardinality));
+		this.incomingPiMessages.set(this.parentMap.get(parent), dm);
 	}
 
 	@Override
@@ -120,10 +138,9 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	{
 		if(this.observed)
 		{
-			this.likelihoodGivenPast = 0;
 			double tmp = 1;
-			for(DiscreteParentSubscriber child : this.ds_children)
-				tmp *= this.incomingLambdaMessages.get(child).getValue(this.value);
+			for(DiscreteParentSubscriber child : this.ds_children) //TODO probably replace these with for(int..) loops
+				tmp *= this.incomingLambdaMessages.get(this.childMap.get(child)).getValue(this.value);
 			this.local_lambda.setValue(this.value,tmp);
 		}
 		else
@@ -132,77 +149,36 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 			{
 				double tmp = 1;
 				for(DiscreteParentSubscriber child : this.ds_children)
-					tmp *= this.incomingLambdaMessages.get(child).getValue(i);
+					tmp *= this.incomingLambdaMessages.get(this.childMap.get(child)).getValue(i);
 				this.local_lambda.setValue(i,tmp);
 			}
 		}
-		
+		this.local_lambda.normalize();
+
 		for(int i = 0; i < this.cardinality; i++)
 			this.local_pi.setValue(i, 0);
 		
-		int[] indices = this.cpt.initialIndices();
-		int[] dims = this.cpt.getConditionDimensions();
-		do
-		{
-			double tmp = 1;
-			double observation_ll_tmp = 1;
-			for(int j = 0; j < this.ds_parents.size(); j++)
-			{
-				tmp *= this.incomingPiMessages.get(this.ds_parents.get(j)).getValue(indices[j]);
-				if(this.observed)
-					observation_ll_tmp *= this.ds_parents.get(j).local_pi.getValue(indices[j]);
-			}
-			for(int i = 0; i < this.cardinality; i++)
-				this.local_pi.setValue(i, this.local_pi.getValue(i)+tmp*this.cpt.evaluate(indices, i));
-			if(this.observed)
-				this.likelihoodGivenPast += observation_ll_tmp*this.cpt.evaluate(indices, this.value);
-		}
-		while((indices = DiscreteDistribution.incrementIndices(indices, dims))!=null);
-	
-		this.local_lambda.normalize();
-		this.local_pi.normalize();
+		if(this.observed)
+			this.likelihoodGivenPast = this.cpt.computeLocalPi(this.local_pi, this.incomingPiMessages, this.parents_local_pis, this.value);
+		else
+			this.cpt.computeLocalPi(this.local_pi, this.incomingPiMessages, this.parents_local_pis, null);
 	}
 	
 	protected void updateLambdas() throws BNException
 	{
-		
-		int[] indices = this.cpt.initialIndices();
-		DiscreteMessage[] dms = new DiscreteMessage[this.ds_parents.size()];
-		int[] sizes = this.cpt.getConditionDimensions();
-		for(int i = 0; i < dms.length; i++)
-			dms[i] = new DiscreteMessage(sizes[i]);
-		do
+		for(DiscreteMessage lambda : this.outgoing_lambdas)
 		{
-			double pi_product = 1;
-			DiscreteBNNode zeroParent = null;
-			for(int i = 0; i < indices.length; i++)
-			{
-				double value = this.incomingPiMessages.get(this.ds_parents.get(i)).getValue(indices[i]);
-				if(value==0 && zeroParent==null)
-					zeroParent = this.ds_parents.get(i);
-				else if(value==0){pi_product = 0;break;}
-				else
-					pi_product *= value;
-			}
-			
-			for(int i = 0; i < this.cardinality; i++)
-			{
-				double p = this.cpt.evaluate(indices, i);
-				
-				for(int j = 0; j < indices.length; j++)
-				{
-					double local_pi_product = pi_product;
-					if(local_pi_product > 0 && zeroParent==null)
-						local_pi_product /= this.incomingPiMessages.get(this.ds_parents.get(j)).getValue(indices[j]);
-					
-					dms[j].setValue(indices[j], dms[j].getValue(indices[j]) + p*local_pi_product*this.local_lambda.getValue(i));
-				}
-			}
+			for(int i = 0; i < lambda.getCardinality(); i++)
+				lambda.setValue(i, 0);
 		}
-		while((indices = DiscreteDistribution.incrementIndices(indices, cpt.getConditionDimensions()))!=null);
 		
+		if(this.observed)
+			this.cpt.computeLambdas(this.outgoing_lambdas, this.incomingPiMessages, this.local_lambda, this.value);
+		else
+			this.cpt.computeLambdas(this.outgoing_lambdas, this.incomingPiMessages, this.local_lambda, null);
+
 		for(int i = 0; i < this.ds_parents.size(); i++)
-			this.ds_parents.get(i).handleLambda(this, dms[i]);
+			this.ds_parents.get(i).handleLambda(this, this.outgoing_lambdas.get(i));
 	}
 	
 	protected void updatePis()
@@ -220,9 +196,10 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		
 		for(int i = imin; i < imax; i++)
 		{
-			for(IBayesNode nd : this.incomingLambdaMessages.keySet())
+			//for(IBayesNode nd : this.incomingLambdaMessages.keySet())
+			for(DiscreteParentSubscriber nd : this.ds_children)
 			{
-				DiscreteMessage dm = this.incomingLambdaMessages.get(nd);
+				DiscreteMessage dm = this.incomingLambdaMessages.get(this.childMap.get(nd));
 				if(dm.getValue(i)!=0)	
 					lambda_prods[i-imin+1] *= dm.getValue(i);
 				else if(zeroNodes[i-imin+1]==null)
@@ -236,7 +213,7 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		}	
 		for(DiscreteParentSubscriber child : this.ds_children)
 		{
-			DiscreteMessage from_child = this.incomingLambdaMessages.get(child);
+			DiscreteMessage from_child = this.incomingLambdaMessages.get(this.childMap.get(child));
 			DiscreteMessage pi_child = new DiscreteMessage(this.cardinality);
 			for(int i = imin; i < imax; i++)
 			{
@@ -279,11 +256,16 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	
 	int[] getParentDimensions()
 	{
-		int[] dims = new int[this.ds_parents.size()];
-		for(int i = 0; i < dims.length; i++)
-			dims[i] = this.ds_parents.get(i).getCardinality();
-		return dims;
+		if(parent_dims==null)
+		{
+			parent_dims = new int[this.ds_parents.size()];
+			for(int i = 0; i < parent_dims.length; i++)
+				parent_dims[i] = this.ds_parents.get(i).getCardinality();
+		}
+		return parent_dims;
 	}
+	
+	private int[] parent_dims = null;
 	
 	public double getLogLikelihood()
 	{
@@ -302,8 +284,21 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	
 	private DiscreteMessage marginalDistribution = null;
 	
+	int numParents = 0;
+	int numChildren = 0;
+	private HashMap<IBayesNode, Integer> parentMap = new HashMap<IBayesNode, Integer>();
+	private HashMap<DiscreteParentSubscriber, Integer> childMap = new HashMap<DiscreteParentSubscriber, Integer>();
+	private Vector<DiscreteMessage> incomingLambdaMessages = new Vector<DiscreteMessage>();
+	private Vector<DiscreteMessage> incomingPiMessages = new Vector<DiscreteMessage>();
+	private Vector<DiscreteMessage> parents_local_pis = new Vector<DiscreteMessage>();
+	private Vector<DiscreteBNNode> ds_parents = new Vector<DiscreteBNNode>();
+	private Vector<DiscreteParentSubscriber> ds_children = new Vector<DiscreteParentSubscriber>();
+	private Vector<DiscreteMessage> outgoing_lambdas= new Vector<DiscreteMessage>();
+
+	/*
 	private ArrayList<DiscreteBNNode> ds_parents = new ArrayList<DiscreteBNNode>();
 	private ArrayList<DiscreteParentSubscriber> ds_children = new ArrayList<DiscreteParentSubscriber>();
 	private HashMap<IBayesNode, DiscreteMessage> incomingLambdaMessages = new HashMap<IBayesNode, DiscreteMessage>();
 	private HashMap<IBayesNode, DiscreteMessage> incomingPiMessages = new HashMap<IBayesNode, DiscreteMessage>();
+	*/
 }

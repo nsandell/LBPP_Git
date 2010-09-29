@@ -1,28 +1,24 @@
 package bn.distributions;
 
+import java.util.Vector;
+
 import bn.BNException;
+import bn.messages.DiscreteMessage;
 
 public abstract class DiscreteDistribution extends Distribution {
 
-	protected DiscreteDistribution(int numConditions, int cardinality)
+	protected DiscreteDistribution(int cardinality)
 	{
-		this.numConditions = numConditions;
 		this.cardinality = cardinality;
 	}
 	
-	public int getCardinality()
+	public final int getCardinality()
 	{
 		return this.cardinality;
 	}
 
-	public int getNumConditions()
-	{
-		return numConditions;
-	}
-	
-	public abstract int[] getConditionDimensions();
 	public abstract double evaluate(int[] indices, int value) throws BNException;
-	
+	public abstract void validateConditionDimensions(int[] dimensions) throws BNException;
 
 	protected final static int getIndex(int[] indices, int[] dimSizes) throws BNException
 	{
@@ -38,10 +34,10 @@ public abstract class DiscreteDistribution extends Distribution {
 		return index;
 	}
 	
-	public int[] initialIndices()
+	public final static int[] initialIndices(int[] dimSizes)
 	{
-		int[] indices = new int[this.numConditions];
-		for(int i= 0; i < this.numConditions; i++)
+		int[] indices = new int[dimSizes.length];
+		for(int i= 0; i < dimSizes.length; i++)
 			indices[i] = 0;
 		return indices;
 	}
@@ -69,7 +65,9 @@ public abstract class DiscreteDistribution extends Distribution {
 		ret += ")";
 		return ret;
 	}
+	
+	public abstract double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException;
+	public abstract void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer value) throws BNException;
 
 	private int cardinality;
-	private int numConditions;
 }

@@ -87,9 +87,6 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 	
 	public void run(int max_iterations, double convergence) throws BNException
 	{
-		for(BaseNodeType node : nodes.values())
-			node.sendInitialMessages();
-		
 		double err = Double.POSITIVE_INFINITY;
 	
 		int i;

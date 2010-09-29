@@ -14,21 +14,20 @@ class NoisyOrCreator implements ICPDCreator
 {
 	static NoisyOrCreator getFactory()
 	{
-		return new NoisyOrCreator(null,null,0);
+		return new NoisyOrCreator(null,null);
 	}
 	
-	private NoisyOrCreator(HashMap<String, Distribution> distmap, String name, int numParents)
+	private NoisyOrCreator(HashMap<String, Distribution> distmap, String name)
 	{
 		this.distmap = distmap;
 		this.name = name;
-		this.numParents = numParents;
 	}
 	public void finish() throws ParserException{}
 	public ParserFunction parseLine(String[] args) throws ParserException
 	{
 		try {
 			Double p = Double.parseDouble(args[0]);
-			NoisyOr noisyOr = new NoisyOr(this.numParents, p);
+			NoisyOr noisyOr = new NoisyOr(p);
 			this.distmap.put(name, noisyOr);
 			return null;
 		} catch(NumberFormatException e) {
@@ -38,15 +37,12 @@ class NoisyOrCreator implements ICPDCreator
 		}
 	}
 	public ICPDCreator newCreator(String name, String argstr, HashMap<String, Distribution> distMap) throws ParserException {
-		try{
-			return new NoisyOrCreator(distMap,name,Integer.parseInt(argstr));
-		} catch(NumberFormatException e) {
-			throw new ParserException("Expected argument to Noisy-Or to be simply the number of parents.");
-		}
+		if(argstr!=null)
+			throw new ParserException("Expect no arguments for noisy or creation...");
+		return new NoisyOrCreator(distMap,name);
 	}
 	
 	private String name;
-	private int numParents;
 	public final int[] getGroups() {return groups;}
 	public final Pattern getRegEx() {return patt;}
 	public final String getPrompt() {return "Enter activation parameter: ";}			

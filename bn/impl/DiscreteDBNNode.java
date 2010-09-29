@@ -72,25 +72,38 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 	}
 
 	@Override
-	public void sendInitialMessages() throws BNException {
-		for(DiscreteBNNode nd : this.nodeInstances)
-			nd.sendInitialMessages();
-	}
-
-	@Override
 	public double updateMessages() throws BNException {
 		double max = 0;
-		for(DiscreteBNNode nd : this.nodeInstances)
-			max = Math.max(max, nd.updateMessages());
+		if(forward)
+		{
+			for(DiscreteBNNode nd : this.nodeInstances)
+				max = Math.max(max, nd.updateMessages());
+		}
+		else
+		{
+			for(int i = this.nodeInstances.size()-1; i >= 0; i--)
+				max = Math.max(max, this.nodeInstances.get(i).updateMessages());
+		}
+		forward = !forward;
 		return max;
 	}
+	boolean forward = true;
 	
 	@Override
 	protected double updateMessagesI(int tmin, int tmax) throws BNException
 	{
 		double max = 0;
-		for(int t = tmin; t <= tmax; t++)
-			max = Math.max(max, this.nodeInstances.get(t).updateMessages());
+		if(forward)
+		{
+			for(int t = tmin; t <= tmax; t++)
+				max = Math.max(max, this.nodeInstances.get(t).updateMessages());
+		}
+		else
+		{
+			for(int t = tmax; t>=tmin; t--)
+				max = Math.max(max, this.nodeInstances.get(t).updateMessages());
+		}
+		forward = !forward;
 		return max;
 	}
 	

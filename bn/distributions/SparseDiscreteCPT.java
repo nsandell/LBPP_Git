@@ -4,9 +4,11 @@ import java.util.Arrays;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Vector;
 import java.util.regex.Pattern;
 
 import bn.BNException;
+import bn.messages.DiscreteMessage;
 
 public class SparseDiscreteCPT extends DiscreteDistribution
 {
@@ -33,7 +35,9 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		@Override
 		public int hashCode()
 		{
-			return Arrays.hashCode(this.indices);
+			if(this.hashCodeV==null)
+				this.hashCodeV = Arrays.hashCode(this.indices);
+			return this.hashCodeV;
 		}
 
 		private boolean equalsI(IndexWrapper other)
@@ -51,6 +55,7 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 			return true;
 		}
 
+		private Integer hashCodeV = null;
 		private int[] indices;
 	}
 
@@ -74,10 +79,9 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 	
 	public SparseDiscreteCPT(Iterator<Entry> entryTable, int[] dimSizes, int cardinality) throws BNException
 	{
-		super(dimSizes.length,cardinality);
+		super(cardinality);
 
 		this.entries = new HashMap<IndexWrapper, HashMap<Integer,Double>>();
-		this.cardinality = cardinality;
 		this.dimSizes = dimSizes;
 
 		while(entryTable.hasNext())
@@ -87,7 +91,7 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 			if(next.value_index >= cardinality || !goodIndex(next.conditional_indices,dimSizes))
 				throw new BNException("Bad entry with indices " + DiscreteDistribution.indexString(next.conditional_indices) + " for entry " 
 						+ next.value_index + " where size is " +DiscreteDistribution.indexString(this.dimSizes) + " with cardinality "
-						+ this.cardinality);
+						+ this.getCardinality());
 			IndexWrapper cur_indices = new IndexWrapper(next.conditional_indices);
 			if(entries.get(cur_indices)==null)
 				entries.put(cur_indices, new HashMap<Integer,Double>());
@@ -130,13 +134,22 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		}
 		return true;
 	}
+	
+	public void validateConditionDimensions(int [] dimens) throws BNException
+	{
+		if(dimens.length!=this.dimSizes.length)
+			throw new BNException("Invalid parent set for CPT!");
+		for(int i = 0; i < dimens.length; i++)
+			if(dimens[i]!=dimSizes[i])
+				throw new BNException("Invalid parent set for CPT!");
+	}
 
 	public double evaluate(int[] indices,int value) throws BNException
 	{
 		if(!goodIndex(indices,this.dimSizes))
 			throw new BNException("Failure to evaluate CPT, invalid indices " + indexString(indices) + " for dimensions " + indexString(this.dimSizes));
-		if(value >= this.cardinality)
-			throw new BNException("Failure to evaluate CPT, bad value " + value + " where cardinality is " + this.cardinality);
+		if(value >= this.getCardinality())
+			throw new BNException("Failure to evaluate CPT, bad value " + value + " where cardinality is " + this.getCardinality());
 
 
 		try
@@ -152,11 +165,82 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 	{
 		return this.entries.get(new IndexWrapper(indices)).get(value);
 	}
+	
+	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException
+	{
+		boolean observed = value!=null;
+		double ll = 0;
+		for(IndexWrapper indexset : this.entries.keySet())
+		{
+			double tmp = 1;
+			double observation_ll_tmp = 1;
+			for(int j = 0; j < indexset.indices.length; j++)
+			{
+				tmp *= incoming_pis.get(j).getValue(indexset.indices[j]);
+				if(observed)
+					observation_ll_tmp *= parent_pis.get(j).getValue(indexset.indices[j]);
+			}
+			for(Integer i : this.entries.get(indexset).keySet())
+				local_pi.setValue(i, local_pi.getValue(i)+tmp*this.evaluate(indexset.indices, i));
+			if(observed)
+				ll += observation_ll_tmp*this.evaluate(indexset.indices, value);
+		}
+		local_pi.normalize();
+		return ll;
+	}
+	
+	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer obsvalue) throws BNException
+	{
+		for(IndexWrapper indexW : this.entries.keySet())
+		{
+			double pi_product = 1;
+			int zeroParent = -1;
+			for(int i = 0; i < indexW.indices.length; i++)
+			{
+				double value = incoming_pis.get(i).getValue(indexW.indices[i]);
+				if(value==0 && zeroParent==-1)
+					zeroParent = i;
+				else if(value==0){pi_product = 0;break;}
+				else
+					pi_product *= value;
+			}
 
-	public int getCardinality(){return this.cardinality;}
+			if(obsvalue==null)
+			{
+				for(Integer i : this.entries.get(indexW).keySet())
+				{
+					double p = this.entries.get(indexW).get(i);
+
+					for(int j = 0; j < indexW.indices.length; j++)
+					{
+						double local_pi_product = pi_product;
+						if(local_pi_product > 0 && zeroParent==-1)
+							local_pi_product /= incoming_pis.get(j).getValue(indexW.indices[j]);
+
+						lambdas_out.get(j).setValue(indexW.indices[j], lambdas_out.get(j).getValue(indexW.indices[j]) + p*local_pi_product*local_lambda.getValue(i));
+					}
+				}
+			}
+			else
+			{
+				Double p = this.entries.get(indexW).get(obsvalue);
+				if(p!=null)
+				{
+					for(int j = 0; j < indexW.indices.length; j++)
+					{
+						double local_pi_product = pi_product;
+						if(local_pi_product > 0 && zeroParent==-1)
+							local_pi_product /= incoming_pis.get(j).getValue(indexW.indices[j]);
+
+						lambdas_out.get(j).setValue(indexW.indices[j], lambdas_out.get(j).getValue(indexW.indices[j]) + p*local_pi_product*local_lambda.getValue(obsvalue));
+					}				
+				}
+			}
+		}
+	}
+	
 	public int[] getConditionDimensions(){return this.dimSizes;}
-
-	int cardinality;
-	int[] dimSizes;
-	HashMap<IndexWrapper,HashMap<Integer,Double>> entries;
+	
+	private int[] dimSizes;
+	private HashMap<IndexWrapper,HashMap<Integer,Double>> entries;
 }

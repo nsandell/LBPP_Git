@@ -141,13 +141,9 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 			throw new BNException(cb.error);
 		System.out.println("Parellel inference has converged after " + elapsed_seconds + " seconds.");
 	}
-	
+
 	public void run_parallel(int max_iterations, double convergence, ParallelInferenceCallback callback) throws BNException
 	{
-		System.out.println("Sending initial messages!");
-		for(DBNNode<?> node : this.getNodes())
-			node.sendInitialMessages();
-		
 		/* Must reserve "boundary" nodes for single thread operation to avoid updating
 		 *  neighboring nodes simultaneously..
 		 *  Say N is the number of processors.  There are N-1 slices to reserve for
@@ -155,8 +151,6 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		 *  For simplicity, all but the last slice will have floor(TNB/N) slices, and the last slice
 		 *  will take the remainder
 		 */
-		
-		System.out.println("Parallel time!");
 		ParallelStatus status = new ParallelStatus(this,convergence,max_iterations,callback,this.getNodes());
 		parallel_iteration_regions(status);
 	}

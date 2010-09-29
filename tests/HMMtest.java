@@ -18,11 +18,11 @@ public class HMMtest {
 		try
 		{
 			System.out.println("Seq length = " + length);
-			double[][] A = {{.7, .3},{.3, .7}};
-			double[][] B = {{.9, .1},{.35, .65}};
-			double[] pi = {1,0};
-			DiscreteCPT ACPT = new DiscreteCPT(new int[]{2}, 2, A);
-			DiscreteCPT BCPT = new DiscreteCPT(new int[]{2}, 2, B);
+			double[][] A = {{.85, .05, .05, .05},{.05, .85, .05, .05},{.05, .05, .85, .05},{.05, .05, .05, .85}};
+			double[][] B = {{.9, .1},{.1, .9},{.3, .7},{.7, .3}};
+			double[] pi = {.8,.1, .05, .05};
+			DiscreteCPT ACPT = new DiscreteCPT(new int[]{4}, 4, A);
+			DiscreteCPT BCPT = new DiscreteCPT(new int[]{4}, 2, B);
 			DiscreteCPTUC piCPT = new DiscreteCPTUC(pi);
 
 			int[] obs = new int[length];
@@ -32,7 +32,7 @@ public class HMMtest {
 			}
 			IDynBayesNet dbn = BayesNetworkFactory.getDynamicNetwork(length);
 			IDiscreteDynBayesNode y = dbn.addDiscreteNode("y", 2);
-			IDiscreteDynBayesNode x = dbn.addDiscreteNode("x", 2);
+			IDiscreteDynBayesNode x = dbn.addDiscreteNode("x", 4);
 			dbn.addIntraEdge(x, y);
 			dbn.addInterEdge(x, x);
 			x.setInitialDistribution(piCPT);
@@ -47,19 +47,19 @@ public class HMMtest {
 			{
 
 				long begin = System.currentTimeMillis();
-				dbn.run(100, 0.0);
+				dbn.run(10, 0.0);
 				long end = System.currentTimeMillis();
 				double runtime = ((double)(end-begin))/1000;
-				for(int i = 0; i < 2; ++i)
+				for(int i = 0; i < 10; ++i)
 				{
 					IDiscreteBayesNode inst = x.getDiscreteInstance(i);
-					System.out.println(inst.getName()+": ["+x.getMarginal(i).getValue(0) +"," + x.getMarginal(i).getValue(1)+"]");
+					System.out.println(inst.getName()+": ["+x.getMarginal(i).getValue(0) +"," + x.getMarginal(i).getValue(1)+x.getMarginal(i).getValue(2) +"," + x.getMarginal(i).getValue(3)+"]");
 				}
 				System.out.println("Converged in " + runtime + " seconds... X Probabilities");
 				System.out.println("Observation likelihood : " + y.getLogLikelihood());
 			}
 			else
-				dbn.run_parallel(100, 0, new CallbackClass(System.currentTimeMillis(),x,y));
+				dbn.run_parallel(10, 0, new CallbackClass(System.currentTimeMillis(),x,y));
 		}
 		catch(BNException e) {
 			System.err.println("Error while running HMMtest : " + e.toString());

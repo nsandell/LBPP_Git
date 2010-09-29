@@ -2,13 +2,10 @@ package bn.commandline;
 
 import java.io.BufferedReader;
 
-
-
-import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.util.HashMap;
 import util.Parser;
 import bn.BNException;
@@ -26,7 +23,7 @@ public class StaticNetCommandLine
 		interactiveStaticNetwork();
 	}
 
-	private static Parser getParser(BufferedReader input, BufferedWriter output, BufferedWriter error, boolean breakOnExc, boolean printLineOnError, IStaticBayesNet bn)
+	private static Parser getParser(BufferedReader input, PrintStream output, PrintStream error, boolean breakOnExc, boolean printLineOnError, IStaticBayesNet bn)
 	{
 		try
 		{
@@ -68,8 +65,7 @@ public class StaticNetCommandLine
 	{
 		IStaticBayesNet bn = BayesNetworkFactory.getStaticNetwork();
 		Parser parser = getParser(	new BufferedReader(new InputStreamReader(System.in)),
-									new BufferedWriter(new OutputStreamWriter(System.out)),
-									new BufferedWriter(new OutputStreamWriter(System.err)), false, true, bn);
+									System.out,System.err,false,true,bn);
 		if(parser==null)
 			return;
 		parser.setPrompt("S>>");

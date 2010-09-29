@@ -1,5 +1,6 @@
 package bn.commandline;
 
+import java.io.PrintStream;
 import java.util.regex.Pattern;
 
 import util.Parser;
@@ -51,7 +52,7 @@ class StaticCommandHandlers {
 		public Pattern getRegEx() {return patt;}
 		public String getPrompt() {return null;}
 		public void finish() throws ParserException {}
-		public ParserFunction parseLine(String[] args) throws ParserException
+		public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException
 		{
 			IBayesNode node = net.getNode(args[0]);
 			if(node==null)

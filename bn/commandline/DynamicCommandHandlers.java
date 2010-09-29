@@ -1,5 +1,6 @@
 package bn.commandline;
 
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
@@ -95,7 +96,7 @@ public class DynamicCommandHandlers
 		private static Pattern patt = Pattern.compile("^\\s*query\\(\\s*(\\w+)\\s*(,\\s*(\\d+)\\s*,\\s*(\\d+))?\\s*\\)\\s*$");
 		private static int[] groups = new int[]{1,3,4};
 		
-		public ParserFunction parseLine(String[] args) throws ParserException {
+		public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException {
 			String nodeName = args[0];
 			int t0 = 0, te = this.net.getT()-1;
 			if(args[1]!=null)
@@ -113,18 +114,18 @@ public class DynamicCommandHandlers
 			IDiscreteDynBayesNode dnode = (IDiscreteDynBayesNode)node;
 			for(int i = 0; i < dnode.getCardinality(); i++)
 			{
-				System.out.print(nodeName + " Marginal("+i+"): ");
+				str.print(nodeName + " Marginal("+i+"): ");
 				for(int t = t0; t <= te; t++)
 				{
 					try {
-						System.out.print(dnode.getMarginal(t).getValue(i) + " ");
+						str.print(dnode.getMarginal(t).getValue(i) + " ");
 					} catch(BNException e) {
 						throw new ParserException("Problem extracting marginal : " + e.getMessage());
 					}
 				}
-				System.out.println();
+				str.println();
 			}
-			System.out.println();
+			str.println();
 			return null;
 		}
 
@@ -138,7 +139,7 @@ public class DynamicCommandHandlers
 			this.bn = bn;
 		}
 		
-		public ParserFunction parseLine(String[] args) throws ParserException
+		public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException
 		{
 			try
 			{

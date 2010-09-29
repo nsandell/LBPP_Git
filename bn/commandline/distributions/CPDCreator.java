@@ -1,5 +1,6 @@
 package bn.commandline.distributions;
 
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
@@ -31,7 +32,7 @@ public class CPDCreator implements ParserFunction
 	public String getPrompt() {return null;}
 	public void finish() throws ParserException {}
 
-	public ParserFunction parseLine(String[] args) throws ParserException
+	public ParserFunction parseLine(String[] args, PrintStream out) throws ParserException
 	{
 		String name = args[0];
 		String type = args[1];

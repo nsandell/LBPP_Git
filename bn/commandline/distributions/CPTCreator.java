@@ -1,5 +1,6 @@
 package bn.commandline.distributions;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import bn.distributions.SparseDiscreteCPT.Entry;
 import java.util.HashMap;
@@ -36,7 +37,7 @@ class CPTCreator implements ICPDCreator
 		} catch(BNException e){throw new ParserException(e.getMessage());}
 	}
 	
-	public ParserFunction parseLine(String[] args) throws ParserException
+	public ParserFunction parseLine(String[] args, PrintStream out) throws ParserException
 	{
 		try {
 			String [] conds = args[0].split("\\s+");

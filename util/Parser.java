@@ -2,9 +2,9 @@ package util;
 
 import java.io.BufferedReader;
 
-import java.io.BufferedWriter;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -27,7 +27,7 @@ public class Parser {
 		public Pattern getRegEx();
 		public String getPrompt();
 		public void finish() throws ParserException;
-		public ParserFunction parseLine(String[] args) throws ParserException; // Return a line handler if expect more, else null
+		public ParserFunction parseLine(String[] args, PrintStream output) throws ParserException; // Return a line handler if expect more, else null
 	}
 	
 	public static abstract class MethodWrapperHandler<EnvObj> implements ParserFunction
@@ -46,7 +46,7 @@ public class Parser {
 		
 		protected void handleReturn(){}
 
-		public ParserFunction parseLine(String[] args) throws ParserException
+		public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException
 		{
 			Object[] objargs = new Object[args.length];
 			Class<?>[] parametersTypes = this.method.getParameterTypes();
@@ -96,9 +96,9 @@ public class Parser {
 		private HashMap<String,EnvObj> environmentObjects;
 	}
 
-	public Parser(BufferedReader input, BufferedWriter output, BufferedWriter error_output, boolean breakOnException, boolean printLineNoOnError)
+	public Parser(BufferedReader input, PrintStream output, PrintStream error_output, boolean breakOnException, boolean printLineNoOnError)
 	{
-		this.input = input; this.output = output; this.breakOnException = breakOnException; this.printLineNoOnError = printLineNoOnError;this.error_output = error_output;
+		this.input = input; this.output = output; this.breakOnException = breakOnException; this.printLineNoOnError = printLineNoOnError; this.error_output = error_output;
 	}
 
 	public void addHandler(ParserFunction handler)
@@ -145,51 +145,34 @@ public class Parser {
 		{
 			try {
 				if(!(this.input.ready() && this.input.markSupported() && this.inputWaiting()) && this.prompt!=null)
-				{
-					try {output.write(this.prompt); output.flush();}
-					catch(IOException e){
-						System.err.println("Error printing to output: " + e.toString());
-						break;
-					}
-				}
+					output.print(this.prompt); 
 				if(!readLine(this.input))
 					break;
 			}
 			catch(Exception e) {
 				if(error_output!=null)
 				{
-					try
-					{
-						if(printLineNoOnError)
-							error_output.write("Error at line " + lineNumber + ": ");
-						else
-							error_output.write("Error: ");
+					if(printLineNoOnError)
+						error_output.print("Error at line " + lineNumber + ": ");
+					else
+						error_output.print("Error: ");
 
-						error_output.write(e.getMessage());
-						error_output.write("\n");
-						error_output.flush();
-					} catch(IOException e2) {
-						System.err.println("Error printing to output terminal: " + e.toString());
-						break;
-					}
+					error_output.println(e.getMessage());
+					error_output.flush();
 				}
 				if(breakOnException)
 					break;
 			}
 			lineNumber++;
 		}
-		try
-		{
-			if(output!=null)
-				{this.output.write("\nExiting...\n\n");this.output.flush();}
-		} catch(IOException e) {}
+		if(output!=null){this.output.println("\nExiting...\n");}
 	}
 	
 	private boolean readLine(BufferedReader fileInput) throws ParserException, IOException
 	{
 		String line = fileInput.readLine();
 		
-		String fileName = null;
+		String fileIn = null;
 		BufferedReader newFileInput = null;
 		int internal_lineno = 1;
 
@@ -199,25 +182,75 @@ public class Parser {
 			return true;
 		if(this.commentStr!=null)
 			line = line.split(this.commentStr)[0];
-		
-		if(line.contains("<<"))
+
+		if(line.contains(">>") || line.contains("<<"))
 		{
-			String[] bits = line.split("\\s*<<\\s*");
-			if(bits.length>2)
-				throw new ParserException("Error, multiple file inputs on one line.");
-			fileName = bits[1];
-			String firstCommandBit = bits[0];
-			try
+			String command = null, fileOut = null;
+			if(line.contains(">>") && line.contains("<<"))
 			{
-				newFileInput = new BufferedReader(new FileReader(fileName));
-				line = firstCommandBit + newFileInput.readLine();
-			} catch(IOException e) {
-				throw new ParserException("Failure getting input from file " + fileName);
-			} catch(Exception e) {
-				throw new ParserException("File ("+fileName+") Line " + internal_lineno);
+				String[] bits = line.split("<<");
+				if(bits.length!=2)
+					throw new ParserException("Redirect format error.");
+				if(bits[0].contains(">>"))
+				{
+					String[] bits2 = bits[0].split(">>");
+					if(bits2.length!=2 || bits[1].contains(">>"))
+						throw new ParserException("Redirect format error.");
+					command = bits2[0];
+					fileOut = bits2[1];
+					fileIn = bits[2];
+				}
+				else
+				{
+					String[] bits2 = bits[1].split(">>");
+					command = bits[0];
+					fileOut = bits2[0];
+					fileIn = bits[1];
+				}	
+			}
+			else if(line.contains(">>"))
+			{
+				String[] bits = line.split(">>");
+				if(bits.length!=2)
+					throw new ParserException("Redirect format error.");
+				command = bits[0];
+				fileOut = bits[1];
+			}
+			else if(line.contains("<<"))
+			{
+				String[] bits = line.split("<<");
+				if(bits.length>2)
+					throw new ParserException("Error, multiple file inputs on one line.");
+				fileIn = bits[1];
+				command = bits[0];
+			}
+			line = command;
+			if(fileOut!=null)
+			{
+				fileOut = fileOut.trim();
+				this.tmp_output = new PrintStream(fileOut);
+			}
+			if(fileIn!=null)
+			{
+				try
+				{
+					fileIn = fileIn.trim();
+					newFileInput = new BufferedReader(new FileReader(fileIn));
+					line += newFileInput.readLine();
+				} catch(IOException e) {
+					throw new ParserException("Failure getting input from file " + fileIn);
+				} catch(Exception e) {
+					throw new ParserException("File ("+fileIn+") Line " + internal_lineno);
+				}
 			}
 		}
 
+		if(this.tmp_output!=null && this.tmp_output.checkError())
+		{
+			this.tmp_output = null;
+			throw new ParserException("Error writing to output stream " + this.tmp_output.toString());
+		}
+		
 		ParserFunction handler = null;
 		Matcher matcher = null;
 		if(this.lastHandler!=null && line.matches("\\s*\\**\\s*"))
@@ -254,8 +287,11 @@ public class Parser {
 		String[] arguments = new String[groups.length];
 		for(int i = 0; i < groups.length; i++)
 			arguments[i] = matcher.group(groups[i]);
-		
-		this.lastHandler = handler.parseLine(arguments);
+	
+		if(this.tmp_output==null)
+			this.lastHandler = handler.parseLine(arguments,this.output);
+		else
+			this.lastHandler = handler.parseLine(arguments,this.tmp_output);
 		
 		if(this.lastHandler!=null)
 			this.prompt = this.lastHandler.getPrompt();
@@ -266,11 +302,14 @@ public class Parser {
 		{
 			if(newFileInput!=null)
 				while(this.readLine(newFileInput));
+			if(this.tmp_output!=null)
+				this.tmp_output.close();
+			this.tmp_output = null;
 		}
 		catch(Exception e) {
 			this.lastHandler = null;
 			this.prompt = this.promptBackup;
-			throw new ParserException("File (" + fileName + ") Line Number " + internal_lineno + ": " + e.getMessage());
+			throw new ParserException("File (" + fileIn + ") Line Number " + internal_lineno + ": " + e.getMessage());
 		}
 
 		return true;
@@ -281,8 +320,9 @@ public class Parser {
 	private ArrayList<ParserFunction> handlers = new ArrayList<ParserFunction>();
 
 	private BufferedReader input;
-	private BufferedWriter output;
-	private BufferedWriter error_output;
+	private PrintStream output;
+	private PrintStream error_output;
+	private PrintStream tmp_output;
 	private String prompt = null;
 	private String promptBackup;
 	private String commentStr = null;

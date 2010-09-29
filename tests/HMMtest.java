@@ -30,6 +30,7 @@ public class HMMtest {
 			{
 				obs[i] = i % 2;
 			}
+			
 			IDynBayesNet dbn = BayesNetworkFactory.getDynamicNetwork(length);
 			IDiscreteDynBayesNode y = dbn.addDiscreteNode("y", 2);
 			IDiscreteDynBayesNode x = dbn.addDiscreteNode("x", 4);

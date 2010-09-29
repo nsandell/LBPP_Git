@@ -1,5 +1,6 @@
 package bn.commandline.distributions;
 
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
@@ -23,7 +24,7 @@ class NoisyOrCreator implements ICPDCreator
 		this.name = name;
 	}
 	public void finish() throws ParserException{}
-	public ParserFunction parseLine(String[] args) throws ParserException
+	public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException
 	{
 		try {
 			Double p = Double.parseDouble(args[0]);

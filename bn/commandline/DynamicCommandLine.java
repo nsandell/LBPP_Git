@@ -2,13 +2,11 @@ package bn.commandline;
 
 import java.io.BufferedReader;
 
-
-import java.io.BufferedWriter;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.util.HashMap;
 import util.Parser;
 import bn.BNException;
@@ -24,7 +22,7 @@ public class DynamicCommandLine
 		interactiveDynamicNetwork();
 	}
 	
-	private static Parser getParser(BufferedReader input, BufferedWriter output, BufferedWriter error, boolean breakOnExc, boolean printLineOnError, IDynBayesNet bn)
+	private static Parser getParser(BufferedReader input, PrintStream output, PrintStream error, boolean breakOnExc, boolean printLineOnError, IDynBayesNet bn)
 	{
 		try
 		{
@@ -88,8 +86,7 @@ public class DynamicCommandLine
 					System.err.println("Error, number of slices must be at least 2.");
 			}
 			IDynBayesNet bn = BayesNetworkFactory.getDynamicNetwork(T);
-			Parser parser = getParser(input, new BufferedWriter(new OutputStreamWriter(System.out)),
-					new BufferedWriter(new OutputStreamWriter(System.err)), false, true, bn);
+			Parser parser = getParser(input,System.out,System.err, false, true, bn);
 			parser.setPrompt("D>>");
 			parser.go();
 		} catch(IOException e) {}

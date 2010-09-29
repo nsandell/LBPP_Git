@@ -1,5 +1,6 @@
 package bn.commandline.distributions;
 
+import java.io.PrintStream;
 import java.util.HashMap;
 
 import java.util.regex.Pattern;
@@ -27,7 +28,7 @@ class DiscreteCPTUCCreator implements ICPDCreator
 	
 	public void finish() throws ParserException{}
 	
-	public ParserFunction parseLine(String[] args) throws ParserException
+	public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException
 	{
 		try {
 			String [] ps = args[0].split("\\s+");

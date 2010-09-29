@@ -134,6 +134,8 @@ public class DiscreteCPT extends DiscreteDistribution
 					for(int j = 0; j < indices.length; j++)
 					{
 						double local_pi_product = pi_product;
+						if(zeroParent!=-1 && j!=zeroParent)
+							local_pi_product = 0;
 						if(local_pi_product > 0 && zeroParent==-1)
 							local_pi_product /= incoming_pis.get(j).getValue(indices[j]);
 

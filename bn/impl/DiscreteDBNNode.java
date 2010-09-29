@@ -122,4 +122,10 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 	public IDiscreteBayesNode getDiscreteInstance(int t) {
 		return this.nodeInstances.get(t);
 	}
+	
+	public void clearEvidence()
+	{
+		for(DiscreteBNNode node : this.nodeInstances)
+			node.clearEvidence();
+	}
 }

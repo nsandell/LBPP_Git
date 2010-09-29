@@ -105,6 +105,14 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		System.out.println("Converged after " + i + " iterations with max change " + err);
 	}
 	
+	public void clearEvidence(String nodeName) throws BNException
+	{
+		BaseNodeType node = this.getNode(nodeName);
+		if(node==null)
+			throw new BNException("Attempted to clear node evidence from node " + nodeName + " - does note exist.");
+		node.clearEvidence();
+	}
+	
 	protected abstract void removeNodeI(BaseNodeType node) throws BNException;
 	private Iterable<String> nodeOrder = null;
 	private HashMap<String, BaseNodeType> nodes = new HashMap<String, BaseNodeType>();

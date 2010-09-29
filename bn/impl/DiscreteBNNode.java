@@ -138,6 +138,8 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	{
 		if(this.observed)
 		{
+			for(int i = 0; i < this.cardinality; i++)
+				this.local_lambda.setValue(i, 0);
 			double tmp = 1;
 			for(DiscreteParentSubscriber child : this.ds_children) //TODO probably replace these with for(int..) loops
 				tmp *= this.incomingLambdaMessages.get(this.childMap.get(child)).getValue(this.value);
@@ -270,6 +272,12 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	public double getLogLikelihood()
 	{
 		return this.likelihoodGivenPast;
+	}
+	
+	public void clearEvidence()
+	{
+		this.value = -1;
+		this.observed = false;
 	}
 	
 	private double likelihoodGivenPast = 0;

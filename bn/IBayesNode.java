@@ -7,7 +7,7 @@ public interface IBayesNode
 	Iterable<IBayesNode> getChildren();
 	Iterable<IBayesNode> getParents();
 	void validate() throws BNException;
-	
+	void clearEvidence();
 	double updateMessages() throws BNException;
 	double getLogLikelihood() throws BNException;
 }

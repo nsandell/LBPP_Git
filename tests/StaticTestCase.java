@@ -19,13 +19,8 @@ public class StaticTestCase{
 			IStaticBayesNet bn = StaticNetCommandLine.loadNetwork(args[0]);
 			bn.validate();
 			HashMap<String, HashMap<String,Double[]>> answers = loadAnswers(args[1]);
-			int i= 0;
 			for(String keyval : answers.keySet())
 			{
-				//i++;
-				//if(i!=9)
-				//	continue;
-				System.out.println("Checking for " + keyval);
 				for(String node : bn.getNodeNames())
 					bn.clearEvidence(node);
 				String[] bits = keyval.split("=");

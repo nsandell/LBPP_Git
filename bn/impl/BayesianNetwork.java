@@ -6,6 +6,8 @@ import java.util.HashSet;
 
 import bn.BNException;
 import bn.IBayesNode;
+import bn.Options.InferenceOptions;
+import bn.Options.LearningOptions;
 
 abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType extends BaseInterface> {
 	
@@ -24,6 +26,14 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 				
 			// Node should validate its CPT matches its parents, etc.
 			node.validate();
+		}
+	}
+	
+	public void optimize(LearningOptions opts)
+	{
+		for(BaseNodeType node : nodes.values())
+		{
+			try{node.optimizeParameters();} catch(BNException e){}
 		}
 	}
 	
@@ -85,12 +95,22 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		this.nodeOrder = nodeOrder;
 	}
 	
-	public void run(int max_iterations, double convergence) throws BNException
+	public void run(int maxit, double conv) throws BNException
 	{
+		this.run(new InferenceOptions(maxit,conv));
+	}
+	
+	public void run(InferenceOptions opts) throws BNException
+	{
+		if(opts.parallel)
+			throw new BNException("Parallel inference not supported for static networks at this time.");
+		
+		this.resetSuffStats();
+		
 		double err = Double.POSITIVE_INFINITY;
 	
 		int i;
-		for(i = 0; i < max_iterations && err > convergence; i++)
+		for(i = 0; i < opts.maxIterations - 1 && err > opts.convergence; i++)
 		{
 			err = 0;
 			if(nodeOrder==null)
@@ -98,12 +118,30 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 			for(String nodeName: nodes.keySet())
 			{
 				BaseNodeType node = nodes.get(nodeName);
-				try{err = Math.max(err,node.updateMessages());}
+				try
+				{
+					err = Math.max(err,node.updateMessages(false));
+				}
 				catch(BNException e){throw new BNException("Node " + nodeName + " threw an exception while updating : ",e);}
 			}
 		}
+		err = 0;
+		if(nodeOrder==null)
+			nodeOrder = nodes.keySet();
+		for(String nodeName: nodes.keySet())
+		{
+			BaseNodeType node = nodes.get(nodeName);
+			try
+			{
+				err = Math.max(err,node.updateMessages(true));
+			}
+			catch(BNException e){throw new BNException("Node " + nodeName + " threw an exception while updating : ",e);}
+		}
+
 		System.out.println("Converged after " + i + " iterations with max change " + err);
 	}
+	
+	protected abstract void resetSuffStats();
 	
 	public void clearEvidence(String nodeName) throws BNException
 	{
@@ -111,6 +149,12 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		if(node==null)
 			throw new BNException("Attempted to clear node evidence from node " + nodeName + " - does note exist.");
 		node.clearEvidence();
+	}
+	
+	public final void collectSufficientStats(boolean flag)
+	{
+		for(BaseNodeType type : nodes.values())
+			type.collectSufficientStats(flag);
 	}
 	
 	protected abstract void removeNodeI(BaseNodeType node) throws BNException;

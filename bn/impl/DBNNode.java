@@ -139,13 +139,17 @@ abstract class DBNNode<InnerType extends BNNode> implements IDynBayesNode
 		return this.intraChildren;
 	}
 	
-	public final double updateMessages(int tmin, int tmax) throws BNException
+	public final double updateMessages(int tmin, int tmax, boolean updateSSIfShould) throws BNException
 	{
-		return this.updateMessagesI(tmin, tmax);
+		return this.updateMessagesI(tmin, tmax, updateSSIfShould);
 	}
 	
-	protected abstract double updateMessagesI(int tmin, int tmax) throws BNException;
+	protected abstract void initializeSufficientStats();
 	
+	protected abstract double updateMessagesI(int tmin, int tmax, boolean updateSSIfShould) throws BNException;
+
+	
+	//TODO check if this has any speed difference, it certainly is making a memory difference!
 	protected CopyOnWriteArrayList<InnerType> nodeInstances;
 	
 	private CopyOnWriteArrayList<DBNNode<?>> interChildren = new CopyOnWriteArrayList<DBNNode<?>>();

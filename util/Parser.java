@@ -178,10 +178,7 @@ public class Parser {
 
 		if(line==null)
 			return false;
-		if(line.matches("\\s*"))
-			return true;
-		if(this.commentStr!=null)
-			line = line.split(this.commentStr)[0];
+	
 
 		if(line.contains(">>") || line.contains("<<"))
 		{
@@ -261,47 +258,58 @@ public class Parser {
 			return true;
 		}
 		
-		if(this.lastHandler!=null)
+		if(this.commentStr!=null)
+			line = line.split(this.commentStr)[0];
+
+		if(!line.matches("\\s*"))
 		{
-			handler = this.lastHandler;
-			matcher = handler.getRegEx().matcher(line);
-			if(!matcher.find())
-				throw new ParserException("Syntax error.");
-		}
-		else
-		{
-			for(ParserFunction handlertmp : this.handlers)
+			if(this.lastHandler!=null)
 			{
-				matcher = handlertmp.getRegEx().matcher(line);
-				if(matcher.find())
-				{
-					handler = handlertmp;
-					break;
-				}
+				handler = this.lastHandler;
+				matcher = handler.getRegEx().matcher(line);
+				if(!matcher.find())
+					throw new ParserException("Syntax error.");
 			}
-			if(handler==null)
-				throw new ParserException("Unrecognized command.");
+			else
+			{
+				for(ParserFunction handlertmp : this.handlers)
+				{
+					matcher = handlertmp.getRegEx().matcher(line);
+					if(matcher.find())
+					{
+						handler = handlertmp;
+						break;
+					}
+				}
+				if(handler==null)
+					throw new ParserException("Unrecognized command.");
+			}
+
+			int[] groups = handler.getGroups();
+			String[] arguments = new String[groups.length];
+			for(int i = 0; i < groups.length; i++)
+				arguments[i] = matcher.group(groups[i]);
+
+			if(this.tmp_output==null)
+				this.lastHandler = handler.parseLine(arguments,this.output);
+			else
+				this.lastHandler = handler.parseLine(arguments,this.tmp_output);
+
+			if(this.lastHandler!=null)
+				this.prompt = this.lastHandler.getPrompt();
+			else
+				this.prompt = this.promptBackup;
 		}
-		
-		int[] groups = handler.getGroups();
-		String[] arguments = new String[groups.length];
-		for(int i = 0; i < groups.length; i++)
-			arguments[i] = matcher.group(groups[i]);
-	
-		if(this.tmp_output==null)
-			this.lastHandler = handler.parseLine(arguments,this.output);
-		else
-			this.lastHandler = handler.parseLine(arguments,this.tmp_output);
-		
-		if(this.lastHandler!=null)
-			this.prompt = this.lastHandler.getPrompt();
-		else
-			this.prompt = this.promptBackup;
-		
+
 		try
 		{
 			if(newFileInput!=null)
-				while(this.readLine(newFileInput));
+			{
+				while(this.readLine(newFileInput))
+				{
+					internal_lineno++;
+				}
+			}
 			if(this.tmp_output!=null)
 				this.tmp_output.close();
 			this.tmp_output = null;

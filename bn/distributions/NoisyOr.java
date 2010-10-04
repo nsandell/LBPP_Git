@@ -37,7 +37,7 @@ public class NoisyOr extends DiscreteDistribution
 				throw new BNException("Noisy-Or depends on parent with cardinality that is not 2.");
 	}
 	
-	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException
+	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value, SufficientStatistic stat, DiscreteMessage localLambda) throws BNException
 	{
 		//TODO Replace this with more efficient.. look up Pearl's book
 		int[] parentDim = new int[incoming_pis.size()];
@@ -64,6 +64,21 @@ public class NoisyOr extends DiscreteDistribution
 		while((indices = DiscreteDistribution.incrementIndices(indices, parentDim))!=null);
 		local_pi.normalize();
 		return ll;
+	}
+	
+	public NoisyOr copy() throws BNException
+	{
+		return new NoisyOr(p);
+	}
+	
+	public void optimize(SufficientStatistic stat) throws BNException
+	{
+		//TODO make noisy or, you know, functional
+	}
+	
+	public SufficientStatistic getSufficientStatisticObj()
+	{
+		return null;
 	}
 	
 	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer value) throws BNException

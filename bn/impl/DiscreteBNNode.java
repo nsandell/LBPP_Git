@@ -8,6 +8,7 @@ import bn.BNException;
 import bn.IBayesNode;
 import bn.IDiscreteBayesNode;
 import bn.distributions.DiscreteDistribution;
+import bn.distributions.Distribution.SufficientStatistic;
 import bn.interfaces.DiscreteChildSubscriber;
 import bn.interfaces.DiscreteParentSubscriber;
 import bn.messages.DiscreteMessage;
@@ -110,9 +111,9 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	}
 
 	@Override
-	public double updateMessages() throws BNException
+	public double updateMessages(boolean collectSSIfShould) throws BNException
 	{
-		this.updateLocalMessages();
+		this.updateLocalMessages(collectSSIfShould);
 		this.updateLambdas();
 		this.updatePis();
 		DiscreteMessage oldmarg = this.marginalDistribution;
@@ -134,7 +135,7 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		return this.marginalDistribution;
 	}
 	
-	protected void updateLocalMessages() throws BNException
+	protected void updateLocalMessages(boolean collectSSIFShould) throws BNException
 	{
 		if(this.observed)
 		{
@@ -159,11 +160,12 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 
 		for(int i = 0; i < this.cardinality; i++)
 			this.local_pi.setValue(i, 0);
-		
-		if(this.observed)
-			this.likelihoodGivenPast = this.cpt.computeLocalPi(this.local_pi, this.incomingPiMessages, this.parents_local_pis, this.value);
+	
+		Integer valueTmp = (this.observed) ? this.value : null;
+		if(this.collectSufficientStatistics && collectSSIFShould)
+			this.likelihoodGivenPast = this.cpt.computeLocalPi(this.local_pi, this.incomingPiMessages, this.parents_local_pis, valueTmp,this.suffStat,this.local_lambda);
 		else
-			this.cpt.computeLocalPi(this.local_pi, this.incomingPiMessages, this.parents_local_pis, null);
+			this.likelihoodGivenPast = this.cpt.computeLocalPi(this.local_pi, this.incomingPiMessages, this.parents_local_pis, valueTmp,null,null);
 	}
 	
 	protected void updateLambdas() throws BNException
@@ -280,6 +282,27 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		this.observed = false;
 	}
 	
+	protected void initializeSufficientStats()
+	{
+		if(this.suffStat!=null)
+			this.suffStat.reset();
+		else
+			this.suffStat = this.cpt.getSufficientStatisticObj();
+	}
+	
+	void setSufficientStats(SufficientStatistic ss)
+	{
+		this.suffStat = ss;
+	}
+	
+	public void optimizeParameters() throws BNException
+	{
+		if(this.suffStat!=null)
+			this.cpt.optimize(this.suffStat);
+		else
+			throw new BNException("Attempted to optimize discrete node with no sufficient statistics.");
+	}
+	
 	private double likelihoodGivenPast = 0;
 
 	private boolean observed = false;
@@ -302,11 +325,6 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	private Vector<DiscreteBNNode> ds_parents = new Vector<DiscreteBNNode>();
 	private Vector<DiscreteParentSubscriber> ds_children = new Vector<DiscreteParentSubscriber>();
 	private Vector<DiscreteMessage> outgoing_lambdas= new Vector<DiscreteMessage>();
-
-	/*
-	private ArrayList<DiscreteBNNode> ds_parents = new ArrayList<DiscreteBNNode>();
-	private ArrayList<DiscreteParentSubscriber> ds_children = new ArrayList<DiscreteParentSubscriber>();
-	private HashMap<IBayesNode, DiscreteMessage> incomingLambdaMessages = new HashMap<IBayesNode, DiscreteMessage>();
-	private HashMap<IBayesNode, DiscreteMessage> incomingPiMessages = new HashMap<IBayesNode, DiscreteMessage>();
-	*/
+	
+	private SufficientStatistic suffStat = null;
 }

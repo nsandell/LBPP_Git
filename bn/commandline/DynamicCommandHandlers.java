@@ -109,12 +109,14 @@ public class DynamicCommandHandlers
 					throw new ParserException("Requested range outside of [0,"+net.getT()+"]");
 			}
 			IDynBayesNode node = net.getNode(nodeName);
+			if(node==null)
+				throw new ParserException("Unknown node.");
 			if(!(node instanceof IDiscreteDynBayesNode))
 				throw new ParserException("Node specified is non-discrete, cannot print marginal.");
 			IDiscreteDynBayesNode dnode = (IDiscreteDynBayesNode)node;
 			for(int i = 0; i < dnode.getCardinality(); i++)
 			{
-				str.print(nodeName + " Marginal("+i+"): ");
+				//str.print(nodeName + " Marginal("+i+"): ");
 				for(int t = t0; t <= te; t++)
 				{
 					try {
@@ -144,6 +146,7 @@ public class DynamicCommandHandlers
 			try
 			{
 				int t0 = Integer.parseInt(args[1]);
+				args[2] = args[2].trim();
 				String [] obsStr = args[2].split("\\s+");
 				int[] data = new int[obsStr.length];
 				for(int i = 0; i < obsStr.length; i++)
@@ -160,7 +163,8 @@ public class DynamicCommandHandlers
 		public String getPrompt() {return null;}
 
 		private static int[] groups = new int[]{1,3,4};
-		private static Pattern patt = Pattern.compile("^\\s*(\\w+)(\\((\\d+)\\))?\\s*=\\s*\\[?\\s*((\\d+\\s*)+)\\]?\\s*$");
+		//private static Pattern patt = Pattern.compile("^\\s*(\\w+)(\\((\\d+)\\))?\\s*=\\s*\\[?\\s*((\\d+\\s*)+)\\]?\\s*$");
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)(\\((\\d+)\\))?\\s*=(.*)");
 		
 		IDynBayesNet bn;
 	}

@@ -101,6 +101,50 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		}
 		this.validate();
 	}
+	
+	public SparseDiscreteCPT copy() throws BNException
+	{
+		class EntryItWrap implements Iterator<Entry> { 
+			public EntryItWrap(HashMap<IndexWrapper, HashMap<Integer,Double>> map)
+			{
+				this.outterMap = map;
+				this.innerIt = innerMap.keySet().iterator();
+				this.outterIt = map.keySet().iterator();
+				this.currentIndices = this.outterIt.next();
+				this.outterMap.get(this.currentIndices);
+			}
+			
+			public boolean hasNext()
+			{
+				return (this.innerIt.hasNext() || this.outterIt.hasNext());
+			}
+			
+			public Entry next()
+			{
+				Entry ent = new Entry();
+				if(!this.innerIt.hasNext())
+				{
+					this.currentIndices = outterIt.next();
+					this.innerMap = this.outterMap.get(this.currentIndices);
+					this.innerIt = this.innerMap.keySet().iterator();
+				}
+				ent.conditional_indices = this.currentIndices.indices;
+				ent.value_index = this.innerIt.next();
+				ent.p = this.innerMap.get(ent.value_index);
+				return ent;
+			}
+			
+			public void remove(){}
+	
+			private HashMap<IndexWrapper,HashMap<Integer,Double>> outterMap;
+			private HashMap<Integer,Double> innerMap;
+			private Iterator<Integer> innerIt;
+			private Iterator<IndexWrapper> outterIt;
+			IndexWrapper currentIndices;
+		}
+
+		return new SparseDiscreteCPT(new EntryItWrap(this.entries),this.dimSizes,this.getCardinality());
+	}
 
 	private void validate() throws BNException
 	{
@@ -166,8 +210,14 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		return this.entries.get(new IndexWrapper(indices)).get(value);
 	}
 	
-	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException
+	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value, SufficientStatistic stat, DiscreteMessage localLambda) throws BNException
 	{
+		SparseCPTSuffStat stato = null;
+		if(stat!=null && !(stat instanceof SparseCPTSuffStat))
+			throw new BNException("Passed sparse CPT invalid sufficient statistic object...");
+		else if(stat!=null)
+			stato = (SparseCPTSuffStat)stat;
+		
 		boolean observed = value!=null;
 		double ll = 0;
 		for(IndexWrapper indexset : this.entries.keySet())
@@ -181,12 +231,48 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 					observation_ll_tmp *= parent_pis.get(j).getValue(indexset.indices[j]);
 			}
 			for(Integer i : this.entries.get(indexset).keySet())
-				local_pi.setValue(i, local_pi.getValue(i)+tmp*this.evaluate(indexset.indices, i));
+			{
+				double jointBit = tmp*this.evaluate(indexset.indices, i);
+				if(stato!=null)
+				{
+					HashMap<Integer,Double> cinner = stato.current.get(indexset);
+					if(cinner==null)
+					{
+						cinner = new HashMap<Integer, Double>();
+						stato.current.put(indexset, cinner);
+					}
+					Double curr = cinner.get(i);
+					if(curr==null)
+						curr = 0.0;
+					cinner.put(i, curr+jointBit*localLambda.getValue(i));
+					stato.current_sum += jointBit*localLambda.getValue(i);
+				}
+				local_pi.setValue(i, local_pi.getValue(i)+jointBit);
+			}
 			if(observed)
 				ll += observation_ll_tmp*this.evaluate(indexset.indices, value);
 		}
+		if(stato!=null)
+			stato.mergeIn();
 		local_pi.normalize();
 		return ll;
+	}
+	
+	public void optimize(SufficientStatistic stat) throws BNException
+	{
+		if(!(stat instanceof SparseCPTSuffStat))
+			throw new BNException("Failed to optimize : incorrect (or null) sufficient statistic.");
+		SparseCPTSuffStat stato = (SparseCPTSuffStat)stat;
+		this.entries.clear();
+		for(IndexWrapper index : stato.expected_trans.keySet())
+		{
+			HashMap<Integer,Double> innerMap_stat = stato.expected_trans.get(index);
+			HashMap<Integer,Double> innerMap = new HashMap<Integer, Double>();
+			this.entries.put(index,innerMap); 
+			double rowsum = stato.row_sum.get(index);
+			for(Integer value : innerMap.keySet())
+				innerMap.put(value, innerMap_stat.get(value)/rowsum);
+		}
 	}
 	
 	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer obsvalue) throws BNException
@@ -239,8 +325,64 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		}
 	}
 	
+	public SufficientStatistic getSufficientStatisticObj()
+	{
+		return new SparseCPTSuffStat();
+	}
+	
+	private static class SparseCPTSuffStat implements SufficientStatistic
+	{
+		public SparseCPTSuffStat()
+		{
+			this.expected_trans = new HashMap<SparseDiscreteCPT.IndexWrapper, HashMap<Integer,Double>>();
+			this.row_sum = new HashMap<SparseDiscreteCPT.IndexWrapper, Double>();
+			this.current = new HashMap<SparseDiscreteCPT.IndexWrapper, HashMap<Integer,Double>>();
+			this.current_sum = 0;
+		}
+		
+		public void reset()
+		{
+			this.expected_trans.clear();
+			this.row_sum.clear();
+			this.current.clear();
+			this.current_sum = 0;
+		}
+		
+		public void mergeIn()
+		{
+			for(IndexWrapper index : current.keySet())
+			{
+				if(this.expected_trans.get(index)==null)
+					this.expected_trans.put(index, new HashMap<Integer, Double>());
+				HashMap<Integer,Double> einner = this.expected_trans.get(index);
+				HashMap<Integer,Double> cinner = this.current.get(index);
+					
+				for(Integer val : cinner.keySet())
+				{
+					double iv = cinner.get(val)/current_sum;
+					if(einner.get(val)==null)
+						einner.put(val,iv);
+					else
+						einner.put(val, einner.get(val)+iv);
+					
+					if(this.row_sum.get(index)==null)
+						this.row_sum.put(index, iv);
+					else
+						this.row_sum.put(index, this.row_sum.get(index)+iv);
+				}
+			}
+			this.current.clear();
+			this.current_sum = 0;
+		}
+		
+		private HashMap<IndexWrapper,HashMap<Integer,Double>> expected_trans;
+		private HashMap<IndexWrapper,Double> row_sum;
+		private HashMap<IndexWrapper,HashMap<Integer,Double>> current;
+		private double current_sum;
+	}
+	
 	public int[] getConditionDimensions(){return this.dimSizes;}
 	
-	private int[] dimSizes;
-	private HashMap<IndexWrapper,HashMap<Integer,Double>> entries;
+	int[] dimSizes;
+	HashMap<IndexWrapper,HashMap<Integer,Double>> entries;
 }

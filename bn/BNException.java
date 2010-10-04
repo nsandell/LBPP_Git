@@ -1,8 +1,15 @@
 package bn;
 
+/**
+ * Basic exception for this package.  Turn printOnThrow to true to get stack traces
+ * when any are thrown for debugging.
+ * 
+ * @author Nils F. Sandell
+ *
+ */
 public class BNException extends Exception {
 	
-	static boolean printOnThrow = false;
+	static boolean printOnThrow = true;
 
 	public BNException(String message) {
 		super(message);

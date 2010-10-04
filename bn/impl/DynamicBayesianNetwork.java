@@ -5,6 +5,7 @@ import java.util.HashMap;
 import bn.BNException;
 import bn.IDynBayesNet;
 import bn.IDynBayesNode;
+import bn.Options;
 import bn.distributions.DiscreteDistribution;
 import bn.distributions.Distribution;
 
@@ -108,7 +109,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 			throw new BNException("Unsupported node/distribution pair.");
 	}
 	
-	private static class BlockCallback implements ParallelInferenceCallback
+	private static class BlockCallback implements ParallelCallback
 	{
 		public void callback(IDynBayesNet neet) {
 			this.done = true;
@@ -124,16 +125,27 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		String error = null;
 	}
 	
-	public void run_parallel_block(int max_iterations, double convergence) throws BNException
+	@Override
+	public void run(Options.InferenceOptions opts) throws BNException
+	{
+		if(!opts.parallel)
+			super.run(opts);
+		else if(opts.callback==null)
+			this.run_parallel_block(opts);
+		else
+			this.run_parallel(opts);
+	}
+	
+	private void run_parallel_block(Options.InferenceOptions opts) throws BNException
 	{
 		BlockCallback cb = new BlockCallback();
 		cb.start_time = System.currentTimeMillis();
 		
-		this.run_parallel(max_iterations, convergence, cb);
+		this.run_parallel(opts);
 		while(!(cb.done))
 		{
 			try{
-			Thread.sleep(500);
+			Thread.sleep(100);
 			}catch(InterruptedException e){}
 		}
 		double elapsed_seconds = ((double)(System.currentTimeMillis()-cb.start_time))/1000.0;
@@ -142,7 +154,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		System.out.println("Parellel inference has converged after " + elapsed_seconds + " seconds.");
 	}
 
-	public void run_parallel(int max_iterations, double convergence, ParallelInferenceCallback callback) throws BNException
+	private void run_parallel(Options.InferenceOptions opts)
 	{
 		/* Must reserve "boundary" nodes for single thread operation to avoid updating
 		 *  neighboring nodes simultaneously..
@@ -151,11 +163,12 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		 *  For simplicity, all but the last slice will have floor(TNB/N) slices, and the last slice
 		 *  will take the remainder
 		 */
-		ParallelStatus status = new ParallelStatus(this,convergence,max_iterations,callback,this.getNodes());
+		ParallelStatus status = new ParallelStatus(this,opts.convergence,opts.maxIterations,opts.callback,this.getNodes());
+		status.finalrun = opts.maxIterations==1;
 		parallel_iteration_regions(status);
 	}
 	
-	public void parallel_iteration_regions(ParallelStatus status)
+	private void parallel_iteration_regions(ParallelStatus status)
 	{
 		double nnb = this.T - (status.maxThreads -1);
 		int numEarlySlice = (int)Math.floor(nnb/status.maxThreads);
@@ -164,14 +177,16 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		for(int i = 0; i < status.maxThreads-1; i++)
 		{
 			// For i < maxthreads-1, slice range is i+i*numEarlySlice : 1 : (i+1)*numEarlySlice+i-1
-			SliceRangeSample thread = new SliceRangeSample(status, status.nodes, i*numEarlySlice+i, (i+1)*numEarlySlice+i-1);
+			SliceRangeSample thread = new SliceRangeSample(status, status.nodes, i*numEarlySlice+i, (i+1)*numEarlySlice+i-1,status.finalrun);
 			thread.start();
 		}
-		SliceRangeSample thread = new SliceRangeSample(status, status.nodes, this.T-numLastSlice, this.T-1);
+		SliceRangeSample thread = new SliceRangeSample(status, status.nodes, this.T-numLastSlice, this.T-1,status.finalrun);
 		thread.start();
 	}
 	
-	public void parallel_iteration_borders(ParallelStatus status)
+
+	
+	private void parallel_iteration_borders(ParallelStatus status)
 	{
 		double nnb = this.T - (status.maxThreads -1);
 		int numEarlySlice = (int)Math.floor(nnb/status.maxThreads);
@@ -182,7 +197,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 			{
 				int border = i+ (i+1)*numEarlySlice;
 				for(DBNNode<?> node : status.nodes)
-					node.updateMessages(border, border);
+					node.updateMessages(border, border,status.finalrun);
 			}
 		} catch(BNException e)
 		{
@@ -210,7 +225,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 	private static class ParallelStatus
 	{
 		
-		public ParallelStatus(DynamicBayesianNetwork bn, double tolerance, int maxIterations, ParallelInferenceCallback callback, Iterable<DBNNode<?>> nodes)
+		public ParallelStatus(DynamicBayesianNetwork bn, double tolerance, int maxIterations, ParallelCallback callback, Iterable<DBNNode<?>> nodes)
 		{
 			this.bn = bn;
 			this.tolerance = tolerance;
@@ -257,10 +272,25 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 					{
 						this.doneThreads = 0;
 						this.bn.parallel_iteration_borders(this);
+						if(this.finalrun==true)
+						{
+							this.callback.callback(bn);
+							return;
+						}
 						
 						this.iteration++;
+						
+						if(this.iteration==this.maxIterations-1)
+							this.finalrun = true;
+						
 						if(this.iteration!=this.maxIterations && this.getError() > this.tolerance)
 						{
+							this.reset();
+							this.bn.parallel_iteration_regions(this);
+						}
+						else if(this.iteration!=this.maxIterations && this.getError() < this.tolerance)
+						{
+							this.finalrun = true;
 							this.reset();
 							this.bn.parallel_iteration_regions(this);
 						}
@@ -280,7 +310,8 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		public int maxThreads = availableProcs;
 		public Iterable<DBNNode<?>> nodes;
 
-		private ParallelInferenceCallback callback;
+		private boolean finalrun = false;
+		private ParallelCallback callback;
 		private int doneThreads;
 		private double tolerance;
 		private DynamicBayesianNetwork bn;
@@ -292,9 +323,9 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 	
 	private static class SliceRangeSample extends Thread
 	{
-		public SliceRangeSample(ParallelStatus status, Iterable<DBNNode<?>> nodes, int tmin, int tmax)
+		public SliceRangeSample(ParallelStatus status, Iterable<DBNNode<?>> nodes, int tmin, int tmax,boolean finalrun)
 		{
-			this.nodes = nodes; this.tmin = tmin; this.tmax = tmax;  this.status = status;
+			this.nodes = nodes; this.tmin = tmin; this.tmax = tmax;  this.status = status;this.finalrun = finalrun;
 		}
 		
 		public void run()
@@ -304,7 +335,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 			{
 				double maxerr = 0;
 				for(DBNNode<?> node : this.nodes)
-					maxerr = Math.max(maxerr,node.updateMessages(this.tmin, this.tmax));
+					maxerr = Math.max(maxerr,node.updateMessages(this.tmin, this.tmax, finalrun));
 				status.setIfErrorBigger(maxerr);
 			} catch(BNException e) {
 				status.ok = false;
@@ -314,9 +345,19 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 			status.threadStop();
 		}
 		
+		private boolean finalrun;
 		private ParallelStatus status;
 		private int tmin, tmax;
 		private Iterable<DBNNode<?>> nodes;
+	}
+	
+	protected void resetSuffStats()
+	{
+		Iterable<DBNNode<?>> nodes = this.getNodes();
+		for(DBNNode<?> node : nodes)
+		{
+			node.initializeSufficientStats();
+		}
 	}
 
 	protected int T;

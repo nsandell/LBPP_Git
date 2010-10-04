@@ -5,7 +5,7 @@ import java.util.Vector;
 import bn.BNException;
 import bn.messages.DiscreteMessage;
 
-public abstract class DiscreteDistribution extends Distribution {
+public abstract class DiscreteDistribution implements Distribution {
 
 	protected DiscreteDistribution(int cardinality)
 	{
@@ -16,6 +16,9 @@ public abstract class DiscreteDistribution extends Distribution {
 	{
 		return this.cardinality;
 	}
+	
+	@Override
+	public abstract DiscreteDistribution copy() throws BNException;
 
 	public abstract double evaluate(int[] indices, int value) throws BNException;
 	public abstract void validateConditionDimensions(int[] dimensions) throws BNException;
@@ -66,8 +69,11 @@ public abstract class DiscreteDistribution extends Distribution {
 		return ret;
 	}
 	
-	public abstract double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException;
-	public abstract void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer value) throws BNException;
+	public abstract double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, 
+										  Vector<DiscreteMessage> parent_pis, Integer value, SufficientStatistic stat, 
+										  DiscreteMessage localLambda) throws BNException;
+	public abstract void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis,
+										DiscreteMessage local_lambda, Integer value) throws BNException;
 
 	private int cardinality;
 }

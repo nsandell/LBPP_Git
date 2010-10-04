@@ -7,6 +7,8 @@ import bn.IStaticBayesNet;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 
+import bn.Options.InferenceOptions;
+
 public class SimplesTest {
 
 	public static void main(String[] args) {
@@ -28,7 +30,7 @@ public class SimplesTest {
 			
 			child2.setValue(1);
 			bn.validate();
-			bn.run(10, 1e-10);
+			bn.run(new InferenceOptions());
 			
 			System.out.println("Root node probability : " + root.getMarginal().getValue(0) + "," + root.getMarginal().getValue(1));
 			System.out.println("Child node probability : " + child.getMarginal().getValue(0) + "," + child.getMarginal().getValue(1));

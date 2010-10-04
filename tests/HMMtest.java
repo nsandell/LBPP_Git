@@ -2,10 +2,13 @@ package tests;
 
 
 import bn.BNException;
+
+import bn.Options.InferenceOptions;
+
 import bn.IDiscreteBayesNode;
 import bn.IDiscreteDynBayesNode;
 import bn.IDynBayesNet;
-import bn.IDynBayesNet.ParallelInferenceCallback;
+import bn.IDynBayesNet.ParallelCallback;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.impl.BayesNetworkFactory;
@@ -46,9 +49,9 @@ public class HMMtest {
 			
 			if(parallel.compareTo("serial")==0)
 			{
-
+				System.out.println("Running serially");
 				long begin = System.currentTimeMillis();
-				dbn.run(10, 0.0);
+				dbn.run(new InferenceOptions(10, 0.0));
 				long end = System.currentTimeMillis();
 				double runtime = ((double)(end-begin))/1000;
 				for(int i = 0; i < 10; ++i)
@@ -60,7 +63,13 @@ public class HMMtest {
 				System.out.println("Observation likelihood : " + y.getLogLikelihood());
 			}
 			else
-				dbn.run_parallel(10, 0, new CallbackClass(System.currentTimeMillis(),x,y));
+			{
+				System.out.println("Running parallel..ly");
+				InferenceOptions opts = new InferenceOptions(10,0);
+				opts.parallel = true;
+				opts.callback = new CallbackClass(System.currentTimeMillis(), x, y);
+				dbn.run(opts);
+			}
 		}
 		catch(BNException e) {
 			System.err.println("Error while running HMMtest : " + e.toString());
@@ -68,7 +77,7 @@ public class HMMtest {
 	}
 
 
-	public static class CallbackClass implements ParallelInferenceCallback
+	public static class CallbackClass implements ParallelCallback
 	{
 
 		private  IDiscreteDynBayesNode x, y;

@@ -17,10 +17,7 @@ public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 	
 	void setDiscreteEvidence(String nodeName, int t0, int[] evidence) throws BNException;
 	
-	void run_parallel(int max_iteration, double tolerance, ParallelInferenceCallback callback) throws BNException;
-	void run_parallel_block(int max_iteration, double tolerance) throws BNException;
-	
-	public static interface ParallelInferenceCallback
+	public static interface ParallelCallback
 	{
 		void callback(IDynBayesNet neet);
 		void error(IDynBayesNet net, String error);

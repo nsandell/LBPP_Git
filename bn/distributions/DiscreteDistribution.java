@@ -18,6 +18,9 @@ public abstract class DiscreteDistribution implements Distribution {
 	}
 	
 	@Override
+	public abstract DiscreteSufficientStatistic getSufficientStatisticObj();
+	
+	@Override
 	public abstract DiscreteDistribution copy() throws BNException;
 
 	public abstract double evaluate(int[] indices, int value) throws BNException;
@@ -70,8 +73,7 @@ public abstract class DiscreteDistribution implements Distribution {
 	}
 	
 	public abstract double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, 
-										  Vector<DiscreteMessage> parent_pis, Integer value, SufficientStatistic stat, 
-										  DiscreteMessage localLambda) throws BNException;
+										  Vector<DiscreteMessage> parent_pis, Integer value) throws BNException;
 	public abstract void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis,
 										DiscreteMessage local_lambda, Integer value) throws BNException;
 

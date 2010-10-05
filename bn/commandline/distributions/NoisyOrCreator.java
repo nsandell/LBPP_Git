@@ -1,18 +1,7 @@
 package bn.commandline.distributions;
 
-import java.io.PrintStream;
-import java.util.HashMap;
-import java.util.regex.Pattern;
-
-import util.Parser.ParserException;
-import util.Parser.ParserFunction;
-import bn.BNException;
-import bn.distributions.Distribution;
-import bn.distributions.NoisyOr;
-import bn.commandline.distributions.CPDCreator.ICPDCreator;
-
-class NoisyOrCreator implements ICPDCreator
-{
+class NoisyOrCreator //implements ICPDCreator
+{/*
 	static NoisyOrCreator getFactory()
 	{
 		return new NoisyOrCreator(null,null);
@@ -50,4 +39,4 @@ class NoisyOrCreator implements ICPDCreator
 	private HashMap<String,Distribution> distmap;
 	private static int[] groups = new int[]{1};
 	private static Pattern patt = Pattern.compile("([\\.e\\-0-9]*)");
-}
+*/}

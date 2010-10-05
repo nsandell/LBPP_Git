@@ -1,22 +1,7 @@
 package bn.commandline.distributions;
 
-import java.io.PrintStream;
-import java.util.ArrayList;
-
-import bn.distributions.SparseDiscreteCPT.Entry;
-import java.util.HashMap;
-
-import java.util.regex.Pattern;
-
-import util.Parser.ParserException;
-import util.Parser.ParserFunction;
-import bn.BNException;
-import bn.distributions.Distribution;
-import bn.distributions.SparseDiscreteCPT;
-import bn.commandline.distributions.CPDCreator.ICPDCreator;
-
-class SparseCPTCreator implements ICPDCreator
-{
+class SparseCPTCreator //implements ICPDCreator
+{/*
 	static SparseCPTCreator getFactory()
 	{
 		return new SparseCPTCreator(null,null,0,null);
@@ -83,5 +68,5 @@ class SparseCPTCreator implements ICPDCreator
 	public final String getPrompt() {return "Enter CPT Entry: ";}			
 	private HashMap<String,Distribution> distmap;
 	private static int[] groups = new int[]{1,3,4};
-	private static Pattern patt = Pattern.compile("^\\s*((\\d+\\s*)+)(\\d+)\\s+([\\.e\\-0-9]+)$");
+	private static Pattern patt = Pattern.compile("^\\s*((\\d+\\s*)+)(\\d+)\\s+([\\.e\\-0-9]+)$");*/
 }

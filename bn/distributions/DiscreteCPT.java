@@ -85,51 +85,32 @@ public class DiscreteCPT extends DiscreteDistribution
 
 	public int[] getConditionDimensions(){return this.dimSizes;}
 	
-	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value, SufficientStatistic stat, DiscreteMessage localLambda) throws BNException
+	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException
 	{
-		CPTSufficient2SliceStat stato = null;
-		if(stat!=null && !(stat instanceof CPTSufficient2SliceStat))
-			throw new BNException("Must pass CPT update a CPD Sufficient Statistic object or none atall");
-		else if(stat!=null)
-		{
-			if(localLambda==null)
-				throw new BNException("Must pass local lambda message in order to compute sufficient statistics.");
-			stato = (CPTSufficient2SliceStat)stat;
-		}
-		
 		boolean observed = value!=null;
-		double ll = 0;
+		double p = 0;
 		int[] indices = initialIndices(dimSizes);
 		do
 		{
 			int compositeindex = getIndex(indices,dimSizes);
 			double tmp = 1;
-			double observation_ll_tmp = 1;
+			double observation_p_tmp = 1;
 			for(int j = 0; j < indices.length; j++)
 			{
 				tmp *= incoming_pis.get(j).getValue(indices[j]);
 				if(observed)
-					observation_ll_tmp *= parent_pis.get(j).getValue(indices[j]);
+					observation_p_tmp *= parent_pis.get(j).getValue(indices[j]);
 			}
 			for(int i = 0; i < this.getCardinality(); i++)
-			{
-				double jointBit = tmp*this.values[compositeindex][i];
-				if(stato!=null)
-				{
-					stato.current[compositeindex][i] += jointBit*localLambda.getValue(i);
-					stato.current_sum += jointBit*localLambda.getValue(i);
-				}
-				local_pi.setValue(i, local_pi.getValue(i)+jointBit);
-			}
+				local_pi.setValue(i, local_pi.getValue(i)+tmp*this.values[compositeindex][i]);
 			if(observed)
-				ll += observation_ll_tmp*this.evaluate(indices, value);
+				p += observation_p_tmp*this.evaluate(indices, value);
+				//p += observation_p_tmp*this.values[compositeindex][value];
 		}
 		while((indices = DiscreteDistribution.incrementIndices(indices, dimSizes))!=null);
 		
-		if(stato!=null)
-			stato.mergeInCurrent();
 		local_pi.normalize();
-		return ll;
+		return p;
 	}
 	
 	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer obsvalue) throws BNException
@@ -189,55 +170,77 @@ public class DiscreteCPT extends DiscreteDistribution
 	
 	public CPTSufficient2SliceStat getSufficientStatisticObj()
 	{
-		return new CPTSufficient2SliceStat(this.dimprod,this.getCardinality());
+		return new CPTSufficient2SliceStat(this);
 	}
 	
-	private static class CPTSufficient2SliceStat implements SufficientStatistic
+	private static class CPTSufficient2SliceStat implements DiscreteSufficientStatistic
 	{
-		public CPTSufficient2SliceStat(int dimprod, int card)
+		public CPTSufficient2SliceStat(DiscreteCPT cpt)
 		{
-			this.dimprod = dimprod;
-			this.card = card;
-			this.exp_tr = new double[dimprod][card];
-			this.current = new double[dimprod][card];
-			this.row_sum = new double[dimprod];
+			this.cpt = cpt;
+			this.exp_tr = new double[this.cpt.dimprod][this.card];
+			this.current = new double[this.cpt.dimprod][this.card];
 			this.reset();
 		}
 		
 		public void reset()
 		{
-				for(int i =  0; i < this.dimprod; i++)
+				for(int i =  0; i < this.cpt.dimprod; i++)
 				{
-					this.row_sum[i] = 0;
 					for(int j = 0; j < this.card; j++)
 					{
 						this.exp_tr[i][j] = 0;
 						this.current[i][j] = 0;
 					}
 				}
-				this.current_sum = 0;
 		}
-		
-		public void mergeInCurrent()
+
+		@Override
+		public DiscreteSufficientStatistic update(SufficientStatistic stat) throws BNException
 		{
-			for(int i = 0; i < this.dimprod; i++)
-			{
+			if(!(stat instanceof CPTSufficient2SliceStat))
+				throw new BNException("Attempted to combine sufficient statistics of differing types ("+this.getClass().getName()+","+stat.getClass().getName()+")");
+			CPTSufficient2SliceStat other = (CPTSufficient2SliceStat)stat;
+			if(other.cpt.dimprod!=this.cpt.dimprod || other.card!=this.card)
+				throw new BNException("Attempted to combine different CPTs statistics..");
+			
+			for(int i = 0; i < this.cpt.dimprod; i++)
 				for(int j = 0; j < this.card; j++)
+					this.exp_tr[i][j] += other.exp_tr[i][j];
+			return this;
+		}
+
+		@Override
+		public DiscreteSufficientStatistic update(DiscreteMessage lambda, DiscreteMessage pi,
+				Vector<DiscreteMessage> incomingPis) throws BNException
+		{
+			int[] indices = initialIndices(this.cpt.dimSizes);
+			double sum = 0;
+			do
+			{
+				int absIndex = getIndex(indices, this.cpt.dimSizes);
+				double current_prod = 1;
+				for(int i = 0; i < indices.length; i++)
+					current_prod *= incomingPis.get(i).getValue(indices[i]);
+				for(int x = 0; x < this.card; x++)
 				{
-					double tmp = this.current[i][j]/this.current_sum;
-					this.exp_tr[i][j] += tmp;
-					this.row_sum[i] += tmp;
-					this.current[i][j] = 0;
+					double jointBit = current_prod*this.cpt.values[absIndex][x];
+					this.current[absIndex][x] = jointBit*lambda.getValue(x);//*pi.getValue(x);
+					sum += this.current[absIndex][x];
 				}
 			}
-			this.current_sum = 0;
+			while((indices = incrementIndices(indices, this.cpt.dimSizes))!=null);
+			
+			for(int i = 0; i < this.cpt.dimprod; i++)
+				for(int j = 0; j < this.card; j++)
+					this.exp_tr[i][j] += this.current[i][j]/sum;
+			return this;
 		}
 		
-		int dimprod, card;
+		int card;
 		double[][] exp_tr;
-		double[] row_sum;
 		double[][] current;
-		double current_sum;
+		private DiscreteCPT cpt;
 	}
 	
 	public void optimize(SufficientStatistic stat) throws BNException
@@ -245,17 +248,18 @@ public class DiscreteCPT extends DiscreteDistribution
 		if(!(stat instanceof CPTSufficient2SliceStat))
 			throw new BNException("Failure to optimize CPT parameters : invalid sufficient statistic object used..");
 		CPTSufficient2SliceStat stato = (CPTSufficient2SliceStat)stat;
-		if(stato.dimprod!=this.values.length || stato.card != this.getCardinality())
+		if(stato.cpt.dimprod!=this.dimprod || stato.card != this.getCardinality())
 			throw new BNException("Failure to optimize CPT parameters : misfitting sufficient statistic object used...");
 		
 		for(int i = 0; i < this.values.length; i++)
 		{
-			if(stato.row_sum[i] > 0)
+			double rowsum = 0;
+			for(int j = 0; j < stato.card; j++)
+				rowsum += stato.exp_tr[i][j];
+			if(rowsum > 0)
 			{
 				for(int j = 0; j < stato.card; j++)
-				{
-					this.values[i][j] = stato.exp_tr[i][j]/stato.row_sum[i];
-				}
+					this.values[i][j] = stato.exp_tr[i][j]/rowsum;
 			}
 		}
 	}

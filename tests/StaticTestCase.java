@@ -1,7 +1,5 @@
 package tests;
 
-import bn.Options.InferenceOptions;
-
 import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.IOException;
@@ -29,7 +27,7 @@ public class StaticTestCase{
 				String nname = bits[0];
 				int value = Integer.parseInt(bits[1]);
 				bn.addDiscreteEvidence(nname, value);
-				bn.run(new InferenceOptions(100, 0));
+				bn.run(100, 0);
 				HashMap<String,Double[]> dists = answers.get(keyval);
 				for(String distnode : dists.keySet())
 				{

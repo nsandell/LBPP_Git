@@ -6,6 +6,7 @@ import bn.BNException;
 import bn.IDiscreteBayesNode;
 import bn.IDiscreteDynBayesNode;
 import bn.distributions.DiscreteDistribution;
+import bn.distributions.Distribution.DiscreteSufficientStatistic;
 import bn.distributions.Distribution.SufficientStatistic;
 
 import bn.messages.DiscreteMessage;
@@ -19,7 +20,6 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 		for(int t = 0; t < bn.getT(); t++)
 			instanceBuilder.add(unrolled.addDiscreteNode(basename+"["+t+"]",cardinality));
 		this.nodeInstances.addAll(instanceBuilder);
-			//this.nodeInstances.add(unrolled.addDiscreteNode(basename+"["+t+"]",cardinality));
 	}
 
 	@Override
@@ -37,12 +37,14 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 		this.adva = dist.copy();
 		try
 		{
+			if(this.init==null)
+				this.nodeInstances.get(0).setDistribution(this.adva);
 			for(int t = 1; t < this.bayesNet.getT(); t++)
 				this.nodeInstances.get(t).setDistribution(this.adva);
+			
 		} catch(BNException e){this.adva = null; throw new BNException(e);}
 	}
 	
-	@SuppressWarnings("unused")
 	private DiscreteDistribution init = null;
 	private DiscreteDistribution adva = null;
 
@@ -84,17 +86,17 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 	}
 
 	@Override
-	public double updateMessages(boolean updateSSIfShould) throws BNException {
+	public double updateMessages() throws BNException {
 		double max = 0;
 		if(forward)
 		{
 			for(DiscreteBNNode nd : this.nodeInstances)
-				max = Math.max(max, nd.updateMessages(updateSSIfShould));
+				max = Math.max(max, nd.updateMessages());
 		}
 		else
 		{
 			for(int i = this.nodeInstances.size()-1; i >= 0; i--)
-				max = Math.max(max, this.nodeInstances.get(i).updateMessages(updateSSIfShould));
+				max = Math.max(max, this.nodeInstances.get(i).updateMessages());
 		}
 		forward = !forward;
 		return max;
@@ -102,18 +104,18 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 	boolean forward = true;
 	
 	@Override
-	protected double updateMessagesI(int tmin, int tmax, boolean updateSSIfShould) throws BNException
+	protected double updateMessagesI(int tmin, int tmax) throws BNException
 	{
 		double max = 0;
 		if(forward)
 		{
 			for(int t = tmin; t <= tmax; t++)
-				max = Math.max(max, this.nodeInstances.get(t).updateMessages(updateSSIfShould));
+				max = Math.max(max, this.nodeInstances.get(t).updateMessages());
 		}
 		else
 		{
 			for(int t = tmax; t>=tmin; t--)
-				max = Math.max(max, this.nodeInstances.get(t).updateMessages(updateSSIfShould));
+				max = Math.max(max, this.nodeInstances.get(t).updateMessages());
 		}
 		forward = !forward;
 		return max;
@@ -135,24 +137,6 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 		return this.nodeInstances.get(t);
 	}
 	
-	public void initializeSufficientStats()
-	{
-		if(this.suffStat==null)
-		{
-			this.suffStat = this.adva.getSufficientStatisticObj();
-			for(int i= 1; i < bayesNet.getT(); i++)
-				this.nodeInstances.get(i).setSufficientStats(suffStat);
-		}
-		else
-			this.suffStat.reset();
-	}
-	
-	public void collectSufficientStats(boolean flag)
-	{
-		for(int i = 1; i < bayesNet.getT(); i++)
-			this.nodeInstances.get(i).collectSufficientStats(flag);
-	}
-	
 	public void clearEvidence()
 	{
 		for(DiscreteBNNode node : this.nodeInstances)
@@ -161,11 +145,52 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 	
 	public void optimizeParameters() throws BNException
 	{
-		if(this.suffStat!=null)
-			this.adva.optimize(this.suffStat);
-		else
-			throw new BNException("Attempted to optimize a discrete dynamic BN that wasn't collecting sufficient statistics!");
+		TwoSliceStatistics<DiscreteSufficientStatistic> tss = this.getSufficientStatistic();
+		if(this.init!=null)
+			this.init.optimize(tss.initialStat);
+		this.adva.optimize(tss.advanceStat);
 	}
 	
-	private SufficientStatistic suffStat = null;
+	public void optimizeParameters(SufficientStatistic stat) throws BNException
+	{
+		if(!(stat instanceof TwoSliceStatistics<?>))
+			throw new BNException("Can't optimize DBN parameters with non two-slice statistic.");
+		TwoSliceStatistics<?> tss = (TwoSliceStatistics<?>)stat;
+		if(this.init!=null)
+			this.init.optimize(tss.initialStat);
+		this.adva.optimize(tss.advanceStat);
+	}
+
+	@Override
+	public TwoSliceStatistics<DiscreteSufficientStatistic> getSufficientStatistic() throws BNException {
+		TwoSliceStatistics<DiscreteSufficientStatistic> tss = new TwoSliceStatistics<DiscreteSufficientStatistic>();
+		if(this.init!=null)
+		{
+			tss.initialStat = this.nodeInstances.get(0).getSufficientStatistic();
+			tss.advanceStat = this.nodeInstances.get(1).getSufficientStatistic();
+		}
+		else
+		{
+			tss.initialStat = null;
+			tss.advanceStat = this.nodeInstances.get(0).getSufficientStatistic();
+			this.nodeInstances.get(1).updateSufficientStatistic(tss.advanceStat);
+		}
+		for(int t = 2; t < this.bayesNet.getT(); t++)
+			this.nodeInstances.get(t).updateSufficientStatistic(tss.advanceStat);
+		return tss;
+	}
+
+	@Override
+	public void updateSufficientStatistic(SufficientStatistic stat)
+			throws BNException {
+		if(!(stat instanceof TwoSliceStatistics<?>))
+			throw new BNException("Cannot update DBN two slice statistic, improper type!");
+		TwoSliceStatistics<?> tss = (TwoSliceStatistics<?>)stat;
+		if(this.init!=null)
+			this.nodeInstances.get(0).updateSufficientStatistic(tss.initialStat);
+		else
+			this.nodeInstances.get(0).updateSufficientStatistic(tss.advanceStat);
+		for(int t = 1; t < this.bayesNet.getT(); t++)
+			this.nodeInstances.get(t).updateSufficientStatistic(tss.advanceStat);
+	}
 }

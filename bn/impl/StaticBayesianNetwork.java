@@ -84,11 +84,4 @@ class StaticBayesianNetwork extends BayesianNetwork<IBayesNode,BNNode> implement
 		else
 			((DiscreteBNNode)node).setValue(evidence);
 	}
-	
-	protected void resetSuffStats()
-	{
-		Iterable<BNNode> nodes = this.getNodes();
-		for(BNNode node : nodes)
-			node.initializeSufficientStats();
-	}
 }

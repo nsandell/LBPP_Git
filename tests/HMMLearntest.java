@@ -2,11 +2,9 @@ package tests;
 
 
 import bn.BNException;
-
-import bn.Options.InferenceOptions;
+import bn.IDiscreteDynBayesNode;
 
 import bn.IDynBayesNet;
-import bn.Options;
 import bn.commandline.DynamicCommandLine;
 
 public class HMMLearntest {
@@ -16,30 +14,30 @@ public class HMMLearntest {
 		try
 		{
 			IDynBayesNet dbn = DynamicCommandLine.loadNetwork("/Users/nsandell/LBPPack/trunk/test_files/hmmLearn.dlbp");
-			dbn.collectSufficientStats(true);
 			dbn.validate();
 			
-			for(int it = 0; it < 500; it++)
+			for(int it = 0; it < 28; it++)
 			{
 				System.out.println("Learning iteration " + it);
 				if(parallel.compareTo("serial")==0)
 				{
 					long begin = System.currentTimeMillis();
-					dbn.run(new InferenceOptions(10, 0.0));
+					dbn.run(100,0);
 					long end = System.currentTimeMillis();
 					double runtime = ((double)(end-begin))/1000;
 					System.out.println("Converged in " + runtime + " seconds...");
 				}
 				else
+					dbn.run_parallel_block(100, 0);
+				for(int j = 0; j < 2; j++)
 				{
-					InferenceOptions opts = new InferenceOptions(10,0);
-					opts.parallel = true;
-					dbn.run(opts);
+					for(int i = 0; i < 3; i++)
+					{
+						System.out.print(((IDiscreteDynBayesNode)dbn.getNode("X")).getMarginal(i).getValue(j)+ " ");
+					}System.out.println();
 				}
-				dbn.optimize(new Options.LearningOptions());
+				dbn.optimize();
 			}
-			int c = 3;
-			c*=3;
 		}
 		catch(BNException e) {
 			System.err.println("Error while running HMMtest : " + e.toString());

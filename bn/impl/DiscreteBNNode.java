@@ -8,6 +8,7 @@ import bn.BNException;
 import bn.IBayesNode;
 import bn.IDiscreteBayesNode;
 import bn.distributions.DiscreteDistribution;
+import bn.distributions.Distribution.DiscreteSufficientStatistic;
 import bn.distributions.Distribution.SufficientStatistic;
 import bn.interfaces.DiscreteChildSubscriber;
 import bn.interfaces.DiscreteParentSubscriber;
@@ -43,10 +44,8 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 			return;
 		this.parentMap.put(parent, this.numParents);
 		this.ds_parents.add((DiscreteBNNode)parent);
-		//this.incomingPiMessages.add(DiscreteMessage.allOnesMessage(this.getCardinality())); 
 		this.incomingPiMessages.add(DiscreteMessage.allOnesMessage(((DiscreteBNNode)parent).getCardinality())); 
 		this.parents_local_pis.add(((DiscreteBNNode)parent).local_pi);
-		//this.outgoing_lambdas.add(DiscreteMessage.allOnesMessage(this.getCardinality()));
 		this.outgoing_lambdas.add(DiscreteMessage.allOnesMessage(((DiscreteBNNode)parent).getCardinality()));
 		this.parent_dims = null;
 		this.numParents++;
@@ -111,9 +110,9 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	}
 
 	@Override
-	public double updateMessages(boolean collectSSIfShould) throws BNException
+	public double updateMessages() throws BNException
 	{
-		this.updateLocalMessages(collectSSIfShould);
+		this.updateLocalMessages();
 		this.updateLambdas();
 		this.updatePis();
 		DiscreteMessage oldmarg = this.marginalDistribution;
@@ -135,7 +134,7 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		return this.marginalDistribution;
 	}
 	
-	protected void updateLocalMessages(boolean collectSSIFShould) throws BNException
+	protected void updateLocalMessages() throws BNException
 	{
 		if(this.observed)
 		{
@@ -162,10 +161,7 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 			this.local_pi.setValue(i, 0);
 	
 		Integer valueTmp = (this.observed) ? this.value : null;
-		if(this.collectSufficientStatistics && collectSSIFShould)
-			this.likelihoodGivenPast = this.cpt.computeLocalPi(this.local_pi, this.incomingPiMessages, this.parents_local_pis, valueTmp,this.suffStat,this.local_lambda);
-		else
-			this.likelihoodGivenPast = this.cpt.computeLocalPi(this.local_pi, this.incomingPiMessages, this.parents_local_pis, valueTmp,null,null);
+			this.likelihoodGivenPast = this.cpt.computeLocalPi(this.local_pi, this.incomingPiMessages, this.parents_local_pis, valueTmp);
 	}
 	
 	protected void updateLambdas() throws BNException
@@ -282,25 +278,16 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		this.observed = false;
 	}
 	
-	protected void initializeSufficientStats()
+	public void updateSufficientStatistic(SufficientStatistic stat) throws BNException
 	{
-		if(this.suffStat!=null)
-			this.suffStat.reset();
-		else
-			this.suffStat = this.cpt.getSufficientStatisticObj();
+		if(!(stat instanceof DiscreteSufficientStatistic))
+			throw new BNException("Attempted to get a non-discrete sufficient statistic update froma discrete node.");
+		((DiscreteSufficientStatistic)stat).update(this.local_lambda,this.local_pi,this.incomingPiMessages);
 	}
 	
-	void setSufficientStats(SufficientStatistic ss)
+	public DiscreteSufficientStatistic getSufficientStatistic() throws BNException
 	{
-		this.suffStat = ss;
-	}
-	
-	public void optimizeParameters() throws BNException
-	{
-		if(this.suffStat!=null)
-			this.cpt.optimize(this.suffStat);
-		else
-			throw new BNException("Attempted to optimize discrete node with no sufficient statistics.");
+		return this.cpt.getSufficientStatisticObj().update(this.local_lambda, this.local_pi, this.incomingPiMessages);
 	}
 	
 	private double likelihoodGivenPast = 0;
@@ -325,6 +312,14 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	private Vector<DiscreteBNNode> ds_parents = new Vector<DiscreteBNNode>();
 	private Vector<DiscreteParentSubscriber> ds_children = new Vector<DiscreteParentSubscriber>();
 	private Vector<DiscreteMessage> outgoing_lambdas= new Vector<DiscreteMessage>();
+
+	public void optimizeParameters() throws BNException
+	{
+		this.cpt.optimize(this.getSufficientStatistic());
+	}
 	
-	private SufficientStatistic suffStat = null;
+	public void optimizeParameters(SufficientStatistic stat) throws BNException
+	{
+		this.cpt.optimize(stat);
+	}
 }

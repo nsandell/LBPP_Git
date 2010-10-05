@@ -3,8 +3,6 @@ package tests;
 
 import bn.BNException;
 
-import bn.Options.InferenceOptions;
-
 import bn.IDiscreteBayesNode;
 import bn.IDiscreteDynBayesNode;
 import bn.IDynBayesNet;
@@ -51,7 +49,7 @@ public class HMMtest {
 			{
 				System.out.println("Running serially");
 				long begin = System.currentTimeMillis();
-				dbn.run(new InferenceOptions(10, 0.0));
+				dbn.run(100,0);
 				long end = System.currentTimeMillis();
 				double runtime = ((double)(end-begin))/1000;
 				for(int i = 0; i < 10; ++i)
@@ -65,10 +63,7 @@ public class HMMtest {
 			else
 			{
 				System.out.println("Running parallel..ly");
-				InferenceOptions opts = new InferenceOptions(10,0);
-				opts.parallel = true;
-				opts.callback = new CallbackClass(System.currentTimeMillis(), x, y);
-				dbn.run(opts);
+				dbn.run_parallel_block(100,0);
 			}
 		}
 		catch(BNException e) {

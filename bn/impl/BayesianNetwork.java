@@ -1,13 +1,10 @@
 package bn.impl;
 
 import java.util.HashMap;
-
 import java.util.HashSet;
-
 import bn.BNException;
 import bn.IBayesNode;
-import bn.Options.InferenceOptions;
-import bn.Options.LearningOptions;
+import bn.distributions.Distribution.SufficientStatistic;
 
 abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType extends BaseInterface> {
 	
@@ -29,7 +26,7 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		}
 	}
 	
-	public void optimize(LearningOptions opts)
+	public void optimize()
 	{
 		for(BaseNodeType node : nodes.values())
 		{
@@ -97,20 +94,10 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 	
 	public void run(int maxit, double conv) throws BNException
 	{
-		this.run(new InferenceOptions(maxit,conv));
-	}
-	
-	public void run(InferenceOptions opts) throws BNException
-	{
-		if(opts.parallel)
-			throw new BNException("Parallel inference not supported for static networks at this time.");
-		
-		this.resetSuffStats();
-		
 		double err = Double.POSITIVE_INFINITY;
 	
 		int i;
-		for(i = 0; i < opts.maxIterations - 1 && err > opts.convergence; i++)
+		for(i = 0; i < maxit && err > conv; i++)
 		{
 			err = 0;
 			if(nodeOrder==null)
@@ -118,30 +105,15 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 			for(String nodeName: nodes.keySet())
 			{
 				BaseNodeType node = nodes.get(nodeName);
-				try
-				{
-					err = Math.max(err,node.updateMessages(false));
-				}
+				try{err = Math.max(err,node.updateMessages());}
 				catch(BNException e){throw new BNException("Node " + nodeName + " threw an exception while updating : ",e);}
 			}
 		}
 		err = 0;
 		if(nodeOrder==null)
 			nodeOrder = nodes.keySet();
-		for(String nodeName: nodes.keySet())
-		{
-			BaseNodeType node = nodes.get(nodeName);
-			try
-			{
-				err = Math.max(err,node.updateMessages(true));
-			}
-			catch(BNException e){throw new BNException("Node " + nodeName + " threw an exception while updating : ",e);}
-		}
-
 		System.out.println("Converged after " + i + " iterations with max change " + err);
 	}
-	
-	protected abstract void resetSuffStats();
 	
 	public void clearEvidence(String nodeName) throws BNException
 	{
@@ -151,10 +123,31 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		node.clearEvidence();
 	}
 	
-	public final void collectSufficientStats(boolean flag)
+	public void collectSufficientStatistics(Iterable<String> nodeNames, HashMap<String,SufficientStatistic> stats) throws BNException
 	{
-		for(BaseNodeType type : nodes.values())
-			type.collectSufficientStats(flag);
+		for(String nodename : nodeNames)
+		{
+			BaseNodeType node = this.getNode(nodename);
+			SufficientStatistic stat = stats.get(nodename);
+			if(stat==null)
+				stats.put(nodename, node.getSufficientStatistic());
+			else
+				stats.get(nodename).update(node.getSufficientStatistic());
+		}
+	}
+	
+	public void optimize(Iterable<String> nodeNames, HashMap<String,SufficientStatistic> stats) throws BNException
+	{
+		for(String nodename : nodeNames)
+		{
+			BaseNodeType node = nodes.get(nodename);
+			SufficientStatistic stat = stats.get(nodename);
+			if(node==null)
+				throw new BNException("Cannot optimize, node " + nodename + " does not exist.");
+			if(stat==null)
+				throw new BNException("Cannot optimize node " + nodename + ", not given sufficient statistic for it.");
+			node.optimizeParameters(stat);
+		}
 	}
 	
 	protected abstract void removeNodeI(BaseNodeType node) throws BNException;

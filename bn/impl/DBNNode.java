@@ -7,6 +7,7 @@ import util.IterableWrapper;
 import bn.BNException;
 import bn.IBayesNode;
 import bn.IDynBayesNode;
+import bn.distributions.Distribution.SufficientStatistic;
 
 abstract class DBNNode<InnerType extends BNNode> implements IDynBayesNode
 {
@@ -139,15 +140,35 @@ abstract class DBNNode<InnerType extends BNNode> implements IDynBayesNode
 		return this.intraChildren;
 	}
 	
-	public final double updateMessages(int tmin, int tmax, boolean updateSSIfShould) throws BNException
+	public final double updateMessages(int tmin, int tmax) throws BNException
 	{
-		return this.updateMessagesI(tmin, tmax, updateSSIfShould);
+		return this.updateMessagesI(tmin, tmax);
 	}
 	
-	protected abstract void initializeSufficientStats();
-	
-	protected abstract double updateMessagesI(int tmin, int tmax, boolean updateSSIfShould) throws BNException;
+	protected abstract double updateMessagesI(int tmin, int tmax) throws BNException;
 
+	public static class TwoSliceStatistics<StatType extends SufficientStatistic> implements SufficientStatistic
+	{
+		@Override
+		public void reset()
+		{
+			this.initialStat.reset();
+			this.advanceStat.reset();
+		}
+		@Override
+		public SufficientStatistic update(SufficientStatistic stat) throws BNException
+		{
+			if(!(stat instanceof TwoSliceStatistics<?>))
+				throw new BNException("Failure to update 2 slice statistic.. wrong type.");
+			TwoSliceStatistics<?> tmp = (TwoSliceStatistics<?>)stat;
+			this.initialStat.update(tmp.initialStat);
+			this.advanceStat.update(tmp.advanceStat);
+			return this;
+		}
+	
+		StatType initialStat;
+		StatType advanceStat;
+	}
 	
 	//TODO check if this has any speed difference, it certainly is making a memory difference!
 	protected CopyOnWriteArrayList<InnerType> nodeInstances;

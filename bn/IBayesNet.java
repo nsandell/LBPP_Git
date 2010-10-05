@@ -1,8 +1,9 @@
 package bn;
 
-import bn.Options.InferenceOptions;
-import bn.Options.LearningOptions;
+import java.util.HashMap;
+
 import bn.distributions.Distribution;
+import bn.distributions.Distribution.SufficientStatistic;
 /**
  * Highest level bayesian network interface - functions that are in common both with 
  * static and dynamic bayesian networks.  Probably shouldn't be carried around by
@@ -49,15 +50,12 @@ public interface IBayesNet<BaseInterface>
 	 */
 	public BaseInterface getNode(String name);
 	
-	public void optimize(LearningOptions opts);
+	public void collectSufficientStatistics(Iterable<String> nodeNames, HashMap<String,SufficientStatistic> stats) throws BNException;// Load stats for the nodes specified by the iterable
+	public void optimize(Iterable<String> nodenames, HashMap<String,SufficientStatistic> stats) throws BNException; // Update the parameters of 'this' network using the stats in the hashmap
+	public void optimize(); // Collect local sufficient statistics, update the graph
 	
 	public void validate() throws BNException;
 	public double nodeLogLikelihood(String nodeName) throws BNException;
-	
 	public void run(int maxit, double convergence) throws BNException;
-	public void run(InferenceOptions opts) throws BNException;
-	
 	public void clearEvidence(String node) throws BNException;
-	
-	public void collectSufficientStats(boolean flag);
 }

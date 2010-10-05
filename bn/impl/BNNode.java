@@ -75,14 +75,7 @@ abstract class BNNode implements IBayesNode
 	{
 		return this.parents;
 	}
-	
-	public void collectSufficientStats(boolean flag)
-	{
-		this.collectSufficientStatistics = flag;
-	}
-	
-	protected abstract void initializeSufficientStats();
-	
+		
 	protected StaticBayesianNetwork bnet;
 	
 	private String name;
@@ -91,6 +84,4 @@ abstract class BNNode implements IBayesNode
 	private IterableWrapper<IBayesNode> parentSet;
 	private ArrayList<BNNode> children = new ArrayList<BNNode>();
 	private ArrayList<BNNode> parents = new ArrayList<BNNode>();
-	
-	protected boolean collectSufficientStatistics = false;
 }

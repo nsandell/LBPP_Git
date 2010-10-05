@@ -85,21 +85,8 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		return dist[value];
 	}
 	
-	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value, SufficientStatistic stat, DiscreteMessage localLambda) throws BNException
+	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException
 	{
-		if(stat!=null && !(stat instanceof UDSuffStat))
-			throw new BNException("Passed incorrect sufficient statistic type to CPTUC distribution.");
-		else if(stat!=null)
-		{
-			UDSuffStat stato = (UDSuffStat)stat; 
-			for(int i = 0; i < stato.expected_data.length; i++)
-			{
-				stato.current[i] = localLambda.getValue(i)*this.dist[i];
-				stato.current_sum += stato.current[i];
-			}
-			stato.mergeIn();
-		}
-		
 		for(int i = 0; i < local_pi.getCardinality(); i++)
 			local_pi.setValue(i, dist[i]);
 		if(value!=null)
@@ -115,9 +102,7 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		
 		UDSuffStat stato = (UDSuffStat)stat; 
 		for(int i = 0; i < stato.expected_data.length; i++)
-		{
 			this.dist[i] = stato.expected_data[i]/stato.expected_sum;
-		}
 	}
 	
 	public UDSuffStat getSufficientStatisticObj()
@@ -125,7 +110,7 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		return new UDSuffStat(this.getCardinality());
 	}
 	
-	public static class UDSuffStat implements SufficientStatistic
+	public static class UDSuffStat implements DiscreteSufficientStatistic
 	{
 		public UDSuffStat(int len)
 		{
@@ -137,33 +122,48 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		public void reset()
 		{
 			for(int i = 0; i < this.expected_data.length; i++)
-			{
 				expected_data[i] = 0;
-				this.current[i] = 0;
-			}
-			this.current_sum = 0;
 			this.expected_sum = 0;
 		}
 		
-		public void mergeIn()
+	
+		@Override
+		public DiscreteSufficientStatistic update(SufficientStatistic stat) throws BNException
 		{
-			this.expected_sum += this.current_sum;
-			for(int i = 0; i < this.expected_data.length; i++)
+			if(!(stat instanceof UDSuffStat))
+				throw new BNException("Expected unconditioned sufficient statistic...");
+			UDSuffStat udstat = (UDSuffStat)stat;
+			if(udstat.expected_data.length!=this.expected_data.length)
+				throw new BNException("Attempted to merge incompatible unconditioned discrete distribution sufficient statistics.");
+			
+			for(int i= 0; i < this.expected_data.length; i++)
+				this.expected_data[i] += udstat.expected_data[i];
+			return this;
+		}
+
+		@Override
+		public DiscreteSufficientStatistic update(DiscreteMessage lambda, DiscreteMessage pi,
+				Vector<DiscreteMessage> parent_pis) throws BNException {
+			double sum = 0;
+			for(int i = 0; i < expected_data.length; i++)
 			{
-				this.expected_data[i] += this.current[i]/this.current_sum;
-				this.current[i] = 0;
+				current[i] = lambda.getValue(i)*pi.getValue(i);
+				sum += lambda.getValue(i)*pi.getValue(i);
 			}
-			this.current_sum = 0;
+			for(int i = 0; i < expected_data.length; i++)
+			{
+				this.expected_data[i] += current[i]/sum;
+				this.expected_sum += current[i]/sum;
+			}
+			return this;
 		}
 		
-		double[] expected_data;
-		double expected_sum;
-		double[] current;
-		double current_sum;
+		private double[] expected_data;
+		private double expected_sum;
+		private double[] current;
 	}
 	
 	// Should have no parents, so...
 	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer value) throws BNException{}
-	
 	private final double[] dist;
 }

@@ -10,5 +10,7 @@ public interface IDiscreteDynBayesNode extends IDynBayesNode {
 	public void setValue(int t, int value) throws BNException;
 	public void setValue(int[] values,int t0) throws BNException;
 	
+	public int getValue(int t) throws BNException;
+	
 	public IDiscreteBayesNode getDiscreteInstance(int t);
 }

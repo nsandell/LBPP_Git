@@ -23,4 +23,5 @@ public interface Distribution
 		public DiscreteSufficientStatistic update(SufficientStatistic stat) throws BNException;
 		public DiscreteSufficientStatistic update(DiscreteMessage lambda, DiscreteMessage pi, Vector<DiscreteMessage> incomingPis) throws BNException;
 	}
+	
 }

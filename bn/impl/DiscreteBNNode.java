@@ -1,5 +1,6 @@
 package bn.impl;
 
+import java.util.ArrayList;
 import java.util.Vector;
 
 import java.util.HashMap;
@@ -14,7 +15,7 @@ import bn.interfaces.DiscreteChildSubscriber;
 import bn.interfaces.DiscreteParentSubscriber;
 import bn.messages.DiscreteMessage;
 
-class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, DiscreteChildSubscriber, IDiscreteBayesNode
+class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, DiscreteChildSubscriber, IDiscreteBayesNode, DiscreteDistribution.IntegerValueSet.IntegerValueObject
 {
 	
 	DiscreteBNNode(StaticBayesianNetwork net, String name, int cardinality)
@@ -233,11 +234,23 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		return this.cardinality;
 	}
 	
+	public void clearValue()
+	{
+		this.observed = false;
+		this.value = -1;
+	}
+	
 	public int getValue() throws BNException
 	{
 		if(!this.observed)
 			throw new BNException("Attempted to extract evidence from unobserved node...");
 		return value;
+	}
+	
+	public void sample() throws BNException
+	{
+		this.value = this.cpt.sample(new DiscreteDistribution.IntegerValueSet(this.ds_parents));
+		this.observed = true;
 	}
 	
 	public void setValue(int value) throws BNException
@@ -309,8 +322,8 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	private Vector<DiscreteMessage> incomingLambdaMessages = new Vector<DiscreteMessage>();
 	private Vector<DiscreteMessage> incomingPiMessages = new Vector<DiscreteMessage>();
 	private Vector<DiscreteMessage> parents_local_pis = new Vector<DiscreteMessage>();
-	private Vector<DiscreteBNNode> ds_parents = new Vector<DiscreteBNNode>();
-	private Vector<DiscreteParentSubscriber> ds_children = new Vector<DiscreteParentSubscriber>();
+	private ArrayList<DiscreteBNNode> ds_parents = new ArrayList<DiscreteBNNode>();
+	private ArrayList<DiscreteParentSubscriber> ds_children = new ArrayList<DiscreteParentSubscriber>();
 	private Vector<DiscreteMessage> outgoing_lambdas= new Vector<DiscreteMessage>();
 
 	public void optimizeParameters() throws BNException

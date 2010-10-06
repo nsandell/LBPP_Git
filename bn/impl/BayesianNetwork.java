@@ -1,5 +1,6 @@
 package bn.impl;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import bn.BNException;
@@ -24,6 +25,40 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 			// Node should validate its CPT matches its parents, etc.
 			node.validate();
 		}
+	}
+	
+	public void sample() throws BNException
+	{
+		ArrayList<IBayesNode> frontier = new ArrayList<IBayesNode>();
+		for(BaseNodeType node : nodes.values())
+		{
+			if(node.numParents()==0)
+				frontier.add(node);
+		}
+		frontierSample(new HashSet<IBayesNode>(), frontier);
+	}
+	
+	private void frontierSample(HashSet<IBayesNode> marks, ArrayList<IBayesNode> frontier) throws BNException
+	{
+		ArrayList<IBayesNode> newFrontier = new ArrayList<IBayesNode>();
+		for(IBayesNode node : frontier)
+		{
+			node.sample();
+			marks.add(node);
+			for(IBayesNode child : node.getChildren())
+			{
+				if(!marks.contains(child))
+					newFrontier.add(child);
+			}
+		}
+		if(newFrontier.size()>0)
+			frontierSample(marks, newFrontier);
+	}
+	
+	public void clearAllEvidence()
+	{
+		for(IBayesNode node : this.nodes.values())
+			node.clearEvidence();
 	}
 	
 	public void optimize()

@@ -50,6 +50,9 @@ public interface IBayesNet<BaseInterface>
 	 */
 	public BaseInterface getNode(String name);
 	
+	public void sample() throws BNException;
+	public void clearAllEvidence();
+	
 	public void collectSufficientStatistics(Iterable<String> nodeNames, HashMap<String,SufficientStatistic> stats) throws BNException;// Load stats for the nodes specified by the iterable
 	public void optimize(Iterable<String> nodenames, HashMap<String,SufficientStatistic> stats) throws BNException; // Update the parameters of 'this' network using the stats in the hashmap
 	public void optimize(); // Collect local sufficient statistics, update the graph

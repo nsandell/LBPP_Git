@@ -40,6 +40,16 @@ abstract class BNNode implements IBayesNode
 		this.parents.add(parent);
 	}
 	
+	public final int numParents()
+	{
+		return this.parents.size();
+	}
+	
+	public final int numChildren()
+	{
+		return this.children.size();
+	}
+	
 	public final void removeParent(BNNode parent) throws BNException
 	{
 		this.removeParentI(parent);

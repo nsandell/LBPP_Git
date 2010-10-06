@@ -2,6 +2,8 @@ package bn.distributions;
 
 import java.util.Vector;
 
+import util.MathUtil;
+
 import bn.distributions.SparseDiscreteCPT.Entry;
 import bn.messages.DiscreteMessage;
 import bn.BNException;
@@ -17,6 +19,23 @@ public class DiscreteCPT extends DiscreteDistribution
 		for(int i = 0; i < this.dimSizes.length; i++)
 			this.dimprod *= this.dimSizes[i];
 		this.validate();
+	}
+	
+	public int sample(IntegerValueSet parents) throws BNException
+	{
+		int prod = 1;
+		for(int i = 0; i < parents.length(); i++)
+			prod *= parents.getValue(i);
+		double val =  MathUtil.rand.nextDouble();
+		double[] dist = this.values[prod];
+		double sum = 0;
+		for(int i = 0; i < dist.length; i++)
+		{
+			sum += dist[i];
+			if(val < sum)
+				return i;
+		}
+		return dist.length-1;
 	}
 	
 	public DiscreteCPT(int[] dimSizes, int cardinality, Iterable<SparseDiscreteCPT.Entry> entries) throws BNException
@@ -209,6 +228,7 @@ public class DiscreteCPT extends DiscreteDistribution
 					this.exp_tr[i][j] += other.exp_tr[i][j];
 			return this;
 		}
+		
 
 		@Override
 		public DiscreteSufficientStatistic update(DiscreteMessage lambda, DiscreteMessage pi,

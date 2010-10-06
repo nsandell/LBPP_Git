@@ -1,5 +1,7 @@
 package util;
 
+import java.util.Random;
+
 public class MathUtil
 {
 	public static class MathUtilException extends Exception
@@ -24,4 +26,6 @@ public class MathUtil
 			innersum += Math.exp(vals[i]-max);
 		return max+Math.log(innersum);	
 	}
+	
+	public static Random rand = new Random();
 }

@@ -13,6 +13,7 @@ import bn.messages.DiscreteMessage;
 
 class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBayesNode {
 	
+	
 	public DiscreteDBNNode(DynamicBayesianNetwork bn, StaticBayesianNetwork unrolled, String basename, int cardinality) throws BNException
 	{
 		super(bn,basename);
@@ -179,6 +180,12 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 			this.nodeInstances.get(t).updateSufficientStatistic(tss.advanceStat);
 		return tss;
 	}
+	
+	public void sample() throws BNException
+	{
+		for(int t = 0; t < this.nodeInstances.size(); t++)
+			this.nodeInstances.get(t).sample();
+	}
 
 	@Override
 	public void updateSufficientStatistic(SufficientStatistic stat)
@@ -192,5 +199,12 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 			this.nodeInstances.get(0).updateSufficientStatistic(tss.advanceStat);
 		for(int t = 1; t < this.bayesNet.getT(); t++)
 			this.nodeInstances.get(t).updateSufficientStatistic(tss.advanceStat);
+	}
+	
+	public int getValue(int t) throws BNException
+	{
+		if(t<0 || t>= this.bayesNet.getT())
+			throw new BNException("Attempted to get value out of t range (" + t + " vs [0,"+this.bayesNet.getT()+"])");
+		return nodeInstances.get(t).getValue();
 	}
 }

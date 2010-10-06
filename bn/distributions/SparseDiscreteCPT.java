@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Vector;
 
+import util.MathUtil;
+
 import bn.BNException;
 import bn.messages.DiscreteMessage;
 
@@ -15,6 +17,28 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		public int[] conditional_indices;
 		public int value_index;
 		public double p;
+	}
+	
+	public int sample(IntegerValueSet parents) throws BNException
+	{
+		int[] parentsI = new int[parents.length()];
+		for(int i = 0; i < parents.length(); i++)
+			parentsI[i] = parents.getValue(i);
+		HashMap<Integer, Double> inner = this.entries.get(new IndexWrapper(parentsI));
+		if(inner==null || inner.size()==0)
+			throw new BNException("Attempted to generate sample from sparse cpt where no entries exist for that condition.");
+		
+		double val = MathUtil.rand.nextDouble();
+		double sum = 0;
+		int lastint = 0;
+		for(java.util.Map.Entry<Integer, Double> ent : inner.entrySet())
+		{
+			lastint = ent.getKey();
+			sum += ent.getValue();
+			if(val < sum)
+				return lastint;
+		}
+		return lastint;
 	}
 
 	private static class IndexWrapper

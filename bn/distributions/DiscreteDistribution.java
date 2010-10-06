@@ -1,5 +1,6 @@
 package bn.distributions;
 
+import java.util.ArrayList;
 import java.util.Vector;
 
 import bn.BNException;
@@ -16,6 +17,8 @@ public abstract class DiscreteDistribution implements Distribution {
 	{
 		return this.cardinality;
 	}
+	
+	public abstract int sample(IntegerValueSet parentVals) throws BNException;
 	
 	@Override
 	public abstract DiscreteSufficientStatistic getSufficientStatisticObj();
@@ -77,5 +80,36 @@ public abstract class DiscreteDistribution implements Distribution {
 	public abstract void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis,
 										DiscreteMessage local_lambda, Integer value) throws BNException;
 
+	public static class IntegerValueSet
+	{
+		public IntegerValueSet(int[] values)
+		{
+			this.values = values;
+		}
+		
+		public IntegerValueSet(ArrayList<? extends IntegerValueObject> list)
+		{
+			this.valueObjects = list;
+		}
+		
+		public static interface IntegerValueObject
+		{
+			public int getValue() throws BNException;
+		}
+		
+		public final int getValue(int i) throws BNException
+		{
+			return values==null ? valueObjects.get(i).getValue() : values[i];
+		}
+		
+		public final int length()
+		{
+			return values==null ? valueObjects.size() : values.length;
+		}
+		
+		private int[] values = null;
+		private ArrayList<? extends IntegerValueObject> valueObjects = null;
+	}
+	
 	private int cardinality;
 }

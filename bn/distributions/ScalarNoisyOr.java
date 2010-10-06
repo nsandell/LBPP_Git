@@ -2,6 +2,8 @@ package bn.distributions;
 
 import java.util.Vector;
 
+import util.MathUtil;
+
 import bn.BNException;
 import bn.messages.DiscreteMessage;
 
@@ -25,6 +27,16 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			return getProbability1(numact);
 		else
 			return 1-getProbability1(numact);
+	}
+	
+	public int sample(IntegerValueSet parents)  throws BNException
+	{
+		int num1 = 0;
+		for(int i= 0; i < parents.length(); i++)
+			if(parents.getValue(i)==1)
+				num1++;
+		
+		return (MathUtil.rand.nextDouble() < getProbability1(num1)) ? 1 : 0;
 	}
 	
 	double getProbability1(int numActiveParents)
@@ -62,7 +74,14 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		if(!(stat instanceof ScalarNoisyOrSuffStat))
 			throw new BNException("Attempted to optimize noisy-or distribution with non-noisy or statistics!");
 		ScalarNoisyOrSuffStat stato = (ScalarNoisyOrSuffStat)stat;
-		this.q = stato.e0/(stato.e0+stato.e1);
+		this.q = 0;
+		double normfac = stato.n-stato.pns.get(0).px0;
+		for(int i = 1; i < stato.pns.size(); i++)
+		{
+			double N0 = stato.pns.get(i).px0;
+			double N = N0+stato.pns.get(i).px1;
+			this.q += N/normfac*Math.pow(N0/N, 1/((double)i));
+		}
 		this.c = 1-q;
 	}
 	
@@ -75,28 +94,46 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			this.reset();
 		}
 		
-		public void reset(){this.e0 = 0; this.e1 = 0;}
+		public void reset(){this.pns.clear();}
 		
 		public ScalarNoisyOrSuffStat update(SufficientStatistic stat) throws BNException
 		{
 			if(!(stat instanceof ScalarNoisyOrSuffStat))
 				throw new BNException("Attempted to update noisy-or statistic with non-noisy-or statistics.");
-			
+	
 			ScalarNoisyOrSuffStat stato = (ScalarNoisyOrSuffStat)stat;
-			this.e0 += stato.e0;
-			this.e1 += stato.e1;
+			for(int i = 0; i < stato.pns.size(); i++)
+			{
+				if(this.pns.size() <= i)
+					this.pns.add(new PXGN());
+				this.pns.get(i).px0 += stato.pns.get(i).px0;
+				this.pns.get(i).px1 += stato.pns.get(i).px1;
+			}
+			this.n += stato.n;
 			return this;
 		}
 		
 		public ScalarNoisyOrSuffStat update(DiscreteMessage lambda, DiscreteMessage pi, Vector<DiscreteMessage> incomingPis)
 		{
 			double[] pn = this.computePN(incomingPis);
-			for(int i = 0; i < incomingPis.size(); i++)
+			double[][] curr = new double[incomingPis.size()+1][2];
+	
+			double total = 0;
+			for(int i = 0; i < incomingPis.size()+1; i++)
 			{
-				double p0 = pn[i]*Math.pow(this.q, i);
-				this.e0 += p0;
-				this.e1 += (1-p0);
+				double fac = Math.pow(this.q, i);
+				curr[i][0] = pn[i]*fac*lambda.getValue(0);
+				curr[i][1] = pn[i]*(1-fac)*lambda.getValue(1);
+				total += (curr[i][0]+curr[i][1]);
+				if(this.pns.size() <= i)
+					this.pns.add(new PXGN());
 			}
+			for(int i = 0; i < incomingPis.size()+1; i++)
+			{
+				this.pns.get(i).px0 += curr[i][0]/total;
+				this.pns.get(i).px1 += curr[i][1]/total;
+			}
+			this.n++;
 			return this;
 		}
 	
@@ -106,9 +143,13 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		{
 			int L = incomingPis.size();
 			double[] dist = new double[L+1];
+			double[] p = new double[L];
 			double eta = 1;
 			for(int i = 0; i < L; i++)
+			{
+				p[i] = incomingPis.get(i).getValue(1)/incomingPis.get(i).getValue(0);
 				eta*= incomingPis.get(i).getValue(0);
+			}
 			dist[0] = eta;
 			
 			double[] buf = new double[L];
@@ -117,21 +158,28 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			
 			for(int i = 0; i < L; i++)
 			{
-				buf[L-1] *= incomingPis.get(L-1-i).getValue(1);
-				for(int j = L-2; j >= 0; j--)
-					buf[j] = incomingPis.get(j-i).getValue(1)*buf[j]+buf[j+1];
+				buf[L-1] *= p[L-1-i];
+				for(int j = L-2; j >= i; j--)
+					buf[j] = p[j-i]*buf[j]+buf[j+1];
 				dist[i+1] = buf[i]*eta;
 			}
 			return dist;
 		}
 		
-		double e0, e1;
+		private static class PXGN
+		{
+			public double px0 = 0;
+			public double px1 = 0;
+		}
+	
+		int n;
+		Vector<PXGN> pns = new Vector<PXGN>();
 		double c, q;
 	}
 	
 	public DiscreteSufficientStatistic getSufficientStatisticObj()
 	{
-		return null;
+		return new ScalarNoisyOrSuffStat(this.c);
 	}
 	
 	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer value) throws BNException

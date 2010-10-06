@@ -2,6 +2,8 @@ package bn.distributions;
 
 import java.util.Vector;
 
+import util.MathUtil;
+
 import bn.BNException;
 import bn.messages.DiscreteMessage;
 
@@ -26,7 +28,19 @@ public class DiscreteCPTUC extends DiscreteDistribution
 
 		if(Math.abs(sum-1) > 1e-12)
 			throw new BNException("Attempted to create unnormalized pdist.");
-
+	}
+	
+	public int sample(IntegerValueSet parents) throws BNException
+	{
+		double val = MathUtil.rand.nextDouble();
+		double sum = 0;
+		for(int i = 0; i < dist.length; i++)
+		{
+			sum += dist[i];
+			if(val < sum)
+				return i;
+		}
+		return dist.length-1;
 	}
 	
 	public DiscreteCPTUC copy() throws BNException

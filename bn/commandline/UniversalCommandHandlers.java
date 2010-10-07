@@ -6,6 +6,7 @@ import java.util.regex.Pattern;
 
 import util.Parser.MethodWrapperHandler;
 import bn.IBayesNet;
+import bn.IBayesNet.RunResults;
 import bn.distributions.Distribution;
 
 public class UniversalCommandHandlers {
@@ -53,6 +54,13 @@ public class UniversalCommandHandlers {
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
 		public String getPrompt() {return null;}
+		
+		@Override
+		protected void handleReturn(PrintStream ps)
+		{
+			RunResults res = (RunResults)this.retObj;
+			ps.println("Converged after " + res.numIts + " iterations with an error of " + res.error + " in " + res.timeElapsed + " seconds.");
+		}
 		
 		private static Pattern patt = Pattern.compile("^\\s*run\\(\\s*(\\d+)\\s*(,\\s*([\\.0-9\\+\\-e]+)\\s*)?\\s*\\)\\s*$");
 		private static int[] groups = new int[]{1,3};

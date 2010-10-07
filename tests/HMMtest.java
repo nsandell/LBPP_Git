@@ -83,7 +83,7 @@ public class HMMtest {
 			this.starttime = starttime;
 		}
 
-		public void callback(IDynBayesNet dbn)
+		public void callback(IDynBayesNet dbn,int numIts, double time, double error)
 		{
 			try
 			{

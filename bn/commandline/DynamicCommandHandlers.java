@@ -11,6 +11,7 @@ import bn.BNException;
 import bn.IDiscreteDynBayesNode;
 import bn.IDynBayesNet;
 import bn.IDynBayesNode;
+import bn.IBayesNet.RunResults;
 import bn.distributions.Distribution;
 
 public class DynamicCommandHandlers
@@ -73,6 +74,14 @@ public class DynamicCommandHandlers
 		{
 			super(bn,IDynBayesNet.class.getMethod("run_parallel_block", new Class<?>[]{int.class,double.class}),new String[]{"max iterations","tolerance"},null);
 		}
+		
+		@Override
+		protected void handleReturn(PrintStream pr)
+		{
+			RunResults res = (RunResults)this.retObj;
+			pr.println("Converged after " + res.numIts + " iterations with an error of " + res.error + " in " + res.timeElapsed + " seconds in parallel run mode.");
+		}
+		
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
 		public String getPrompt() {return null;}

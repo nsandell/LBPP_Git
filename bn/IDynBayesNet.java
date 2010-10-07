@@ -90,9 +90,10 @@ public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 	 * will block until converged.
 	 * @param maxit Maximum number of iterations.
 	 * @param conv Convergence criterion.
+	 * @return Results of the run.
 	 * @throws BNException
 	 */
-	public void run_parallel_block(int maxit, double conv) throws BNException;
+	public RunResults run_parallel_block(int maxit, double conv) throws BNException;
 	
 	/**
 	 * Set a discrete node's value.
@@ -113,8 +114,11 @@ public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 		/**
 		 * This is called when the inference has completed
 		 * @param net The network which has finished inference.
+		 * @param numIts The number of iterations it took to converge
+		 * @param err The final error when converged
+		 * @param timeElapsed The time in seconds it took to converge.
 		 */
-		void callback(IDynBayesNet net);
+		void callback(IDynBayesNet net, int numIts, double err, double timeElapsed);
 		
 		/**
 		 * This is called if parallel inference encountered a problem.

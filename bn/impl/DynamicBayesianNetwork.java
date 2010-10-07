@@ -110,9 +110,11 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 	
 	private static class BlockCallback2 implements ParallelCallback
 	{
-		public void callback(IDynBayesNet net) {
-			this.end_time = System.currentTimeMillis();
+		public void callback(IDynBayesNet net, int numIts, double err, double time) {
 			synchronized (blockLock) {
+				this.timeElapsed = time;
+				this.errorD = err;
+				this.numIts = numIts;
 				this.blockLock.notify();
 			}
 		}
@@ -123,23 +125,23 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 			this.blockLock.notify();
 		}
 	
-		long start_time, end_time;
+		double timeElapsed, errorD;
+		int numIts;
 		private String error = null;
 		Object blockLock = new Object();
 	}
 	
-	public void run_parallel_block(int maxit, double conv) throws BNException
+	public RunResults run_parallel_block(int maxit, double conv) throws BNException
 	{
 		BlockCallback2 cb = new BlockCallback2();
-		cb.start_time = System.currentTimeMillis();
 		synchronized (cb.blockLock) {
 			this.run_parallel(maxit, conv, cb);
 			try{cb.blockLock.wait();}catch(InterruptedException e){System.err.println("Interrupted..");}
 		}
-		double elapsed_seconds = ((double)(cb.end_time-cb.start_time))/1000.0;
 		if(cb.error!=null)
 			throw new BNException(cb.error);
-		System.out.println("Parellel inference has converged after " + elapsed_seconds + " seconds.");
+		return new RunResults(cb.numIts, cb.timeElapsed, cb.errorD);
+		//System.out.println("Parellel inference has converged after " + elapsed_seconds + " seconds.");
 	}
 
 	public void run_parallel(int maxIt, double conv, ParallelCallback callback)
@@ -152,6 +154,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		 *  will take the remainder
 		 */
 		ParallelStatus status = new ParallelStatus(this,conv,maxIt,callback,this.getNodes());
+		status.start_time = System.currentTimeMillis();
 		parallel_iteration_regions(status);
 	}
 	
@@ -266,7 +269,9 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 							this.bn.parallel_iteration_regions(this);
 						}
 						else
-							this.callback.callback(bn);
+						{
+							this.callback.callback(bn,this.iteration,this.getError(),((double)(System.currentTimeMillis()-this.start_time))/1000.0);
+						}
 					}
 				}
 			}
@@ -274,6 +279,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 				this.callback.error(bn,this.message);
 		}
 		
+		long start_time;
 		public boolean ok = true;
 		public String message;
 		public int iteration = 0;

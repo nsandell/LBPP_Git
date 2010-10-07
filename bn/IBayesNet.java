@@ -100,15 +100,29 @@ public interface IBayesNet<BaseInterface>
 	 */
 	public double nodeLogLikelihood(String nodeName) throws BNException;
 	
+	public static class RunResults
+	{
+		public RunResults(int numIts, double timeElapsed, double error)
+		{
+			this.numIts = numIts;
+			this.timeElapsed = timeElapsed;
+			this.error = error;
+		}
+		public int numIts;
+		public double timeElapsed; 
+		public double error;
+	}
+	
 	/**
 	 * Run belief propagation on this network.
 	 * @param maxit The maximum number of iterations to be performed, regardless of error.
 	 * @param convergence The convergence criteria - all distributions must change between 
 	 * 			consecutive iterations less than this to be converged.  The change metric
 	 * 			may vary by node but for discrete nodes it is the L-Infinity norm.
+	 * @return Results of the run
 	 * @throws BNException Shouldn't be thrown unless the network is invalid.
 	 */
-	public void run(int maxit, double convergence) throws BNException;
+	public RunResults run(int maxit, double convergence) throws BNException;
 	
 	/**
 	 * Clear evidence for a specific node.

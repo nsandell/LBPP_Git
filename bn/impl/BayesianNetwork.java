@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import bn.BNException;
 import bn.IBayesNode;
+import bn.IBayesNet.RunResults;
 import bn.distributions.Distribution.SufficientStatistic;
 
 abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType extends BaseInterface> {
@@ -127,8 +128,9 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		this.nodeOrder = nodeOrder;
 	}
 	
-	public void run(int maxit, double conv) throws BNException
+	public RunResults run(int maxit, double conv) throws BNException
 	{
+		long start_time = System.currentTimeMillis();
 		double err = Double.POSITIVE_INFINITY;
 	
 		int i;
@@ -147,7 +149,9 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		err = 0;
 		if(nodeOrder==null)
 			nodeOrder = nodes.keySet();
-		System.out.println("Converged after " + i + " iterations with max change " + err);
+		long end_time = System.currentTimeMillis();
+		return new RunResults(i, ((double)(end_time-start_time))/1000.0, err);
+		//System.out.println("Converged after " + i + " iterations with max change " + err);
 	}
 	
 	public void clearEvidence(String nodeName) throws BNException

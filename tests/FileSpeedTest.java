@@ -5,8 +5,7 @@ import bn.commandline.StaticNetCommandLine;
 public class FileSpeedTest {
 	public static void main(String[] args) throws Exception
 	{
-		//IStaticBayesNet net = StaticNetCommandLine.loadNetwork(args[0]);
-		IStaticBayesNet net = StaticNetCommandLine.loadNetwork("/Users/nsandell/Documents/MATLAB/speedtest11.lbp");
+		IStaticBayesNet net = StaticNetCommandLine.loadNetwork(args[0]);
 		
 		long start = System.currentTimeMillis();
 		net.run(10000, 0);

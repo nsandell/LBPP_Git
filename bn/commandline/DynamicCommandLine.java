@@ -37,7 +37,7 @@ public class DynamicCommandLine
 			parser.addHandler(new DynamicCommandHandlers.IntraEdgeHandler(bn));
 			parser.addHandler(new DynamicCommandHandlers.DiscreteNodeAdder(bn));
 			parser.addHandler(new DynamicCommandHandlers.InitialDistSetter(bn, distMap));
-			//parser.addHandler(new DynamicCommandHandlers.ParallelRunner(bn));
+			parser.addHandler(new DynamicCommandHandlers.ParallelRunner(bn));
 			parser.addHandler(new DynamicCommandHandlers.MarginalHandler(bn));
 			parser.addHandler(new DynamicCommandHandlers.ObservationHandler(bn));
 			parser.addHandler(new UniversalCommandHandlers.LLGetter(bn));

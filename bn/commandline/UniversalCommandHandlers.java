@@ -1,5 +1,6 @@
 package bn.commandline;
 
+import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.regex.Pattern;
 
@@ -66,9 +67,9 @@ public class UniversalCommandHandlers {
 		}
 		
 		@Override
-		protected void handleReturn()
+		protected void handleReturn(PrintStream pr)
 		{
-			System.out.println((Double)this.retObj);
+			pr.println((Double)this.retObj);
 		}
 		
 		public int[] getGroups() {return groups;}

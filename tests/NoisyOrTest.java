@@ -7,7 +7,6 @@ import java.util.Random;
 import bn.BNException;
 import bn.IDiscreteBayesNode;
 import bn.IStaticBayesNet;
-import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.distributions.ScalarNoisyOr;
 import bn.distributions.Distribution.SufficientStatistic;
@@ -17,7 +16,7 @@ public class NoisyOrTest
 {
 	public static void main(String[] args) throws BNException
 	{
-		test2();
+		test1();
 	}
 	
 	public static void test1() throws BNException
@@ -61,6 +60,8 @@ public class NoisyOrTest
 			System.out.println(1-onesFrac/.5);
 			y.optimizeParameters(stats.get("Y"));
 		}
+		int a = 3;
+		a*=3;
 	}
 	
 	public static void test2() throws BNException

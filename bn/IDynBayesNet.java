@@ -96,6 +96,17 @@ public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 	public RunResults run_parallel_block(int maxit, double conv) throws BNException;
 	
 	/**
+	 * Perform expectation maximization with inference in parallel
+	 * @param maxit Maximum number of EM iterations
+	 * @param conv EM Convergence criterion
+	 * @param infMaxIt Maximimum number of BP iterations
+	 * @param infConv BP convergence criterion
+	 * @return Results
+	 * @throws BNException 
+	 */
+	public RunResults optimize_parallel(int maxit, double conv, int infMaxIt, double infConv) throws BNException;
+	
+	/**
 	 * Set a discrete node's value.
 	 * @param nodeName Name of the discrete node to set.
 	 * @param t0 Time slice to set the value at.

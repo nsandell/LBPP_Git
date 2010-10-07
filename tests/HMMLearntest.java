@@ -36,7 +36,7 @@ public class HMMLearntest {
 						System.out.print(((IDiscreteDynBayesNode)dbn.getNode("X")).getMarginal(i).getValue(j)+ " ");
 					}System.out.println();
 				}
-				dbn.optimize();
+				dbn.optimize(1,0,0,0);
 			}
 		}
 		catch(BNException e) {

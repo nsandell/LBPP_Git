@@ -144,22 +144,26 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 			node.clearEvidence();
 	}
 	
-	public void optimizeParameters() throws BNException
+	public double optimizeParameters() throws BNException
 	{
+		double initchange = 0, advachange = 0;
 		TwoSliceStatistics<DiscreteSufficientStatistic> tss = this.getSufficientStatistic();
 		if(this.init!=null)
-			this.init.optimize(tss.initialStat);
-		this.adva.optimize(tss.advanceStat);
+			initchange = this.init.optimize(tss.initialStat);
+		advachange = this.adva.optimize(tss.advanceStat);
+		return Math.max(initchange, advachange);
 	}
 	
-	public void optimizeParameters(SufficientStatistic stat) throws BNException
+	public double optimizeParameters(SufficientStatistic stat) throws BNException
 	{
+		double initchange = 0, advachange = 0;
 		if(!(stat instanceof TwoSliceStatistics<?>))
 			throw new BNException("Can't optimize DBN parameters with non two-slice statistic.");
 		TwoSliceStatistics<?> tss = (TwoSliceStatistics<?>)stat;
 		if(this.init!=null)
-			this.init.optimize(tss.initialStat);
-		this.adva.optimize(tss.advanceStat);
+			initchange = this.init.optimize(tss.initialStat);
+		advachange = this.adva.optimize(tss.advanceStat);
+		return Math.max(initchange, advachange);
 	}
 
 	@Override

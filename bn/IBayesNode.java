@@ -65,18 +65,20 @@ public interface IBayesNode
 	 * Optimize the parameters of this node.  This will collect the sufficient
 	 * statistics given the current evidence in the network, and then optimize
 	 * the parameters accordingly.
+	 * @return The change of the node in optimizing.
 	 * @throws BNException
 	 */
-	void optimizeParameters() throws BNException;
+	double optimizeParameters() throws BNException;
 	
 	/**
 	 * Optimize the parameters of this node according to a sufficient statistic
 	 * passed in as an argument.
 	 * @param stat The sufficient statistic to optimize according to.
+	 * @return The change of the node in optimizing.
 	 * @throws BNException If the sufficient statistic does not line up with
 	 * the expectations of the node.
 	 */
-	void optimizeParameters(SufficientStatistic stat) throws BNException;
+	double optimizeParameters(SufficientStatistic stat) throws BNException;
 	
 	/**
 	 * Get the log likelihood of this node given the evidence "above" it

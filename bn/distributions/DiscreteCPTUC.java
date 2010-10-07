@@ -110,14 +110,19 @@ public class DiscreteCPTUC extends DiscreteDistribution
 	}
 	
 	@Override
-	public void optimize(SufficientStatistic stat) throws BNException
+	public double optimize(SufficientStatistic stat) throws BNException
 	{
 		if(!(stat instanceof UDSuffStat))
 			throw new BNException("Attempted to optimized probability vector with non probability vector statistics.");
-		
+		double maxdiff = 0;
 		UDSuffStat stato = (UDSuffStat)stat; 
 		for(int i = 0; i < stato.expected_data.length; i++)
-			this.dist[i] = stato.expected_data[i]/stato.expected_sum;
+		{
+			double newval = stato.expected_data[i]/stato.expected_sum;
+			maxdiff = Math.max(Math.abs(newval), maxdiff);
+			this.dist[i] = newval; 
+		}
+		return maxdiff;
 	}
 	
 	@Override

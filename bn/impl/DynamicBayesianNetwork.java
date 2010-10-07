@@ -5,6 +5,7 @@ import java.util.HashMap;
 import bn.BNException;
 import bn.IDynBayesNet;
 import bn.IDynBayesNode;
+import bn.IBayesNet.RunResults;
 import bn.distributions.DiscreteDistribution;
 import bn.distributions.Distribution;
 
@@ -75,6 +76,25 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 	public int getT()
 	{
 		return this.T;
+	}
+	
+	public RunResults optimize_parallel(int maxLearnIt, double learnErrConvergence, int maxInfIt, double infErrConvergence) throws BNException
+	{
+		long startTime = System.currentTimeMillis();
+		double learnErr = 0;
+		int i = 0;
+		while(i < maxLearnIt)
+		{
+			this.run_parallel_block(maxInfIt, infErrConvergence);
+			for(DBNNode<?> node : this.dnodes.values())
+			{
+				learnErr = Math.max(node.optimizeParameters(),learnErr);
+			}
+			if(learnErr < learnErrConvergence)
+				break;
+			i++;
+		}
+		return new RunResults(i, ((double)(System.currentTimeMillis()-startTime))/1000.0, learnErr);
 	}
 
 	@Override

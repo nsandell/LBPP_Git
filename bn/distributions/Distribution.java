@@ -23,9 +23,10 @@ public interface Distribution
 	/**
 	 * Optimize this distribution based on a sufficient statistic object.
 	 * @param obj The statistic to optimize on.
+	 * @return The resulting change in optimizing.
 	 * @throws BNException If the statistic is of the incorrect type.
 	 */
-	public void optimize(SufficientStatistic obj) throws BNException;
+	public double optimize(SufficientStatistic obj) throws BNException;
 	
 	/**
 	 * Copy this distribution.

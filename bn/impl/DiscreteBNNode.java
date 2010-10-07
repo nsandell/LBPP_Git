@@ -326,13 +326,13 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	private ArrayList<DiscreteParentSubscriber> ds_children = new ArrayList<DiscreteParentSubscriber>();
 	private Vector<DiscreteMessage> outgoing_lambdas= new Vector<DiscreteMessage>();
 
-	public void optimizeParameters() throws BNException
+	public double optimizeParameters() throws BNException
 	{
-		this.cpt.optimize(this.getSufficientStatistic());
+		return this.cpt.optimize(this.getSufficientStatistic());
 	}
 	
-	public void optimizeParameters(SufficientStatistic stat) throws BNException
+	public double optimizeParameters(SufficientStatistic stat) throws BNException
 	{
-		this.cpt.optimize(stat);
+		return this.cpt.optimize(stat);
 	}
 }

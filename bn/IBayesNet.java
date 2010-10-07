@@ -80,10 +80,15 @@ public interface IBayesNet<BaseInterface>
 	public void optimize(Iterable<String> nodenames, HashMap<String,SufficientStatistic> stats) throws BNException; // Update the parameters of 'this' network using the stats in the hashmap
 	
 	/**
-	 * This method first collects sufficient statistics for all nodes, and then optimizes
-	 * the node CPD parameters based on those nodes.
+	 * Run expectation maximization on this network.
+	 * @param learnIt Will perform at most this many EM iterations.
+	 * @param learnErr Will terminate EM earlier if this err criteria is met.
+	 * @param runIt In the inference part of EM, will run at most this many iterations of belief propagation.
+	 * @param runErr This is the convergence criteria for the belief propagation part of EM
+	 * @return Results of the procedure.
+	 * @throws BNException
 	 */
-	public void optimize(); 
+	public RunResults optimize(int learnIt, double learnErr, int runIt, double runErr) throws BNException;
 	
 	/**
 	 * Validate that this Bayesian Network is properly formed.  An exception would be thrown if,

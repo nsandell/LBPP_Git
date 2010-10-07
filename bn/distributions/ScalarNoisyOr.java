@@ -93,7 +93,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 	}
 	
 	@Override //TODO Validate this approach, I think it may be a heuristic
-	public void optimize(SufficientStatistic stat) throws BNException
+	public double optimize(SufficientStatistic stat) throws BNException
 	{
 		if(!(stat instanceof ScalarNoisyOrSuffStat))
 			throw new BNException("Attempted to optimize noisy-or distribution with non-noisy or statistics!");
@@ -106,7 +106,9 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			double N = N0+stato.pns.get(i).px1;
 			this.q += N/normfac*Math.pow(N0/N, 1/((double)i));
 		}
+		double change = Math.abs(this.c-(1-q));
 		this.c = 1-q;
+		return change;
 	}
 	
 	/**

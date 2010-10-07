@@ -62,12 +62,23 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 			node.clearEvidence();
 	}
 	
-	public void optimize()
+	public RunResults optimize(int maxLearnIt, double learnErrConvergence, int maxInfIt, double infErrConvergence) throws BNException
 	{
-		for(BaseNodeType node : nodes.values())
+		long startTime = System.currentTimeMillis();
+		double learnErr = 0;
+		int i = 0;
+		while(i < maxLearnIt)
 		{
-			try{node.optimizeParameters();} catch(BNException e){}
+			this.run(maxInfIt, infErrConvergence);
+			for(BaseNodeType node : nodes.values())
+			{
+				learnErr = Math.max(node.optimizeParameters(),learnErr);
+			}
+			if(learnErr < learnErrConvergence)
+				break;
+			i++;
 		}
+		return new RunResults(i, ((double)(System.currentTimeMillis()-startTime))/1000.0, learnErr);
 	}
 	
 	private void dfs_cycle_detect(HashSet<IBayesNode> marks, HashSet<IBayesNode> ancestors, IBayesNode current) throws BNException

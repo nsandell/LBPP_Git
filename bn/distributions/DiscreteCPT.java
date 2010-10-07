@@ -315,11 +315,12 @@ public class DiscreteCPT extends DiscreteDistribution
 	}
 	
 	@Override
-	public void optimize(SufficientStatistic stat) throws BNException
+	public double optimize(SufficientStatistic stat) throws BNException
 	{
 		if(!(stat instanceof CPTSufficient2SliceStat))
 			throw new BNException("Failure to optimize CPT parameters : invalid sufficient statistic object used..");
 		CPTSufficient2SliceStat stato = (CPTSufficient2SliceStat)stat;
+		double maxdiff = 0;
 		if(stato.cpt.dimprod!=this.dimprod || stato.card != this.getCardinality())
 			throw new BNException("Failure to optimize CPT parameters : misfitting sufficient statistic object used...");
 		
@@ -331,9 +332,14 @@ public class DiscreteCPT extends DiscreteDistribution
 			if(rowsum > 0)
 			{
 				for(int j = 0; j < stato.card; j++)
-					this.values[i][j] = stato.exp_tr[i][j]/rowsum;
+				{
+					double newval = stato.exp_tr[i][j]/rowsum;
+					maxdiff = Math.max(Math.abs(this.values[i][j]-newval), maxdiff);
+					this.values[i][j] = newval;
+				}
 			}
 		}
+		return maxdiff;
 	}
 	
 	@Override

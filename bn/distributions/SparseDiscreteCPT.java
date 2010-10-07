@@ -303,10 +303,11 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 	}
 	
 	@Override
-	public void optimize(SufficientStatistic stat) throws BNException
+	public double optimize(SufficientStatistic stat) throws BNException
 	{
 		if(!(stat instanceof SparseCPTSuffStat))
 			throw new BNException("Failed to optimize : incorrect (or null) sufficient statistic.");
+		double maxChange = 0;
 		SparseCPTSuffStat stato = (SparseCPTSuffStat)stat;
 		this.entries.clear();
 		for(IndexWrapper index : stato.expected_trans.keySet())
@@ -315,9 +316,17 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 			HashMap<Integer,Double> innerMap = new HashMap<Integer, Double>();
 			this.entries.put(index,innerMap); 
 			double rowsum = stato.row_sum.get(index);
-			for(Integer value : innerMap.keySet())
-				innerMap.put(value, innerMap_stat.get(value)/rowsum);
+			for(Integer value : innerMap_stat.keySet())
+			{
+				double newval = innerMap_stat.get(value)/rowsum;
+				if(innerMap.get(value)==null)
+					maxChange = Math.max(maxChange,newval);
+				else
+					maxChange = Math.max(maxChange, Math.abs(newval-innerMap.get(value)));
+				innerMap.put(value, newval);
+			}
 		}
+		return maxChange;
 	}
 	
 	@Override

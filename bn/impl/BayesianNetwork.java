@@ -65,10 +65,11 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 	public RunResults optimize(int maxLearnIt, double learnErrConvergence, int maxInfIt, double infErrConvergence) throws BNException
 	{
 		long startTime = System.currentTimeMillis();
-		double learnErr = 0;
 		int i = 0;
+		double learnErr = 0;
 		while(i < maxLearnIt)
 		{
+			learnErr = 0;
 			this.run(maxInfIt, infErrConvergence);
 			for(BaseNodeType node : nodes.values())
 			{

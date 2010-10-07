@@ -65,6 +65,30 @@ public class UniversalCommandHandlers {
 		private static Pattern patt = Pattern.compile("^\\s*run\\(\\s*(\\d+)\\s*(,\\s*([\\.0-9\\+\\-e]+)\\s*)?\\s*\\)\\s*$");
 		private static int[] groups = new int[]{1,3};
 	}
+	
+	static class Optimizer extends MethodWrapperHandler<Object>
+	{
+		public Optimizer(IBayesNet<?> net) throws Exception {
+			super(net,IBayesNet.class.getMethod("optimize", new Class[]{int.class,double.class,int.class,double.class}),
+					new String[]{"maximum EM iterations", "EM convergence criterion",
+								 "maximum BP iterations", "BP convergence criterion"},null);
+		}
+		
+		@Override
+		protected void handleReturn(PrintStream pr)
+		{
+			RunResults res = (RunResults)this.retObj;
+			pr.println("Optimized in " + res.numIts + " iterations of EM, with an error of " + res.error + " and in " + res.timeElapsed + " seconds.");
+		}
+
+
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+
+		private static Pattern patt = Pattern.compile("^\\s*learn\\(\\s*(.*)\\s*,\\s*(.*)\\s*,\\s*(.*)\\s*,\\s*(.*)\\s*\\)\\s*$");
+		private static int[] groups = new int[]{1,2,3,4};
+	}
 
 	static class LLGetter extends MethodWrapperHandler<Object>
 	{

@@ -247,8 +247,8 @@ public class DiscreteCPT extends DiscreteDistribution
 		public CPTSufficient2SliceStat(DiscreteCPT cpt)
 		{
 			this.cpt = cpt;
-			this.exp_tr = new double[this.cpt.dimprod][this.card];
-			this.current = new double[this.cpt.dimprod][this.card];
+			this.exp_tr = new double[this.cpt.dimprod][this.cpt.getCardinality()];
+			this.current = new double[this.cpt.dimprod][this.cpt.getCardinality()];
 			this.reset();
 		}
 	
@@ -257,7 +257,7 @@ public class DiscreteCPT extends DiscreteDistribution
 		{
 				for(int i =  0; i < this.cpt.dimprod; i++)
 				{
-					for(int j = 0; j < this.card; j++)
+					for(int j = 0; j < this.cpt.getCardinality(); j++)
 					{
 						this.exp_tr[i][j] = 0;
 						this.current[i][j] = 0;
@@ -271,11 +271,11 @@ public class DiscreteCPT extends DiscreteDistribution
 			if(!(stat instanceof CPTSufficient2SliceStat))
 				throw new BNException("Attempted to combine sufficient statistics of differing types ("+this.getClass().getName()+","+stat.getClass().getName()+")");
 			CPTSufficient2SliceStat other = (CPTSufficient2SliceStat)stat;
-			if(other.cpt.dimprod!=this.cpt.dimprod || other.card!=this.card)
+			if(other.cpt.dimprod!=this.cpt.dimprod || other.cpt.getCardinality()!=this.cpt.getCardinality())
 				throw new BNException("Attempted to combine different CPTs statistics..");
 			
 			for(int i = 0; i < this.cpt.dimprod; i++)
-				for(int j = 0; j < this.card; j++)
+				for(int j = 0; j < this.cpt.getCardinality(); j++)
 					this.exp_tr[i][j] += other.exp_tr[i][j];
 			return this;
 		}
@@ -293,7 +293,7 @@ public class DiscreteCPT extends DiscreteDistribution
 				double current_prod = 1;
 				for(int i = 0; i < indices.length; i++)
 					current_prod *= incomingPis.get(i).getValue(indices[i]);
-				for(int x = 0; x < this.card; x++)
+				for(int x = 0; x < this.cpt.getCardinality(); x++)
 				{
 					double jointBit = current_prod*this.cpt.values[absIndex][x];
 					this.current[absIndex][x] = jointBit*lambda.getValue(x);
@@ -303,12 +303,11 @@ public class DiscreteCPT extends DiscreteDistribution
 			while((indices = incrementIndices(indices, this.cpt.dimSizes))!=null);
 			
 			for(int i = 0; i < this.cpt.dimprod; i++)
-				for(int j = 0; j < this.card; j++)
+				for(int j = 0; j < this.cpt.getCardinality(); j++)
 					this.exp_tr[i][j] += this.current[i][j]/sum;
 			return this;
 		}
 		
-		int card;
 		double[][] exp_tr;
 		double[][] current;
 		private DiscreteCPT cpt;
@@ -321,17 +320,17 @@ public class DiscreteCPT extends DiscreteDistribution
 			throw new BNException("Failure to optimize CPT parameters : invalid sufficient statistic object used..");
 		CPTSufficient2SliceStat stato = (CPTSufficient2SliceStat)stat;
 		double maxdiff = 0;
-		if(stato.cpt.dimprod!=this.dimprod || stato.card != this.getCardinality())
+		if(stato.cpt.dimprod!=this.dimprod || stato.cpt.getCardinality() != this.getCardinality())
 			throw new BNException("Failure to optimize CPT parameters : misfitting sufficient statistic object used...");
 		
 		for(int i = 0; i < this.values.length; i++)
 		{
 			double rowsum = 0;
-			for(int j = 0; j < stato.card; j++)
+			for(int j = 0; j < stato.cpt.getCardinality(); j++)
 				rowsum += stato.exp_tr[i][j];
 			if(rowsum > 0)
 			{
-				for(int j = 0; j < stato.card; j++)
+				for(int j = 0; j < stato.cpt.getCardinality(); j++)
 				{
 					double newval = stato.exp_tr[i][j]/rowsum;
 					maxdiff = Math.max(Math.abs(this.values[i][j]-newval), maxdiff);

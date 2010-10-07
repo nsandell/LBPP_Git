@@ -119,7 +119,7 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		for(int i = 0; i < stato.expected_data.length; i++)
 		{
 			double newval = stato.expected_data[i]/stato.expected_sum;
-			maxdiff = Math.max(Math.abs(newval), maxdiff);
+			maxdiff = Math.max(Math.abs(newval-dist[i]), maxdiff);
 			this.dist[i] = newval; 
 		}
 		return maxdiff;

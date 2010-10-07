@@ -5,9 +5,11 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import util.Parser;
+import util.Parser.MethodWrapperHandler;
 import util.Parser.ParserException;
 import util.Parser.ParserFunction;
 import bn.BNException;
+import bn.IBayesNet;
 import bn.IDiscreteDynBayesNode;
 import bn.IDynBayesNet;
 import bn.IDynBayesNode;
@@ -88,6 +90,31 @@ public class DynamicCommandHandlers
 		private static int[] groups = new int[]{1,2};
 		private static Pattern patt = Pattern.compile("^\\s*runp\\(\\s*(\\d+)\\s*,\\s*([\\.e\\-0-9]+)\\s*\\)\\s*$");
 	}
+	
+	static class ParallelOptimizer extends MethodWrapperHandler<Object>
+	{
+		public ParallelOptimizer(IBayesNet<?> net) throws Exception {
+			super(net,IDynBayesNet.class.getMethod("optimize_parallel", new Class[]{int.class,double.class,int.class,double.class}),
+					new String[]{"maximum EM iterations", "EM convergence criterion",
+								 "maximum BP iterations", "BP convergence criterion"},null);
+		}
+		
+		@Override
+		protected void handleReturn(PrintStream pr)
+		{
+			RunResults res = (RunResults)this.retObj;
+			pr.println("Optimized in " + res.numIts + " iterations of EM, with an error of " + res.error + " and in " + res.timeElapsed + " seconds.");
+		}
+
+
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+
+		private static Pattern patt = Pattern.compile("^\\s*learnp\\(\\s*(.*)\\s*,\\s*(.*)\\s*,\\s*(.*)\\s*,\\s*(.*)\\s*\\)\\s*$");
+		private static int[] groups = new int[]{1,2,3,4};
+	}
+
 
 	static class MarginalHandler implements Parser.ParserFunction
 	{

@@ -108,35 +108,35 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 			throw new BNException("Unsupported node/distribution pair.");
 	}
 	
-	private static class BlockCallback implements ParallelCallback
+	private static class BlockCallback2 implements ParallelCallback
 	{
-		public void callback(IDynBayesNet neet) {
-			this.done = true;
+		public void callback(IDynBayesNet net) {
+			this.end_time = System.currentTimeMillis();
+			synchronized (blockLock) {
+				this.blockLock.notify();
+			}
 		}
-
-		public void error(IDynBayesNet net, String error) {
-			this.done = true;
+		
+		public void error(IDynBayesNet net, String error)
+		{
 			this.error = error;
+			this.blockLock.notify();
 		}
 	
-		long start_time;
-		boolean done = false;
-		String error = null;
+		long start_time, end_time;
+		private String error = null;
+		Object blockLock = new Object();
 	}
 	
 	public void run_parallel_block(int maxit, double conv) throws BNException
 	{
-		BlockCallback cb = new BlockCallback();
+		BlockCallback2 cb = new BlockCallback2();
 		cb.start_time = System.currentTimeMillis();
-		
-		this.run_parallel(maxit,conv,cb);
-		while(!(cb.done))
-		{
-			try{
-			Thread.sleep(100);
-			}catch(InterruptedException e){}
+		synchronized (cb.blockLock) {
+			this.run_parallel(maxit, conv, cb);
+			try{cb.blockLock.wait();}catch(InterruptedException e){System.err.println("Interrupted..");}
 		}
-		double elapsed_seconds = ((double)(System.currentTimeMillis()-cb.start_time))/1000.0;
+		double elapsed_seconds = ((double)(cb.end_time-cb.start_time))/1000.0;
 		if(cb.error!=null)
 			throw new BNException(cb.error);
 		System.out.println("Parellel inference has converged after " + elapsed_seconds + " seconds.");

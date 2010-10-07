@@ -10,8 +10,20 @@ import util.MathUtil;
 import bn.BNException;
 import bn.messages.DiscreteMessage;
 
+/**
+ * Sparse discrete CPT.  The storage is fairly heavy weight (hash tables) so this probably won't
+ * save space unless very sparse.  More likely it will save time.  Does not necessarily have to
+ * have every parent index combination specified, but if that combination comes up in runtime
+ * it will cause an exception.
+ * @author Nils F. Sandell
+ */
 public class SparseDiscreteCPT extends DiscreteDistribution
 {
+	/**
+	 * Class representative of an entry in a CPT, this is for outside classes
+	 * initializing the CPT.
+	 * @author Nils F. Sandell
+	 */
 	public static class Entry
 	{
 		public int[] conditional_indices;
@@ -19,6 +31,7 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		public double p;
 	}
 	
+	@Override
 	public int sample(IntegerValueSet parents) throws BNException
 	{
 		int[] parentsI = new int[parents.length()];
@@ -41,6 +54,10 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		return lastint;
 	}
 
+	/**
+	 * Wrap a set of indices for hashing and comparison, for use in our tables.
+	 * @author Nils F. Sandell
+	 */
 	private static class IndexWrapper
 	{
 		public IndexWrapper(int[] indices)
@@ -81,6 +98,14 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		private int[] indices;
 	}
 
+	/**
+	 * Constructor, build sparse table from an iterator over entries.
+	 * @param entryTable Iterator over entries to set the table with.
+	 * @param dimSizes Size of conditioning variables.
+	 * @param cardinality Cardinality of the varibale.
+	 * @throws BNException If the Sparse CPT has a row that doesn't sum to ones
+	 * 			(that has at least one entry) or the arguments are otherwise inconsistent
+	 */
 	public SparseDiscreteCPT(Iterator<Entry> entryTable, int[] dimSizes, int cardinality) throws BNException
 	{
 		super(cardinality);
@@ -106,6 +131,7 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		this.validate();
 	}
 	
+	@Override
 	public SparseDiscreteCPT copy() throws BNException
 	{
 		class EntryItWrap implements Iterator<Entry> { 
@@ -150,6 +176,10 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		return new SparseDiscreteCPT(new EntryItWrap(this.entries),this.dimSizes,this.getCardinality());
 	}
 
+	/**
+	 * Validate this CPT
+	 * @throws BNException If invalid
+	 */
 	private void validate() throws BNException
 	{
 		int[] indices = new int[this.dimSizes.length];
@@ -171,6 +201,12 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		} while((indices = incrementIndices(indices, dimSizes))!=null);
 	}
 
+	/**
+	 * Ensure an index set is valid given the dimensions of conditioning variables.
+	 * @param indexes Index set over conditioning variables
+	 * @param dimSizes Conditioning variables dimensions
+	 * @return True of good, else false
+	 */
 	private final static boolean goodIndex(int[] indexes, int[] dimSizes)
 	{
 		if(indexes.length!=dimSizes.length)
@@ -183,6 +219,7 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		return true;
 	}
 	
+	@Override
 	public void validateConditionDimensions(int [] dimens) throws BNException
 	{
 		if(dimens.length!=this.dimSizes.length)
@@ -192,6 +229,7 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 				throw new BNException("Invalid parent set for CPT!");
 	}
 
+	@Override
 	public double evaluate(int[] indices,int value) throws BNException
 	{
 		if(!goodIndex(indices,this.dimSizes))
@@ -208,6 +246,12 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		}
 	}
 
+	/**
+	 * Evaluate using an index wrapper rather than int[]
+	 * @param indexWrapper Conditioning variable values
+	 * @param value value of variable of interest
+	 * @return probability
+	 */
 	public double evaluate(IndexWrapper indexWrapper, int value)
 	{
 		try{
@@ -217,6 +261,13 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		}
 	}
 	
+	/**
+	 * Faster evaluation, without checking properness of
+	 * indices
+	 * @param indices Values of conditioning variables
+	 * @param value Value of variable of interest
+	 * @return Probability.
+	 */
 	public double evaluateFast(int[] indices,int value)
 	{
 		try
@@ -227,6 +278,7 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		}
 	}
 	
+	@Override
 	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException
 	{
 		boolean observed = value!=null;
@@ -250,6 +302,7 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		return ll;
 	}
 	
+	@Override
 	public void optimize(SufficientStatistic stat) throws BNException
 	{
 		if(!(stat instanceof SparseCPTSuffStat))
@@ -267,6 +320,7 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		}
 	}
 	
+	@Override
 	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer obsvalue) throws BNException
 	{
 		for(IndexWrapper indexW : this.entries.keySet())
@@ -317,11 +371,17 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		}
 	}
 	
+	@Override
 	public DiscreteSufficientStatistic getSufficientStatisticObj()
 	{
 		return new SparseCPTSuffStat(this);
 	}
 	
+	/**
+	 * Sufficient statistic for sparse CPT.  Similar to dense statistic but stored
+	 * sparsely
+	 * @author Nils F. Sandell
+	 */
 	private static class SparseCPTSuffStat implements DiscreteSufficientStatistic
 	{
 		public SparseCPTSuffStat(SparseDiscreteCPT cpt)
@@ -337,7 +397,8 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 			this.expected_trans.clear();
 		}
 		
-		public SparseCPTSuffStat update(DiscreteMessage lambda, DiscreteMessage pi,
+		@Override
+		public SparseCPTSuffStat update(DiscreteMessage lambda,
 				Vector<DiscreteMessage> incomingPis)
 		{
 			HashMap<IndexWrapper, HashMap<Integer, Double>> current = new HashMap<SparseDiscreteCPT.IndexWrapper, HashMap<Integer,Double>>();
@@ -424,8 +485,6 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		private HashMap<IndexWrapper,Double> row_sum;
 		private HashMap<IndexWrapper,HashMap<Integer,Double>> expected_trans;
 	}
-	
-	public int[] getConditionDimensions(){return this.dimSizes;}
 	
 	int[] dimSizes;
 	HashMap<IndexWrapper,HashMap<Integer,Double>> entries;

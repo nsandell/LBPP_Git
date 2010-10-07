@@ -7,9 +7,22 @@ import util.MathUtil;
 import bn.BNException;
 import bn.messages.DiscreteMessage;
 
+/**
+ * Implements a 'scalar' noisy or CPD.  That is, a noisy or node
+ * where all activiation (inhibition) effects from parents are
+ * identical, described by space c (activation probability)
+ * i.e. p(this=1 | one and only one parent=1)=c
+ * Note this is only valid for binary nodes with binary parents
+ * @author Nils F. Sandell
+ */
 public class ScalarNoisyOr extends DiscreteDistribution
 {
 	
+	/**
+	 * Create a scalar noisy or node with activation parameter c
+	 * @param c Activation parameter (i.e. p(this=1 | one and only one parent=1)=c)
+	 * @throws BNException If c < 0 or c > 1
+	 */
 	public ScalarNoisyOr(double c) throws BNException
 	{
 		super(2);
@@ -18,6 +31,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		this.q = 1-c;
 	}
 	
+	@Override
 	public double evaluate(int[] indices, int value)
 	{
 		int numact = 0;
@@ -29,6 +43,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			return 1-getProbability1(numact);
 	}
 	
+	@Override
 	public int sample(IntegerValueSet parents)  throws BNException
 	{
 		int num1 = 0;
@@ -39,11 +54,17 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		return (MathUtil.rand.nextDouble() < getProbability1(num1)) ? 1 : 0;
 	}
 	
+	/**
+	 * Get the probability this node is active given the number of active parents.
+	 * @param numActiveParents the number of active parents.
+	 * @return Probability this node is active.
+	 */
 	double getProbability1(int numActiveParents)
 	{
 		return 1-Math.pow(this.q, numActiveParents);
 	}
 	
+	@Override
 	public void validateConditionDimensions(int[] dims) throws BNException
 	{
 		for(int i =0; i < dims.length; i++)
@@ -51,6 +72,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 				throw new BNException("Noisy-Or depends on parent with cardinality that is not 2.");
 	}
 	
+	@Override
 	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value)
 	{
 		double localProduct = 1;
@@ -64,11 +86,13 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			return 0;
 	}
 	
+	@Override
 	public ScalarNoisyOr copy() throws BNException
 	{
 		return new ScalarNoisyOr(c);
 	}
 	
+	@Override //TODO Validate this approach, I think it may be a heuristic
 	public void optimize(SufficientStatistic stat) throws BNException
 	{
 		if(!(stat instanceof ScalarNoisyOrSuffStat))
@@ -85,17 +109,22 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		this.c = 1-q;
 	}
 	
+	/**
+	 * Sufficient statistic for scalar noisy or class
+	 * @author Nils F. Sandell
+	 */
 	public static class ScalarNoisyOrSuffStat implements DiscreteSufficientStatistic
 	{
-		public ScalarNoisyOrSuffStat(double c)
+		public ScalarNoisyOrSuffStat(ScalarNoisyOr cpt)
 		{
-			this.c = c;
-			this.q = 1-c;
+			this.cpt = cpt;
 			this.reset();
 		}
 		
+		@Override
 		public void reset(){this.pns.clear();}
 		
+		@Override
 		public ScalarNoisyOrSuffStat update(SufficientStatistic stat) throws BNException
 		{
 			if(!(stat instanceof ScalarNoisyOrSuffStat))
@@ -113,7 +142,8 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			return this;
 		}
 		
-		public ScalarNoisyOrSuffStat update(DiscreteMessage lambda, DiscreteMessage pi, Vector<DiscreteMessage> incomingPis)
+		@Override
+		public ScalarNoisyOrSuffStat update(DiscreteMessage lambda, Vector<DiscreteMessage> incomingPis)
 		{
 			double[] pn = this.computePN(incomingPis);
 			double[][] curr = new double[incomingPis.size()+1][2];
@@ -121,7 +151,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			double total = 0;
 			for(int i = 0; i < incomingPis.size()+1; i++)
 			{
-				double fac = Math.pow(this.q, i);
+				double fac = Math.pow(this.cpt.q, i);
 				curr[i][0] = pn[i]*fac*lambda.getValue(0);
 				curr[i][1] = pn[i]*(1-fac)*lambda.getValue(1);
 				total += (curr[i][0]+curr[i][1]);
@@ -174,14 +204,16 @@ public class ScalarNoisyOr extends DiscreteDistribution
 	
 		int n;
 		Vector<PXGN> pns = new Vector<PXGN>();
-		double c, q;
+		ScalarNoisyOr cpt;
 	}
 	
+	@Override
 	public DiscreteSufficientStatistic getSufficientStatisticObj()
 	{
-		return new ScalarNoisyOrSuffStat(this.c);
+		return new ScalarNoisyOrSuffStat(this);
 	}
 	
+	@Override
 	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer value) throws BNException
 	{
 		double localProd = 1;

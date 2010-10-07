@@ -7,15 +7,28 @@ import util.MathUtil;
 import bn.BNException;
 import bn.messages.DiscreteMessage;
 
+/**
+ * A probability vector - a CPT with non conditioning variables.
+ * @author Nils F. Sandell
+ */
 public class DiscreteCPTUC extends DiscreteDistribution
 {
+	/**
+	 * Create a probability vector
+	 * @param distr They probability values.
+	 * @throws BNException
+	 */
 	public DiscreteCPTUC(double[] distr) throws BNException
 	{
 		super(distr.length);
-		this.dist = distr;
+		this.dist = distr.clone();
 		this.validate();
 	}
 
+	/**
+	 * Validate this probability vector
+	 * @throws BNException
+	 */
 	private final void validate() throws BNException
 	{
 		double sum = 0;
@@ -29,7 +42,8 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		if(Math.abs(sum-1) > 1e-12)
 			throw new BNException("Attempted to create unnormalized pdist.");
 	}
-	
+
+	@Override
 	public int sample(IntegerValueSet parents) throws BNException
 	{
 		double val = MathUtil.rand.nextDouble();
@@ -43,6 +57,7 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		return dist.length-1;
 	}
 	
+	@Override
 	public DiscreteCPTUC copy() throws BNException
 	{
 		double[] newdist = new double[this.dist.length];
@@ -51,34 +66,16 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		return new DiscreteCPTUC(newdist);
 	}
 
-	public int[] getConditionDimensions()
-	{
-		return new int[0];
-	}
-
-	public DiscreteCPTUC(int index,int card)
-	{
-		super(card);
-		this.dist = null;
-	}
-
-	public DiscreteCPTUC(DiscreteCPTUC orig)
-	{
-		super(orig.getCardinality());
-		if(orig.dist==null)
-		{
-			this.dist = null;
-		}
-		else
-		{
-			this.dist = new double[orig.dist.length];
-			for(int i = 0; i < this.dist.length; i++)
-				this.dist[i] = orig.dist[i];
-		}
-	}
-
+	/**
+	 * Get a uniform distribution probability vector.
+	 * @param The cardinality of the vector
+	 * @return Uniform distribution
+	 * @throws BNException Cardinality <= 0
+	 */
 	public static DiscreteCPTUC uniform(int cardinality) throws BNException
 	{
+		if(cardinality <= 0)
+			throw new BNException("Attempted to get uniform distribution with cardinality <= 0");
 		double[] uniform = new double[cardinality];
 		double value = ((double)1)/((double)cardinality);
 		for(int i = 0; i < cardinality; i++)
@@ -86,12 +83,14 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		return new DiscreteCPTUC(uniform);
 	}
 	
+	@Override
 	public void validateConditionDimensions(int[] dims) throws BNException
 	{
 		if(dims.length!=0)
 			throw new BNException("Probability vector should not have conditions..");
 	}
 
+	@Override
 	public double evaluate(int[] indices, int value) throws BNException
 	{
 		if(indices.length!=0)
@@ -99,6 +98,7 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		return dist[value];
 	}
 	
+	@Override
 	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException
 	{
 		for(int i = 0; i < local_pi.getCardinality(); i++)
@@ -109,6 +109,7 @@ public class DiscreteCPTUC extends DiscreteDistribution
 			return 0;
 	}
 	
+	@Override
 	public void optimize(SufficientStatistic stat) throws BNException
 	{
 		if(!(stat instanceof UDSuffStat))
@@ -119,20 +120,27 @@ public class DiscreteCPTUC extends DiscreteDistribution
 			this.dist[i] = stato.expected_data[i]/stato.expected_sum;
 	}
 	
+	@Override
 	public UDSuffStat getSufficientStatisticObj()
 	{
-		return new UDSuffStat(this.getCardinality());
+		return new UDSuffStat(this.getCardinality(),this);
 	}
 	
+	/**
+	 * Sufficient statistic for a probability vector
+	 * @author Nils F. Sandell
+	 */
 	public static class UDSuffStat implements DiscreteSufficientStatistic
 	{
-		public UDSuffStat(int len)
+		public UDSuffStat(int len, DiscreteCPTUC cpt)
 		{
 			this.expected_data = new double[len];
 			this.current = new double[len];
 			this.reset();
+			this.cpt = cpt;
 		}
 		
+		@Override
 		public void reset()
 		{
 			for(int i = 0; i < this.expected_data.length; i++)
@@ -156,13 +164,13 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		}
 
 		@Override
-		public DiscreteSufficientStatistic update(DiscreteMessage lambda, DiscreteMessage pi,
+		public DiscreteSufficientStatistic update(DiscreteMessage lambda,
 				Vector<DiscreteMessage> parent_pis) throws BNException {
 			double sum = 0;
 			for(int i = 0; i < expected_data.length; i++)
 			{
-				current[i] = lambda.getValue(i)*pi.getValue(i);
-				sum += lambda.getValue(i)*pi.getValue(i);
+				current[i] = lambda.getValue(i)*this.cpt.dist[i];
+				sum += lambda.getValue(i)*this.cpt.dist[i];
 			}
 			for(int i = 0; i < expected_data.length; i++)
 			{
@@ -172,12 +180,14 @@ public class DiscreteCPTUC extends DiscreteDistribution
 			return this;
 		}
 		
+		private DiscreteCPTUC cpt;
 		private double[] expected_data;
 		private double expected_sum;
 		private double[] current;
 	}
 	
-	// Should have no parents, so...
+	@Override //Should have no parents so this method has no functionality.
 	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer value) throws BNException{}
+	
 	private final double[] dist;
 }

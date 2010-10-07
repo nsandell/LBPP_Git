@@ -8,36 +8,40 @@ import bn.distributions.SparseDiscreteCPT.Entry;
 import bn.messages.DiscreteMessage;
 import bn.BNException;
 
+/**
+ * Standard dense storage of a CPT of arbitrary number of conditions.
+ * @author Nils F Sandell
+ */
 public class DiscreteCPT extends DiscreteDistribution
 {
+	/**
+	 * Create a dense CPT
+	 * @param dimSizes Size of the conditioned dimensions, in order
+	 * @param cardinality Cardinality of this node.
+	 * @param values Dense array that stores the values appropriately.  The first index is
+	 * 		the product space if indices and the second index is the variable value.
+	 * @throws BNException CPT isn't normalized per condition or some index-mismatches.
+	 */
 	public DiscreteCPT(int[] dimSizes, int cardinality, double[][] values) throws BNException
 	{
 		super(cardinality);
 		this.dimSizes = dimSizes;
-		this.values = values;		
+		this.values = values.clone();		
 		this.dimprod = 1;
 		for(int i = 0; i < this.dimSizes.length; i++)
 			this.dimprod *= this.dimSizes[i];
 		this.validate();
 	}
 	
-	public int sample(IntegerValueSet parents) throws BNException
-	{
-		int prod = 1;
-		for(int i = 0; i < parents.length(); i++)
-			prod *= parents.getValue(i);
-		double val =  MathUtil.rand.nextDouble();
-		double[] dist = this.values[prod];
-		double sum = 0;
-		for(int i = 0; i < dist.length; i++)
-		{
-			sum += dist[i];
-			if(val < sum)
-				return i;
-		}
-		return dist.length-1;
-	}
 	
+	/**
+	 * Create a dense CPT with an easier to form creation method.
+	 * @param dimSizes Size of the conditioning variables in order.
+	 * @param cardinality Size of the variable of interest.
+	 * @param entries Iterable over entries.  Each entry consists of conditionining indices,
+	 * 		value for the variable of interest, and the probability.
+	 * @throws BNException If the CPT formed with the arguments is invalid.
+	 */
 	public DiscreteCPT(int[] dimSizes, int cardinality, Iterable<SparseDiscreteCPT.Entry> entries) throws BNException
 	{
 		super(cardinality);
@@ -56,6 +60,30 @@ public class DiscreteCPT extends DiscreteDistribution
 		this.validate();
 	}
 
+	/**
+	 * Sample this distribution given some instantiation of the parents.
+	 */
+	@Override
+	public int sample(IntegerValueSet parents) throws BNException
+	{
+		int prod = 1;
+		for(int i = 0; i < parents.length(); i++)
+			prod *= parents.getValue(i);
+		double val =  MathUtil.rand.nextDouble();
+		double[] dist = this.values[prod];
+		double sum = 0;
+		for(int i = 0; i < dist.length; i++)
+		{
+			sum += dist[i];
+			if(val < sum)
+				return i;
+		}
+		return dist.length-1;
+	}
+	
+	/**
+	 * Validate this CPT
+	 */
 	private void validate() throws BNException
 	{
 		int[] indices = new int[this.dimSizes.length];
@@ -79,6 +107,12 @@ public class DiscreteCPT extends DiscreteDistribution
 		} while((indices = incrementIndices(indices, dimSizes))!=null);
 	}
 
+	/**
+	 * Change the distribution over the variable for a given set of parent indices
+	 * @param indices Parent values
+	 * @param dist New distribution
+	 * @throws BNException If bad parent values or bad distribution.
+	 */
 	public void setDist(int[] indices, double[] dist) throws BNException
 	{
 		if(dist.length!=this.getCardinality())
@@ -88,6 +122,7 @@ public class DiscreteCPT extends DiscreteDistribution
 		this.values[index] = dist;
 	}
 	
+	@Override
 	public void validateConditionDimensions(int [] dimens) throws BNException
 	{
 		if(dimens.length!=this.dimSizes.length)
@@ -97,18 +132,24 @@ public class DiscreteCPT extends DiscreteDistribution
 				throw new BNException("Invalid parent set for CPT!");
 	}
 
+	@Override
 	public double evaluate(int[] indices, int value) throws BNException
 	{
 		return values[getIndex(indices, this.dimSizes)][value];
 	}
 
+	/**
+	 * Get the dimensions of the conditioning variable set.
+	 * @return The dimensions in an array.
+	 */
 	public int[] getConditionDimensions(){return this.dimSizes;}
 	
+	@Override
 	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException
 	{
 		boolean observed = value!=null;
 		double p = 0;
-		int[] indices = initialIndices(dimSizes);
+		int[] indices = initialIndices(dimSizes.length);
 		do
 		{
 			int compositeindex = getIndex(indices,dimSizes);
@@ -123,8 +164,7 @@ public class DiscreteCPT extends DiscreteDistribution
 			for(int i = 0; i < this.getCardinality(); i++)
 				local_pi.setValue(i, local_pi.getValue(i)+tmp*this.values[compositeindex][i]);
 			if(observed)
-				p += observation_p_tmp*this.evaluate(indices, value);
-				//p += observation_p_tmp*this.values[compositeindex][value];
+				p += observation_p_tmp*this.values[compositeindex][value];
 		}
 		while((indices = DiscreteDistribution.incrementIndices(indices, dimSizes))!=null);
 		
@@ -132,9 +172,10 @@ public class DiscreteCPT extends DiscreteDistribution
 		return p;
 	}
 	
+	@Override
 	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer obsvalue) throws BNException
 	{
-		int[] indices = initialIndices(dimSizes);
+		int[] indices = initialIndices(dimSizes.length);
 
 		do
 		{
@@ -187,13 +228,22 @@ public class DiscreteCPT extends DiscreteDistribution
 		while((indices = DiscreteDistribution.incrementIndices(indices, this.dimSizes))!=null);
 	}
 	
+	@Override
 	public CPTSufficient2SliceStat getSufficientStatisticObj()
 	{
 		return new CPTSufficient2SliceStat(this);
 	}
 	
+	/**
+	 * Sufficient statistic class for a dense CPT
+	 * @author Nils F. Sandell
+	 */
 	private static class CPTSufficient2SliceStat implements DiscreteSufficientStatistic
 	{
+		/**
+		 * Create a sufficient statistic object
+		 * @param cpt For this CPT
+		 */
 		public CPTSufficient2SliceStat(DiscreteCPT cpt)
 		{
 			this.cpt = cpt;
@@ -201,7 +251,8 @@ public class DiscreteCPT extends DiscreteDistribution
 			this.current = new double[this.cpt.dimprod][this.card];
 			this.reset();
 		}
-		
+	
+		@Override
 		public void reset()
 		{
 				for(int i =  0; i < this.cpt.dimprod; i++)
@@ -231,10 +282,10 @@ public class DiscreteCPT extends DiscreteDistribution
 		
 
 		@Override
-		public DiscreteSufficientStatistic update(DiscreteMessage lambda, DiscreteMessage pi,
+		public DiscreteSufficientStatistic update(DiscreteMessage lambda,
 				Vector<DiscreteMessage> incomingPis) throws BNException
 		{
-			int[] indices = initialIndices(this.cpt.dimSizes);
+			int[] indices = initialIndices(this.cpt.dimSizes.length);
 			double sum = 0;
 			do
 			{
@@ -245,7 +296,7 @@ public class DiscreteCPT extends DiscreteDistribution
 				for(int x = 0; x < this.card; x++)
 				{
 					double jointBit = current_prod*this.cpt.values[absIndex][x];
-					this.current[absIndex][x] = jointBit*lambda.getValue(x);//*pi.getValue(x);
+					this.current[absIndex][x] = jointBit*lambda.getValue(x);
 					sum += this.current[absIndex][x];
 				}
 			}
@@ -263,6 +314,7 @@ public class DiscreteCPT extends DiscreteDistribution
 		private DiscreteCPT cpt;
 	}
 	
+	@Override
 	public void optimize(SufficientStatistic stat) throws BNException
 	{
 		if(!(stat instanceof CPTSufficient2SliceStat))
@@ -284,6 +336,7 @@ public class DiscreteCPT extends DiscreteDistribution
 		}
 	}
 	
+	@Override
 	public DiscreteCPT copy() throws BNException
 	{
 

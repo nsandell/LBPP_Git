@@ -1,8 +1,10 @@
 package bn.distributions;
 
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Vector;
 
 import util.MathUtil;
@@ -327,6 +329,20 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 			}
 		}
 		return maxChange;
+	}
+	
+	public void printDistribution(PrintStream ps)
+	{
+		ps.println("Sparse CPT: ");
+		for(IndexWrapper iw : this.entries.keySet())
+		{
+			HashMap<Integer,Double> inner = this.entries.get(iw);
+			String iws = indexString(iw.indices);
+			for(Map.Entry<Integer, Double> en : inner.entrySet())
+			{
+				ps.println(iws + " => " + en.getKey() + " w.p." + en.getValue());
+			}
+		}
 	}
 	
 	@Override

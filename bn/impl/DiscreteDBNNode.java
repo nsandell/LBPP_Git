@@ -1,5 +1,6 @@
 package bn.impl;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 
 import bn.BNException;
@@ -152,6 +153,19 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 			initchange = this.init.optimize(tss.initialStat);
 		advachange = this.adva.optimize(tss.advanceStat);
 		return Math.max(initchange, advachange);
+	}
+	
+	public void printDistributionInfo(PrintStream ps) throws BNException
+	{
+		if(this.init!=null)
+		{
+			ps.println("Initial Distribution for node " + this.name);
+			this.init.printDistribution(ps);
+		}
+		if(this.adva==null)
+			throw new BNException("Attempted to print node distribution where distribution hasn't been set!");
+		ps.println("Distribution for node " + this.name);
+		this.adva.printDistribution(ps);
 	}
 	
 	public double optimizeParameters(SufficientStatistic stat) throws BNException

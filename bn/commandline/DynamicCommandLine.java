@@ -43,6 +43,7 @@ public class DynamicCommandLine
 			parser.addHandler(new UniversalCommandHandlers.LLGetter(bn));
 			parser.addHandler(new UniversalCommandHandlers.Optimizer(bn));
 			parser.addHandler(new DynamicCommandHandlers.ParallelOptimizer(bn));
+			parser.addHandler(new UniversalCommandHandlers.NodeDistPrinter(bn));
 		
 			return parser;
 		}

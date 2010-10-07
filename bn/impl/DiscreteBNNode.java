@@ -1,5 +1,6 @@
 package bn.impl;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Vector;
 
@@ -301,6 +302,13 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	public DiscreteSufficientStatistic getSufficientStatistic() throws BNException
 	{
 		return this.cpt.getSufficientStatisticObj().update(this.local_lambda, this.incomingPiMessages);
+	}
+	
+	public void printDistributionInfo(PrintStream ps) throws BNException
+	{
+		if(this.cpt==null)
+			throw new BNException("CPT for node hasn't been set, cannot print it!");
+		this.cpt.printDistribution(ps);
 	}
 	
 	private double likelihoodGivenPast = 0;

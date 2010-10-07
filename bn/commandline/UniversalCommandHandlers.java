@@ -5,8 +5,12 @@ import java.util.HashMap;
 import java.util.regex.Pattern;
 
 import util.Parser.MethodWrapperHandler;
+import util.Parser.ParserException;
+import util.Parser.ParserFunction;
+import bn.BNException;
 import bn.IBayesNet;
 import bn.IBayesNet.RunResults;
+import bn.IBayesNode;
 import bn.distributions.Distribution;
 
 public class UniversalCommandHandlers {
@@ -88,6 +92,39 @@ public class UniversalCommandHandlers {
 
 		private static Pattern patt = Pattern.compile("^\\s*learn\\(\\s*(.*)\\s*,\\s*(.*)\\s*,\\s*(.*)\\s*,\\s*(.*)\\s*\\)\\s*$");
 		private static int[] groups = new int[]{1,2,3,4};
+	}
+	
+	static class NodeDistPrinter implements ParserFunction
+	{
+		public NodeDistPrinter(IBayesNet<?> net)
+		{
+			this.net = net;
+		}
+		private IBayesNet<?> net;
+		@Override
+		public Pattern getRegEx() {return regex;}
+		@Override
+		public int[] getGroups() {return groups;}
+		@Override
+		public String getPrompt() {return null;}
+		@Override
+		public void finish() throws ParserException{}
+		@Override
+		public ParserFunction parseLine(String[] args, PrintStream output)
+				throws ParserException {
+			IBayesNode nd = (IBayesNode)net.getNode(args[0]);
+			if(nd ==null)
+				throw new ParserException("Node " + args[0] + " doesn't exist.");
+			else
+			{
+				try {nd.printDistributionInfo(output);}
+				catch(BNException e) { throw new ParserException(e.getMessage());}
+			}
+			return null;
+		}
+		
+		private int[] groups = new int[]{1};
+		private Pattern regex = Pattern.compile("^\\s*distInfo\\((\\w+)\\)\\s*$");
 	}
 
 	static class LLGetter extends MethodWrapperHandler<Object>

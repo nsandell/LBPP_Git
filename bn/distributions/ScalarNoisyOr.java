@@ -1,5 +1,6 @@
 package bn.distributions;
 
+import java.io.PrintStream;
 import java.util.Vector;
 
 import util.MathUtil;
@@ -109,6 +110,11 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		double change = Math.abs(this.c-(1-q));
 		this.c = 1-q;
 		return change;
+	}
+	
+	public void printDistribution(PrintStream ps)
+	{
+		ps.println("Scalar Noisy Or: Activation Parameter = " + this.c);
 	}
 	
 	/**

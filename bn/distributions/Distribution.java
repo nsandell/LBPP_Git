@@ -1,5 +1,6 @@
 package bn.distributions;
 
+import java.io.PrintStream;
 import java.util.Vector;
 
 import bn.BNException;
@@ -34,6 +35,8 @@ public interface Distribution
 	 * @throws BNException
 	 */
 	public Distribution copy() throws BNException;
+	
+	public void printDistribution(PrintStream pr);
 	
 	/**
 	 * Base interface for sufficient statistics.  They should be able to empty themselves

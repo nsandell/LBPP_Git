@@ -1,5 +1,6 @@
 package bn.distributions;
 
+import java.io.PrintStream;
 import java.util.Vector;
 
 import util.MathUtil;
@@ -234,6 +235,20 @@ public class DiscreteCPT extends DiscreteDistribution
 		return new CPTSufficient2SliceStat(this);
 	}
 	
+	public void printDistribution(PrintStream ps)
+	{
+		ps.println("CPT:");
+		int[] indices = initialIndices(this.dimSizes.length);
+		int index = 0;
+		do
+		{
+			for(int i =0; i < this.getCardinality(); i++)
+				ps.println(indexString(indices) + " => " + i + " w.p. " + this.values[index][i]);
+			index++;
+		}
+		while((indices=incrementIndices(indices, this.dimSizes))!=null);
+	}
+
 	/**
 	 * Sufficient statistic class for a dense CPT
 	 * @author Nils F. Sandell
@@ -280,7 +295,6 @@ public class DiscreteCPT extends DiscreteDistribution
 			return this;
 		}
 		
-
 		@Override
 		public DiscreteSufficientStatistic update(DiscreteMessage lambda,
 				Vector<DiscreteMessage> incomingPis) throws BNException

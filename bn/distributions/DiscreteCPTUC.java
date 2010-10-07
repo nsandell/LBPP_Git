@@ -1,5 +1,6 @@
 package bn.distributions;
 
+import java.io.PrintStream;
 import java.util.Vector;
 
 import util.MathUtil;
@@ -123,6 +124,15 @@ public class DiscreteCPTUC extends DiscreteDistribution
 			this.dist[i] = newval; 
 		}
 		return maxdiff;
+	}
+	
+	public void printDistribution(PrintStream ps)
+	{
+		ps.print("Probability Vector: [");
+		ps.print(dist[0]);
+		for(int i = 1; i < this.getCardinality(); i++)
+			ps.print(" " + dist[i]);
+		ps.println("]");
 	}
 	
 	@Override

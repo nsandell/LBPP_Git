@@ -5,7 +5,6 @@ import java.util.HashMap;
 import bn.BNException;
 import bn.IDynBayesNet;
 import bn.IDynBayesNode;
-import bn.IBayesNet.RunResults;
 import bn.distributions.DiscreteDistribution;
 import bn.distributions.Distribution;
 

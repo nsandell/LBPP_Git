@@ -1,5 +1,7 @@
 package bn;
 
+import java.io.PrintStream;
+
 import bn.distributions.Distribution.SufficientStatistic;
 
 /**
@@ -69,6 +71,12 @@ public interface IBayesNode
 	 * @throws BNException
 	 */
 	double optimizeParameters() throws BNException;
+	
+	/**
+	 * Print information about the distribution to a stream
+	 * @throws BNException If distribution hasn't been set
+	 */
+	void printDistributionInfo(PrintStream ps) throws BNException;
 	
 	/**
 	 * Optimize the parameters of this node according to a sufficient statistic

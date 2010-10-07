@@ -295,12 +295,12 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	{
 		if(!(stat instanceof DiscreteSufficientStatistic))
 			throw new BNException("Attempted to get a non-discrete sufficient statistic update froma discrete node.");
-		((DiscreteSufficientStatistic)stat).update(this.local_lambda,this.local_pi,this.incomingPiMessages);
+		((DiscreteSufficientStatistic)stat).update(this.local_lambda,this.incomingPiMessages);
 	}
 	
 	public DiscreteSufficientStatistic getSufficientStatistic() throws BNException
 	{
-		return this.cpt.getSufficientStatisticObj().update(this.local_lambda, this.local_pi, this.incomingPiMessages);
+		return this.cpt.getSufficientStatisticObj().update(this.local_lambda, this.incomingPiMessages);
 	}
 	
 	private double likelihoodGivenPast = 0;

@@ -11,27 +11,91 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
+/**
+ * Class that wraps a bunch of java functionality in an interactive command
+ * line environment.
+ * @author Nils F. Sandell
+ */
 public class Parser {
-	
 
+	/**
+	 * Exception for use within the parser and parser functions.  Should be thrown
+	 * with command-line appropriate error messages.
+	 * @author Nils F. Sandell
+	 */
 	public static class ParserException extends Exception
 	{
 		private static final long serialVersionUID = 1L;
 		public ParserException(String message){super(message);}
 	}
 
+	/**
+	 * Interface for objects that wrap specific java functionality.
+	 * @author Nils F. Sandell
+	 */
 	public static interface ParserFunction
 	{
-		public int[] getGroups();
+		/**
+		 * Get the regex that should be mapped to this function.  Should be 
+		 * set up so that any desired arguments are 'groups'.
+		 * @return Regex pattern object.
+		 */
 		public Pattern getRegEx();
+		
+		/**
+		 * Get the regex 'groups' that are desired to be passed as
+		 * arguments to this function.
+		 * @return Array of group indexes.
+		 */
+		public int[] getGroups();
+		
+		/**
+		 * Get the prompt if this function demands additional input after
+		 * initial call.
+		 * @return String to be output as the prompt.
+		 */
 		public String getPrompt();
+		
+		/**
+		 * Called when user enters the termination syntax (*s) if this function
+		 * takes variable lines of input.
+		 * @throws ParserException If termination to this point in input creates an error.
+		 */
 		public void finish() throws ParserException;
+		
+		/**
+		 * A line of input has been entered by the user matching the regex specified for this function.
+		 * @param args Strings corresponding to the regex groups this object desired.
+		 * @param output A printstream for any notification text to be printed to.
+		 * @return If this function needs more lines of input, it returns a parserfunction to handle 
+		 * 		the additional lines (might be "this", or another ParserFunction).  If it needs no 
+		 * 		more lines it should return null.
+		 * @throws ParserException If there is an error processing the function arguments or running the
+		 * 		function.  Exception text should be command-line error appropriate.
+		 */
 		public ParserFunction parseLine(String[] args, PrintStream output) throws ParserException; // Return a line handler if expect more, else null
 	}
 	
+	/**
+	 * ParserFunction class that uses reflection to wrap a method.  Cuts down on implementation of
+	 * ParserFunctions that directly send command line arguments that are integers, doubles, etc
+	 * to a function.
+	 * @author Nils F. Sandell
+	 *
+	 * @param If this function takes an argument that names a non-primitive java object, this specifies
+	 * 		the type of object that is taken.  Hence, for now these functions can only take one non-primitive
+	 * 		object argument.
+	 */
 	public static abstract class MethodWrapperHandler<EnvObj> implements ParserFunction
 	{
+		/**
+		 * Constructor.
+		 * @param obj The object on which the method should be called.
+		 * @param method The method that belongs to the object that we want to call.
+		 * @param argumentNames The names of the arguments to this function (for error purposes.)
+		 * @param environmentObjects Map that maps names to object instances for the non-primitive object arguments.
+		 * @throws Exception If the arguments are not coherent.
+		 */
 		public MethodWrapperHandler(Object obj, Method method, String[] argumentNames, HashMap<String, EnvObj> environmentObjects) throws Exception
 		{
 			if(this.getGroups().length!=argumentNames.length || this.getGroups().length!=method.getParameterTypes().length)
@@ -44,17 +108,25 @@ public class Parser {
 		
 		public void finish(){}
 		
-		protected void handleReturn(){}
+		/**
+		 * This method should be implemented by subclass if we wish to do
+		 * something with the result of the function call.
+		 * @param str Stream for outputting any user-level text.
+		 */
+		protected void handleReturn(PrintStream str){}
 
+		// Implements the wrapping of the method
 		public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException
 		{
 			Object[] objargs = new Object[args.length];
 			Class<?>[] parametersTypes = this.method.getParameterTypes();
-			if(parametersTypes.length!=args.length)
+			if(parametersTypes.length!=args.length) // Make sure we get appropriate number of arguments.
 				throw new ParserException("Method takes more arguments than specified...");
 			int i = 0;
 			try
 			{
+				// Iterate through the arguments converting them to the appropriate types for the method
+				//  throwing an error if the argument is improper (String when expecting Int, etc)
 				while(i < args.length)
 				{
 					if(String.class.equals(parametersTypes[i]))
@@ -73,10 +145,12 @@ public class Parser {
 					}
 					i++;
 				}
+				// If this method returns something aside from void, store it and invoke a method for
+				// handling that return type.
 				if(this.method.getReturnType()!=void.class)
 				{
 					retObj = this.method.invoke(this.obj, objargs);
-					this.handleReturn();
+					this.handleReturn(str);
 				}
 				else this.method.invoke(this.obj, objargs);
 			} catch(IllegalArgumentException e) {
@@ -96,28 +170,56 @@ public class Parser {
 		private HashMap<String,EnvObj> environmentObjects;
 	}
 
+	/**
+	 * Create a command line parser object.
+	 * @param input The stream from which to grab input.
+	 * @param output The stream to push output.  If this is null, will not print output.
+	 * @param error_output The stream to push error output.  If this is null, will not print error output.
+	 * @param breakOnException If true, breaks on receiving exceptions from functions.  Inappropriate if we are using
+	 * 		as an interactive prompt, for example, as the user should be able to just correct what was wrong.  May be
+	 * 		appropriate if loading a file.
+	 * @param printLineNoOnError If true, will print a line number on an error.  More useful for file reading.
+	 */
 	public Parser(BufferedReader input, PrintStream output, PrintStream error_output, boolean breakOnException, boolean printLineNoOnError)
 	{
 		this.input = input; this.output = output; this.breakOnException = breakOnException; this.printLineNoOnError = printLineNoOnError; this.error_output = error_output;
 	}
 
+	/**
+	 * Add a function for this command line to handle.
+	 * @param handler Function we want to handle.
+	 */
 	public void addHandler(ParserFunction handler)
 	{
 		this.handlers.add(handler);
 	}
 
+	/**
+	 * Set the prompt to be used to prompt user for input.
+	 * @param prompt String to be printed as prompt.
+	 */
 	public void setPrompt(String prompt)
 	{
 		this.prompt = prompt;
 		this.promptBackup = prompt;
 	}
 
+	/**
+	 * Set a 'comment' regex, where text after an occurrence will be stripped
+	 * and ignored before command processing.
+	 * @param commentStr Regex denoting single line comment start.
+	 */
 	public void setCommentString(String commentStr)
 	{
 		this.commentStr = commentStr;
 	}
 	
-	public boolean inputWaiting()
+	/**
+	 * Checks to see if there is more input waiting, so we know whether or
+	 * not to print a prompt.
+	 * @return True if more input is waiting.
+	 */
+	private boolean inputWaiting()
 	{
 		try {
 			this.input.mark(2048);
@@ -138,6 +240,9 @@ public class Parser {
 		}
 	}
 
+	/**
+	 * Start the command line handler.
+	 */
 	public void go()
 	{
 		int lineNumber = 1;
@@ -168,6 +273,13 @@ public class Parser {
 		if(output!=null){this.output.println("\nExiting...\n");}
 	}
 	
+	/**
+	 * Internal function for handling input
+	 * @param fileInput If we are inside a file pipe, handle to the input file.
+	 * @return False if the file pipe or standard input has ended.
+	 * @throws ParserException If there is an error parsing a command
+	 * @throws IOException If there is an error with an input/output pipe.
+	 */
 	private boolean readLine(BufferedReader fileInput) throws ParserException, IOException
 	{
 		String line = fileInput.readLine();

@@ -2,6 +2,11 @@ package util;
 
 import java.util.Random;
 
+/**
+ * Generic math and random number generation utilities.
+ * @author Nils F. Sandell
+ *
+ */
 public class MathUtil
 {
 	public static class MathUtilException extends Exception

@@ -54,7 +54,7 @@ public class StaticNetCommandLine
 		try
 		{
 			IStaticBayesNet bn = BayesNetworkFactory.getStaticNetwork();
-			Parser parser = getParser(new BufferedReader(new FileReader(file)), null, null, true, true, bn);
+			Parser parser = getParser(new BufferedReader(new FileReader(file)), null, System.err, true, true, bn);
 			if(parser==null) return null;
 			parser.go();
 			return bn;

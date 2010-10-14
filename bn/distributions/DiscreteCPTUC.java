@@ -45,7 +45,7 @@ public class DiscreteCPTUC extends DiscreteDistribution
 	}
 
 	@Override
-	public int sample(IntegerValueSet parents) throws BNException
+	public int sample(ValueSet<Integer> parents) throws BNException
 	{
 		double val = MathUtil.rand.nextDouble();
 		double sum = 0;

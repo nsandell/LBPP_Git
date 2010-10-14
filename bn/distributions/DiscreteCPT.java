@@ -34,6 +34,20 @@ public class DiscreteCPT extends DiscreteDistribution
 		this.validate();
 	}
 	
+	/**
+	 * Special constructor for one parent CPT
+	 * @param values The CPT	
+	 * @param cardinality The cardinality of this variable.
+	 */
+	public DiscreteCPT(double[][] values, int cardinality) throws BNException
+	{
+		super(cardinality);
+		this.dimSizes = new int[]{values.length};
+		this.values = values;
+		this.dimprod = values.length;
+		this.validate();
+	}
+	
 	
 	/**
 	 * Create a dense CPT with an easier to form creation method.
@@ -65,7 +79,7 @@ public class DiscreteCPT extends DiscreteDistribution
 	 * Sample this distribution given some instantiation of the parents.
 	 */
 	@Override
-	public int sample(IntegerValueSet parents) throws BNException
+	public int sample(ValueSet<Integer> parents) throws BNException
 	{
 		int prod = 1;
 		for(int i = 0; i < parents.length(); i++)
@@ -197,7 +211,6 @@ public class DiscreteCPT extends DiscreteDistribution
 				for(int i = 0; i < this.getCardinality(); i++)
 				{
 					double p = this.evaluate(indices, i);
-
 					for(int j = 0; j < indices.length; j++)
 					{
 						double local_pi_product = pi_product;

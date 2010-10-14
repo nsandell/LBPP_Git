@@ -119,6 +119,13 @@ public interface IBayesNet<BaseInterface>
 	}
 	
 	/**
+	 * Get the log likelihood of all of the evidence present in the network.
+	 * @return The log likelihood, 0 if there is no evidence.
+	 * @throws BNException if message passing hasn't been run yet.
+	 */
+	public double evidenceLogLikelihood() throws BNException;
+	
+	/**
 	 * Run belief propagation on this network.
 	 * @param maxit The maximum number of iterations to be performed, regardless of error.
 	 * @param convergence The convergence criteria - all distributions must change between 

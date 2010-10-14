@@ -39,6 +39,14 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		frontierSample(new HashSet<IBayesNode>(), frontier);
 	}
 	
+	public double evidenceLogLikelihood() throws BNException
+	{
+		double ll = 0;
+		for(BaseNodeType node : nodes.values())
+			ll += node.getLogLikelihood();
+		return ll;
+	}
+	
 	private void frontierSample(HashSet<IBayesNode> marks, ArrayList<IBayesNode> frontier) throws BNException
 	{
 		ArrayList<IBayesNode> newFrontier = new ArrayList<IBayesNode>();

@@ -1,6 +1,7 @@
 package bn.distributions;
 
 import java.io.PrintStream;
+import java.util.ArrayList;
 import java.util.Vector;
 
 import bn.BNException;
@@ -81,4 +82,66 @@ public interface Distribution
 		public DiscreteSufficientStatistic update(DiscreteMessage lambda, Vector<DiscreteMessage> incomingPis) throws BNException;
 	}
 	
+	/**
+	 * An index wrapper function such that we can pass discrete CPDs parent values either through
+	 * an array of integers or a vector of objects that have an integer value (i.e. discrete nodes)
+	 * @author Nils F. Sandell
+	 */
+	public static class ValueSet<ValueType>
+	{
+		/**
+		 * Constructor if we want to use array of ints
+		 * @param values Conditioning variable values
+		 */
+		public ValueSet(ValueType[] values)
+		{
+			this.values = values;
+		}
+		
+		/**
+		 * Constructor if we want to use an ArrayList of objects that have integer values
+		 * @param list The arraylist
+		 */
+		public ValueSet(ArrayList<? extends ValueObject<ValueType>> list)
+		{
+			this.valueObjects = list;
+		}
+		
+		/**
+		 * Objects that have an integer value can implement this to be used in a set
+		 * @author Nils F Sandell
+		 */
+		public static interface ValueObject<ValueType>
+		{
+			/**
+			 * Get the integer value associated with this object
+			 * @return The integer value
+			 * @throws BNException If the object doesn't currently have a value.
+			 */
+			public ValueType getValue() throws BNException;
+		}
+		
+		/**
+		 * Get a value from this set.
+		 * @param i Gets the 'ith' value
+		 * @return The value desired.
+		 * @throws BNException If that value doesn't exist
+		 */
+		public final ValueType getValue(int i) throws BNException
+		{
+			return values==null ? valueObjects.get(i).getValue() : values[i];
+		}
+		
+		/**
+		 * Get the number of values in this set.
+		 * @return The number of values
+		 */
+		public final int length()
+		{
+			return values==null ? valueObjects.size() : values.length;
+		}
+		
+		private ValueType[] values = null;
+		private ArrayList<? extends ValueObject<ValueType>> valueObjects = null;
+	}
 }

@@ -19,6 +19,7 @@ public class HMMtest {
 		try
 		{
 			System.out.println("Seq length = " + length);
+			
 			double[][] A = {{.85, .05, .05, .05},{.05, .85, .05, .05},{.05, .05, .85, .05},{.05, .05, .05, .85}};
 			double[][] B = {{.9, .1},{.1, .9},{.3, .7},{.7, .3}};
 			double[] pi = {.8,.1, .05, .05};

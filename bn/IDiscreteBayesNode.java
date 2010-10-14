@@ -15,7 +15,7 @@ public interface IDiscreteBayesNode extends IBayesNode
 	 * @return The current value of the node.
 	 * @throws BNException If the node's value isn't specified. 
 	 */
-	int getValue() throws BNException;
+	Integer getValue() throws BNException;
 	
 	/**
 	 * Get the cardinality of this node.

@@ -34,7 +34,7 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 	}
 	
 	@Override
-	public int sample(IntegerValueSet parents) throws BNException
+	public int sample(ValueSet<Integer> parents) throws BNException
 	{
 		int[] parentsI = new int[parents.length()];
 		for(int i = 0; i < parents.length(); i++)

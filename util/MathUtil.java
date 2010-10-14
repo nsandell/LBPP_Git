@@ -2,6 +2,8 @@ package util;
 
 import java.util.Random;
 
+import Jama.Matrix;
+
 /**
  * Generic math and random number generation utilities.
  * @author Nils F. Sandell
@@ -30,6 +32,14 @@ public class MathUtil
 		for(int i = 0; i < vals.length; i++)
 			innersum += Math.exp(vals[i]-max);
 		return max+Math.log(innersum);	
+	}
+	
+	public static Matrix normalVector(int len)
+	{
+		Matrix ret = new Matrix(len, 1);
+		for(int i =0; i < len; i++)
+			ret.set(i, 0, rand.nextGaussian());
+		return ret;
 	}
 	
 	public static Random rand = new Random();

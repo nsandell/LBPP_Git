@@ -10,13 +10,14 @@ import bn.BNException;
 import bn.IBayesNode;
 import bn.IDiscreteBayesNode;
 import bn.distributions.DiscreteDistribution;
+import bn.distributions.Distribution;
 import bn.distributions.Distribution.DiscreteSufficientStatistic;
 import bn.distributions.Distribution.SufficientStatistic;
 import bn.interfaces.DiscreteChildSubscriber;
 import bn.interfaces.DiscreteParentSubscriber;
 import bn.messages.DiscreteMessage;
 
-class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, DiscreteChildSubscriber, IDiscreteBayesNode, DiscreteDistribution.IntegerValueSet.IntegerValueObject
+class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, DiscreteChildSubscriber, IDiscreteBayesNode, Distribution.ValueSet.ValueObject<Integer>
 {
 	
 	DiscreteBNNode(StaticBayesianNetwork net, String name, int cardinality)
@@ -241,7 +242,7 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		this.value = -1;
 	}
 	
-	public int getValue() throws BNException
+	public Integer getValue() throws BNException
 	{
 		if(!this.observed)
 			throw new BNException("Attempted to extract evidence from unobserved node...");
@@ -250,7 +251,7 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 	
 	public void sample() throws BNException
 	{
-		this.value = this.cpt.sample(new DiscreteDistribution.IntegerValueSet(this.ds_parents));
+		this.value = this.cpt.sample(new Distribution.ValueSet<Integer>(this.ds_parents));
 		this.observed = true;
 	}
 	

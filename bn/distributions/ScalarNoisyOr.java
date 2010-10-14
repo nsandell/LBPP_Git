@@ -45,7 +45,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 	}
 	
 	@Override
-	public int sample(IntegerValueSet parents)  throws BNException
+	public int sample(ValueSet<Integer> parents)  throws BNException
 	{
 		int num1 = 0;
 		for(int i= 0; i < parents.length(); i++)

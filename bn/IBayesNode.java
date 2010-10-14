@@ -2,6 +2,7 @@ package bn;
 
 import java.io.PrintStream;
 
+import bn.distributions.Distribution;
 import bn.distributions.Distribution.SufficientStatistic;
 
 /**
@@ -121,4 +122,10 @@ public interface IBayesNode
 	 * 	if otherwise unable to extract current statistics.
 	 */
 	public void updateSufficientStatistic(SufficientStatistic stat) throws BNException;
+	
+	/**
+	 * Get the distribution for this node.
+	 * @return The distribution.
+	 */
+	public Distribution getDistribution();
 }

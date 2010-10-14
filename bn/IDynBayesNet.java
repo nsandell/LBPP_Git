@@ -48,6 +48,40 @@ public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 	void addIntraEdge(IDynBayesNode from, IDynBayesNode to) throws BNException;
 	
 	/**
+	 * Remove a dependency from a node in time slices t+1 to another node
+	 * in time slices t.
+	 * @param from Name of the child node.
+	 * @param to Name of the parent node.
+	 * @throws BNException If either node doesn't exist, or aren't connected.
+	 */
+	void removeInterEdge(String from, String to) throws BNException;
+	
+	/**
+	 * Remove a dependency from a node to another node within the same time slice
+	 * @param from Name of the child node.
+	 * @param to Name of the parent node.
+	 * @throws BNException If either node doesn't exist, or aren't connected.
+	 */
+	void removeIntraEdge(String from, String to) throws BNException;
+
+	/**
+	 * Remove a dependency from a node in time slices t+1 to another node
+	 * in time slices t.
+ 	 * @param from The parent node.
+	 * @param to The child node.
+	 * @throws BNException If either node doesn't exist, or aren't connected.
+	 */	
+	void removeInterEdge(IDynBayesNode from, IDynBayesNode to) throws BNException;
+	
+	/**
+	 * Remove a dependency from a node to another node within the same time slice
+	 * @param from The parent node.
+	 * @param to The child node.
+	 * @throws BNException If either node doesn't exist in this network, or aren't connected.
+	 */
+	void removeIntraEdge(IDynBayesNode from, IDynBayesNode to) throws BNException;
+	
+	/**
 	 * Add a discrete node to this network.
 	 * @param name Name of the node to add.
 	 * @param cardinality Cardinality of the discrete node.
@@ -115,6 +149,7 @@ public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 	 * 		exist or is not discrete.
 	 */
 	void setDiscreteEvidence(String nodeName, int t0, int[] evidence) throws BNException;
+	
 	
 	/**
 	 * Callback interface for calling parallel inference.

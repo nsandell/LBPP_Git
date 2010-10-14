@@ -1,5 +1,7 @@
 package bn;
 
+import bn.distributions.Distribution;
+
 
 /**
  * The interface to a node in a Dynamic Bayesian Network
@@ -44,4 +46,10 @@ public interface IDynBayesNode extends IBayesNode
 	 * @return The log likelihood.
 	 */
 	double getLogLikelihood() throws BNException;
+	
+	/**
+	 * Get the initial distribution for this node.
+	 * @return Initial distribution, null if initial is the same as the rest of the distributions.
+	 */
+	Distribution getInitialDistribution();
 }

@@ -24,6 +24,22 @@ public interface IStaticBayesNet extends IBayesNet<IBayesNode>
 	public void addEdge(IBayesNode from, IBayesNode to) throws BNException;
 	
 	/**
+	 * Remove an existing edge from one node to another.
+	 * @param from Child node name
+	 * @param to Parent node name
+	 * @throws BNException If the nodes aren't connected, or they don't exist.
+	 */
+	public void removeEdge(String from, String to) throws BNException;
+	
+	/**
+	 * Add edge from one node to another.
+	 * @param from Child node
+	 * @param to Parent node
+	 * @throws BNException If the nodes aren't be connected.
+	 */
+	public void removeEdge(IBayesNode from, IBayesNode to) throws BNException;
+
+	/**
 	 * Add a discrete node to this network.
 	 * @param name Name of the node to add.
 	 * @param cardinality Cardinality of the node to add.

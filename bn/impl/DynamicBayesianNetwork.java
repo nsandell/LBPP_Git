@@ -344,6 +344,42 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		private Iterable<DBNNode<?>> nodes;
 	}
 	
+	@Override
+	public void removeInterEdge(String from, String to) throws BNException {
+		DBNNode<?> fromN = this.getNode(from);
+		DBNNode<?> toN = this.getNode(to);
+		
+		if(fromN==null || toN==null)
+			throw new BNException("Failed to remove edge, node " + from + " or " + to + " doesn't exist.");
+		
+		fromN.removeInterChild(toN);
+		toN.removeInterParent(fromN);	
+	}
+
+	@Override
+	public void removeIntraEdge(String from, String to) throws BNException {
+		DBNNode<?> fromN = this.getNode(from);
+		DBNNode<?> toN = this.getNode(to);
+		
+		if(fromN==null || toN==null)
+			throw new BNException("Failed to remove edge, node " + from + " or " + to + " doesn't exist.");
+		
+		fromN.removeIntraChild(toN);
+		toN.removeIntraParent(fromN);
+	}
+
+	@Override
+	public void removeInterEdge(IDynBayesNode from, IDynBayesNode to)
+			throws BNException {
+		this.removeInterEdge(from.getName(), to.getName());
+	}
+
+	@Override
+	public void removeIntraEdge(IDynBayesNode from, IDynBayesNode to)
+			throws BNException {
+		this.removeIntraEdge(from.getName(), to.getName());
+	}
+	
 	protected int T;
 	protected StaticBayesianNetwork unrolled_network = new StaticBayesianNetwork();
 	protected static int availableProcs = Runtime.getRuntime().availableProcessors();

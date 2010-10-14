@@ -312,6 +312,11 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		this.cpt.printDistribution(ps);
 	}
 	
+	public DiscreteDistribution getDistribution()
+	{
+		return this.cpt;
+	}
+	
 	private double likelihoodGivenPast = 0;
 
 	private boolean observed = false;

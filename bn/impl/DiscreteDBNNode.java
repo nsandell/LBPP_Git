@@ -225,4 +225,14 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 			throw new BNException("Attempted to get value out of t range (" + t + " vs [0,"+this.bayesNet.getT()+"])");
 		return nodeInstances.get(t).getValue();
 	}
+	
+	public DiscreteDistribution getDistribution()
+	{
+		return this.adva;
+	}
+	
+	public DiscreteDistribution getInitialDistribution()
+	{
+		return this.init;
+	}
 }

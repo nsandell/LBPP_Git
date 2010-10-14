@@ -84,4 +84,19 @@ class StaticBayesianNetwork extends BayesianNetwork<IBayesNode,BNNode> implement
 		else
 			((DiscreteBNNode)node).setValue(evidence);
 	}
+	
+	public void removeEdge(IBayesNode from, IBayesNode to) throws BNException
+	{
+		this.removeEdge(from.getName(), to.getName());
+	}
+	
+	public void removeEdge(String from, String to) throws BNException
+	{
+		BNNode fromN = this.getNode(from);
+		BNNode toN = this.getNode(to);
+		if(fromN==null || toN==null)
+			throw new BNException("Attempted to remove edge ("+from+","+to+") where one of the nodes doesn't exist.");
+		fromN.removeChild(toN);
+		toN.removeParent(fromN);
+	}
 }

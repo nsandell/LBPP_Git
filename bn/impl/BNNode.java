@@ -22,6 +22,11 @@ abstract class BNNode implements IBayesNode
 		this.childrenSet = new IterableWrapper<IBayesNode>(children);
 	}
 	
+	boolean hasChild(BNNode child)
+	{
+		return (this.children.contains(child));
+	}
+	
 	public final void addChild(BNNode child) throws BNException
 	{
 		this.addChildI(child);

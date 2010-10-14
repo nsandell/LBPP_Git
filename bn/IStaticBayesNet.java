@@ -55,4 +55,13 @@ public interface IStaticBayesNet extends IBayesNet<IBayesNode>
 	 * @throws BNException If the node isn't discrete or the observation is invalid.
 	 */
 	public void addDiscreteEvidence(String node, int obsv) throws BNException;
+	
+	/**
+	 * Check whether an edge exists or not.
+	 * @param from Parent node
+	 * @param to Child node
+	 * @return True if it does, else false
+	 * @throws BNException If either of the nodes specified don't exist.
+	 */
+	public boolean edgeExists(String from, String to) throws BNException;
 }

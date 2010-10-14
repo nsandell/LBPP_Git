@@ -99,4 +99,14 @@ class StaticBayesianNetwork extends BayesianNetwork<IBayesNode,BNNode> implement
 		fromN.removeChild(toN);
 		toN.removeParent(fromN);
 	}
+	
+	public boolean edgeExists(String from, String to) throws BNException
+	{
+		BNNode fromN = this.getNode(from);
+		BNNode toN = this.getNode(to);
+		
+		if(fromN==null || toN==null)
+			throw new BNException("Either node " + from + " or node " + to + " doesn't exist in this network.");
+		return fromN.hasChild(toN);
+	}
 }

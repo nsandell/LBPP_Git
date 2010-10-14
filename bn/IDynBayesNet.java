@@ -80,6 +80,22 @@ public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 	 * @throws BNException If either node doesn't exist in this network, or aren't connected.
 	 */
 	void removeIntraEdge(IDynBayesNode from, IDynBayesNode to) throws BNException;
+
+	/**
+	 * Test whether an edge exists between a node at time slice t and another at t+1
+	 * @param fromName Parent node
+	 * @param toName Child node
+	 * @throws BNException If either node doesn't exist
+	 */
+	boolean existsInterEdge(String fromName, String toName) throws BNException;
+
+	/**
+	 * Test whether an edge exists between a node within the same time slice 
+	 * @param fromName Parent node
+	 * @param toName Child node
+	 * @throws BNException If either node doesn't exist
+	 */
+	boolean existsIntraEdge(String fromName, String toName) throws BNException;
 	
 	/**
 	 * Add a discrete node to this network.

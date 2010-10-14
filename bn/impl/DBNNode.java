@@ -18,6 +18,16 @@ abstract class DBNNode<InnerType extends BNNode> implements IDynBayesNode
 		this.nodeInstances = new CopyOnWriteArrayList<InnerType>();
 	}
 	
+	boolean hasInterChild(DBNNode<?> child)
+	{
+		return this.interChildren.contains(child);
+	}
+	
+	boolean hasIntraChild(DBNNode<?> child)
+	{
+		return this.intraChildren.contains(child);
+	}
+	
 	public final int numParents()
 	{
 		return this.intraParents.size();

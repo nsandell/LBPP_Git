@@ -380,6 +380,26 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		this.removeIntraEdge(from.getName(), to.getName());
 	}
 	
+	@Override
+	public boolean existsInterEdge(String fromName, String toName)
+			throws BNException {
+		DBNNode<?> fromN = this.getNode(fromName);
+		DBNNode<?> toN = this.getNode(toName);
+		if(fromN==null || toN==null)
+			throw new BNException("Failure removing interedge : Either node " + fromName + " or node " + toName + " does not exist.");
+		return fromN.hasInterChild(toN);
+	}
+
+	@Override
+	public boolean existsIntraEdge(String fromName, String toName)
+			throws BNException {
+		DBNNode<?> fromN = this.getNode(fromName);
+		DBNNode<?> toN = this.getNode(toName);
+		if(fromN==null || toN==null)
+			throw new BNException("Failure removing intraedge : Either node " + fromName + " or node " + toName + " does not exist.");
+		return fromN.hasIntraChild(toN);
+	}
+	
 	protected int T;
 	protected StaticBayesianNetwork unrolled_network = new StaticBayesianNetwork();
 	protected static int availableProcs = Runtime.getRuntime().availableProcessors();

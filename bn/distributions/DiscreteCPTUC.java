@@ -104,10 +104,8 @@ public class DiscreteCPTUC extends DiscreteDistribution
 	{
 		for(int i = 0; i < local_pi.getCardinality(); i++)
 			local_pi.setValue(i, dist[i]);
-		if(value!=null)
-			return dist[value];
-		else
-			return 0;
+		
+		return value==null ? 0 : Math.log(dist[value]);
 	}
 	
 	@Override

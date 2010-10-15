@@ -81,10 +81,8 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			localProduct *= (1-incoming_pis.get(i).getValue(1)*this.c);
 		local_pi.setValue(0, localProduct);
 		local_pi.setValue(1, 1-localProduct);
-		if(value!=null)
-			return local_pi.getValue(value);
-		else
-			return 0;
+		
+		return value==null ? 0 : Math.log(local_pi.getValue(value));
 	}
 	
 	@Override

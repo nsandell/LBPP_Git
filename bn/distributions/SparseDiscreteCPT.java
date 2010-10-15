@@ -301,7 +301,7 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 				ll += observation_ll_tmp*this.evaluate(indexset.indices, value);
 		}
 		local_pi.normalize();
-		return ll;
+		return observed ? Math.log(ll) : 0;
 	}
 	
 	@Override

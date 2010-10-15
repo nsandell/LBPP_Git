@@ -164,8 +164,7 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 			this.local_pi.setValue(i, 0);
 	
 		Integer valueTmp = (this.observed) ? this.value : null;
-		// Need to evaluate whether it's worth it to change CPD computeLocalPis to return log likelihood rather than likelihood
-		this.likelihoodGivenPast = Math.log(this.cpt.computeLocalPi(this.local_pi, this.incomingPiMessages, this.parents_local_pis, valueTmp));
+		this.likelihoodGivenPast = this.cpt.computeLocalPi(this.local_pi, this.incomingPiMessages, this.parents_local_pis, valueTmp);
 	}
 	
 	protected void updateLambdas() throws BNException

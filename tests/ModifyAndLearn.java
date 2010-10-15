@@ -35,6 +35,8 @@ public class ModifyAndLearn {
 		//net.setDiscreteEvidence("Y2",0 , evidence);
 		
 		net.validate();
+		net.removeIntraEdge(x, y1);
+		net.validate();
 		net.optimize_parallel(20, 1e-4, 20, 1e-4);
 		net.optimize(1, 0, 1, 0);
 		

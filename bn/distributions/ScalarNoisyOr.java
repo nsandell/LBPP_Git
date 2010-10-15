@@ -10,7 +10,7 @@ import bn.messages.DiscreteMessage;
 
 /**
  * Implements a 'scalar' noisy or CPD.  That is, a noisy or node
- * where all activiation (inhibition) effects from parents are
+ * where all activation (inhibition) effects from parents are
  * identical, described by space c (activation probability)
  * i.e. p(this=1 | one and only one parent=1)=c
  * Note this is only valid for binary nodes with binary parents

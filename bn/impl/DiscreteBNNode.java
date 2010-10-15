@@ -62,10 +62,10 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		if(parentIndex==null)
 			return;
 		this.parentMap.remove(parent);
-		this.incomingPiMessages.remove(parentIndex);
-		this.outgoing_lambdas.remove(parentIndex);
-		this.ds_parents.remove(parentIndex);
-		this.parents_local_pis.remove(parentIndex);
+		this.incomingPiMessages.remove((int)parentIndex);
+		this.outgoing_lambdas.remove((int)parentIndex);
+		this.ds_parents.remove((int)parentIndex);
+		this.parents_local_pis.remove((int)parentIndex);
 		this.parent_dims = null;
 		this.numParents--;
 	}
@@ -88,8 +88,8 @@ class DiscreteBNNode extends BNNode implements DiscreteParentSubscriber, Discret
 		if(childIndex==null)
 			return;
 		this.childMap.remove((DiscreteParentSubscriber)child);
-		this.incomingLambdaMessages.remove(childIndex);
-		this.ds_children.remove(childIndex);
+		this.incomingLambdaMessages.remove((int)childIndex);
+		this.ds_children.remove((int)childIndex);
 		this.numChildren--;
 	}
 	

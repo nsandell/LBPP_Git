@@ -1,7 +1,18 @@
 package bn.commandline.distributions;
 
-class NoisyOrCreator //implements ICPDCreator
-{/*
+import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.regex.Pattern;
+
+import util.Parser.ParserException;
+import util.Parser.ParserFunction;
+
+import bn.BNException;
+import bn.commandline.distributions.CPDCreator.ICPDCreator;
+import bn.distributions.*;
+
+class NoisyOrCreator implements ICPDCreator
+{
 	static NoisyOrCreator getFactory()
 	{
 		return new NoisyOrCreator(null,null);
@@ -12,12 +23,13 @@ class NoisyOrCreator //implements ICPDCreator
 		this.distmap = distmap;
 		this.name = name;
 	}
+	
 	public void finish() throws ParserException{}
 	public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException
 	{
 		try {
 			Double p = Double.parseDouble(args[0]);
-			NoisyOr noisyOr = new NoisyOr(p);
+			ScalarNoisyOr noisyOr = new ScalarNoisyOr(p);
 			this.distmap.put(name, noisyOr);
 			return null;
 		} catch(NumberFormatException e) {
@@ -27,7 +39,7 @@ class NoisyOrCreator //implements ICPDCreator
 		}
 	}
 	public ICPDCreator newCreator(String name, String argstr, HashMap<String, Distribution> distMap) throws ParserException {
-		if(argstr!=null)
+		if(argstr!=null && !argstr.equals(""))
 			throw new ParserException("Expect no arguments for noisy or creation...");
 		return new NoisyOrCreator(distMap,name);
 	}
@@ -39,4 +51,4 @@ class NoisyOrCreator //implements ICPDCreator
 	private HashMap<String,Distribution> distmap;
 	private static int[] groups = new int[]{1};
 	private static Pattern patt = Pattern.compile("([\\.e\\-0-9]*)");
-*/}
+}

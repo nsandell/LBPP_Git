@@ -80,10 +80,11 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 	public RunResults optimize_parallel(int maxLearnIt, double learnErrConvergence, int maxInfIt, double infErrConvergence) throws BNException
 	{
 		long startTime = System.currentTimeMillis();
-		double learnErr = 0;
 		int i = 0;
+		double learnErr = 0;
 		while(i < maxLearnIt)
 		{
+			learnErr = 0;
 			this.run_parallel_block(maxInfIt, infErrConvergence);
 			for(DBNNode<?> node : this.dnodes.values())
 			{

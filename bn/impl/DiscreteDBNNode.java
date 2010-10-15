@@ -129,7 +129,7 @@ class DiscreteDBNNode extends DBNNode<DiscreteBNNode> implements IDiscreteDynBay
 		for(int i = 0; i < bayesNet.getT(); i++)
 		{
 			if(this.nodeInstances.get(i).isObserved())
-				ll += Math.log(this.nodeInstances.get(i).getLogLikelihood());
+				ll += this.nodeInstances.get(i).getLogLikelihood();
 		}
 		return ll;
 	}

@@ -68,6 +68,8 @@ public class ScalarNoisyOr extends DiscreteDistribution
 	@Override
 	public void validateConditionDimensions(int[] dims) throws BNException
 	{
+		if(dims.length==0)
+			throw new BNException("Noisy-Or node has no parents!");
 		for(int i =0; i < dims.length; i++)
 			if(dims[i]!=2)
 				throw new BNException("Noisy-Or depends on parent with cardinality that is not 2.");
@@ -82,7 +84,14 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		local_pi.setValue(0, localProduct);
 		local_pi.setValue(1, 1-localProduct);
 		
-		return value==null ? 0 : Math.log(local_pi.getValue(value));
+		if(value!=null)
+		{
+			localProduct = 1;
+			for(int i = 0; i < parent_pis.size(); i++)
+				localProduct *= (1-parent_pis.get(i).getValue(1)*this.c);
+			return value==0 ? Math.log(localProduct) : Math.log(1-localProduct);
+		}
+		else return 0;
 	}
 	
 	@Override

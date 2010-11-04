@@ -1,12 +1,13 @@
 package bn;
 
 import bn.distributions.Distribution;
+import bn.messages.Message;
 
 /**
  * Interface for a Dynamic Bayesian Network.
  * @author Nils F. Sandell
  */
-public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
+public interface IDynBayesNet extends IBayesNet<IBayesNode>
 {
 	/**
 	 * Add a dependency from a node in time slices t+1 to another node
@@ -28,6 +29,8 @@ public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 	void addIntraEdge(String from, String to) throws BNException;
 	
 
+	public double logLikelihood(int t) throws BNException;
+	
 	/**
 	 * Add a dependency from a node in time slices t+1 to another node
 	 * in time slices t.
@@ -36,7 +39,9 @@ public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 	 * @throws BNException If either node doesn't exist.  Or if the specified
 	 *  	nodes are unable to have this relationship.
 	 */	
-	void addInterEdge(IDynBayesNode from, IDynBayesNode to) throws BNException;
+	void addInterEdge(IBayesNode from, IBayesNode to) throws BNException;
+	
+	public Message getMarginal(String nodename, int t) throws BNException;
 	
 	/**
 	 * Add a dependency from a node to another node within the same time slice
@@ -45,7 +50,7 @@ public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 	 * @throws BNException If either node doesn't exist in this network.  Or if 
 	 *		 the specified nodes are unable to have this relationship.
 	 */
-	void addIntraEdge(IDynBayesNode from, IDynBayesNode to) throws BNException;
+	void addIntraEdge(IBayesNode from, IBayesNode to) throws BNException;
 	
 	/**
 	 * Remove a dependency from a node in time slices t+1 to another node
@@ -71,7 +76,7 @@ public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 	 * @param to The child node.
 	 * @throws BNException If either node doesn't exist, or aren't connected.
 	 */	
-	void removeInterEdge(IDynBayesNode from, IDynBayesNode to) throws BNException;
+	void removeInterEdge(IBayesNode from, IBayesNode to) throws BNException;
 	
 	/**
 	 * Remove a dependency from a node to another node within the same time slice
@@ -79,7 +84,7 @@ public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 	 * @param to The child node.
 	 * @throws BNException If either node doesn't exist in this network, or aren't connected.
 	 */
-	void removeIntraEdge(IDynBayesNode from, IDynBayesNode to) throws BNException;
+	void removeIntraEdge(IBayesNode from, IBayesNode to) throws BNException;
 
 	/**
 	 * Test whether an edge exists between a node at time slice t and another at t+1
@@ -164,7 +169,8 @@ public interface IDynBayesNet extends IBayesNet<IDynBayesNode>
 	 * @throws BNException If t0 or evidence are out of bounds, or if the node doesn't
 	 * 		exist or is not discrete.
 	 */
-	void setDiscreteEvidence(String nodeName, int t0, int[] evidence) throws BNException;
+	void setEvidence(String nodeName, int t0, Object[] evidence) throws BNException;
+	void setEvidence(String nodeName, int t, Object evidence) throws BNException;
 	
 	
 	/**

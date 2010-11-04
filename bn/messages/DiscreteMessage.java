@@ -7,7 +7,7 @@ import bn.BNException;
  * and nodes that can be connected to discrete nodes.
  * @author Nils F. Sandell
  */
-public class DiscreteMessage
+public class DiscreteMessage extends Message
 {
 	/**
 	 * Creates a message with desired cardinality.
@@ -18,7 +18,6 @@ public class DiscreteMessage
 		this.message_values = new double[cardinality];
 		for(int i = 0; i < cardinality; i++)
 			this.message_values[i] = 0;
-		this.cardinality = cardinality;
 	}
 	
 	/**
@@ -37,6 +36,44 @@ public class DiscreteMessage
 		return sum;
 	}
 	
+	public void setUniform()
+	{
+		for(int i = 0; i < this.message_values.length; i++)
+			message_values[i] = 1.0/((double)message_values.length);
+	}
+	
+	public DiscreteMessage getMarginal(DiscreteMessage other) throws BNException
+	{
+		try
+		{
+			DiscreteMessage marginal = this.multiply(other);
+			marginal.normalize();
+			return marginal;
+		} catch(BNException e) {
+			throw new BNException("Error attempting to get a marginal from two discrete messages : " + e.getMessage());
+		}
+	}
+	
+	public DiscreteMessage getMarginal(Message other) throws BNException
+	{
+		if(!(other instanceof DiscreteMessage))
+			throw new BNException("Attempted to get a marginal with a discrete message and non-discrete message.");
+		return this.getMarginal((DiscreteMessage)other);
+	}
+	
+	public DiscreteMessage copy()
+	{
+		DiscreteMessage newMsg = new DiscreteMessage(this.message_values.length);
+		newMsg.message_values = this.message_values.clone();
+		return newMsg;
+	}
+	
+	public void empty()
+	{
+		for(int i = 0; i < this.message_values.length; i++)
+			this.message_values[i] = 0;
+	}
+	
 	/**
 	 * Perform entry-wise division between this message and an argument message,
 	 * storing the result in a new message.
@@ -46,12 +83,17 @@ public class DiscreteMessage
 	 */
 	public DiscreteMessage divide(DiscreteMessage other) throws BNException
 	{
-		if(other.cardinality!=this.cardinality)
+		if(other.message_values.length!=this.message_values.length)
 			throw new BNException("Attempted to multiply messages of unequal length.");
-		DiscreteMessage ret = new DiscreteMessage(this.cardinality);
-		for(int i = 0; i < this.cardinality; i++)
+		DiscreteMessage ret = new DiscreteMessage(this.message_values.length);
+		for(int i = 0; i < this.message_values.length; i++)
 			ret.setValue(i, this.message_values[i]/other.message_values[i]);
 		return ret;
+	}
+	
+	public void setInitial()
+	{
+		this.setUniform();
 	}
 
 	/**
@@ -63,9 +105,9 @@ public class DiscreteMessage
 	 */
 	public DiscreteMessage multiply(DiscreteMessage other) throws BNException
 	{
-		if(other.cardinality!=this.cardinality)
+		if(other.message_values.length!=this.message_values.length)
 			throw new BNException("Attempted to multiply messages of unequal length.");
-		DiscreteMessage ret = new DiscreteMessage(this.cardinality);
+		DiscreteMessage ret = new DiscreteMessage(this.message_values.length);
 		for(int i = 0; i < message_values.length; i++)
 			ret.message_values[i] = this.message_values[i] * other.message_values[i];
 		return ret;
@@ -81,6 +123,14 @@ public class DiscreteMessage
 		DiscreteMessage ret = new DiscreteMessage(card);
 		for(int i = 0; i < card ; i++)
 			ret.message_values[i] = 1;
+		return ret;
+	}
+	
+	public static DiscreteMessage normalMessage(int card)
+	{
+		DiscreteMessage ret = new DiscreteMessage(card);
+		for(int i = 0; i < card; i++)
+			ret.message_values[i] = 1.0/((double)card);
 		return ret;
 	}
 	
@@ -100,7 +150,7 @@ public class DiscreteMessage
 	 */
 	public int getCardinality()
 	{
-		return this.cardinality;
+		return this.message_values.length;
 	}
 	
 	/**
@@ -112,7 +162,18 @@ public class DiscreteMessage
 	{
 		return this.message_values[index];
 	}
+	
+	public void adopt(Message msg) throws BNException
+	{
+		if(!(msg instanceof DiscreteMessage))
+			throw new BNException("Attempted to adopt message values of non-discrete message.");
+		DiscreteMessage dmsg = (DiscreteMessage)msg;
+		if(dmsg.message_values.length!=this.message_values.length)
+			throw new BNException("Attempted to adopt message of differing cardinality.");
+		for(int i = 0;i < this.message_values.length; i++)
+			this.message_values[i] = dmsg.message_values[i];
+	}
 
-	private int cardinality;
 	private double[] message_values;
+	private static final long serialVersionUID = 50L;
 }

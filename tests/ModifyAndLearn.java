@@ -1,8 +1,8 @@
 package tests;
 
 import bn.BNException;
+import bn.IBayesNode;
 import bn.IDynBayesNet;
-import bn.IDynBayesNode;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.distributions.ScalarNoisyOr;
@@ -17,11 +17,11 @@ public class ModifyAndLearn {
 		DiscreteCPT cpt = new DiscreteCPT(A, 2);
 		DiscreteCPTUC pidist = new DiscreteCPTUC(pi);
 		
-		IDynBayesNode x = net.addDiscreteNode("X", 2);
+		IBayesNode x = net.addDiscreteNode("X", 2);
 		net.setInitialDistribution("X", pidist);
 		net.setDistribution("X", cpt);
 		net.addInterEdge(x, x);
-		IDynBayesNode y1 = net.addDiscreteNode("Y1", 2);
+		IBayesNode y1 = net.addDiscreteNode("Y1", 2);
 		net.addIntraEdge(x,y1);
 		net.setDistribution("Y1", new ScalarNoisyOr(.9));
 		/*IDynBayesNode y2 = net.addDiscreteNode("Y2", 2);
@@ -31,7 +31,7 @@ public class ModifyAndLearn {
 		int[] evidence = new int[100];
 		for(int i = 0;i < 100; i++)
 			evidence[i] = i % 2;
-		net.setDiscreteEvidence("Y1",0 , evidence);
+		net.setEvidence("Y1",0 , evidence);
 		//net.setDiscreteEvidence("Y2",0 , evidence);
 		
 		net.validate();
@@ -41,10 +41,10 @@ public class ModifyAndLearn {
 		net.optimize(1, 0, 1, 0);
 		
 		
-		double ll = net.evidenceLogLikelihood();
+		double ll = net.logLikelihood();
 		ll+=3;
 		
-		IDynBayesNode x2 = net.addDiscreteNode("X2", 2);
+		IBayesNode x2 = net.addDiscreteNode("X2", 2);
 		net.setInitialDistribution("X2", pidist);
 		net.setDistribution("X2", cpt);
 		net.addIntraEdge(x2, y1);

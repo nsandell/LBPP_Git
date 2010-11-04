@@ -1,5 +1,7 @@
 package bn;
 
+import bn.messages.Message;
+
 /**
  * Interface for Static Bayes network-specific functions.
  * @author Nils F. Sandell
@@ -16,14 +18,6 @@ public interface IStaticBayesNet extends IBayesNet<IBayesNode>
 	public void addEdge(String from, String to) throws BNException;
 	
 	/**
-	 * Add edge from one node to another.
-	 * @param from Child node
-	 * @param to Parent node
-	 * @throws BNException If the nodes can't be connected.
-	 */
-	public void addEdge(IBayesNode from, IBayesNode to) throws BNException;
-	
-	/**
 	 * Remove an existing edge from one node to another.
 	 * @param from Child node name
 	 * @param to Parent node name
@@ -31,14 +25,6 @@ public interface IStaticBayesNet extends IBayesNet<IBayesNode>
 	 */
 	public void removeEdge(String from, String to) throws BNException;
 	
-	/**
-	 * Add edge from one node to another.
-	 * @param from Child node
-	 * @param to Parent node
-	 * @throws BNException If the nodes aren't be connected.
-	 */
-	public void removeEdge(IBayesNode from, IBayesNode to) throws BNException;
-
 	/**
 	 * Add a discrete node to this network.
 	 * @param name Name of the node to add.
@@ -54,7 +40,23 @@ public interface IStaticBayesNet extends IBayesNet<IBayesNode>
 	 * @param obsv Observation to set the node.
 	 * @throws BNException If the node isn't discrete or the observation is invalid.
 	 */
-	public void addDiscreteEvidence(String node, int obsv) throws BNException;
+	public void addEvidence(String node, Object obsv) throws BNException;
+	
+	/**
+	 * Get the evidence from a node
+	 * @param node Node to get evidence from.
+	 * @return The evidence, as an object.
+	 * @throws BNException If no node exists or the node has no evidence.
+	 */
+	public Object getEvidence(String node) throws BNException;
+	
+	/**
+	 * Get the marginal for a node.
+	 * @param nodename The name of the node.
+	 * @return  The marginal for the node.
+	 * @throws BNException If inference hasn't been run or there is otherwise no marginal.
+	 */
+	public Message getMarginal(String nodename) throws BNException;
 	
 	/**
 	 * Check whether an edge exists or not.

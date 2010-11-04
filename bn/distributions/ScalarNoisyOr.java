@@ -55,6 +55,14 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		return (MathUtil.rand.nextDouble() < getProbability1(num1)) ? 1 : 0;
 	}
 	
+	@Override
+	public void print(PrintStream ps)
+	{
+		ps.println("NoisyOr()");
+		ps.println(this.c);
+		ps.println();
+	}
+	
 	/**
 	 * Get the probability this node is active given the number of active parents.
 	 * @param numActiveParents the number of active parents.
@@ -76,13 +84,15 @@ public class ScalarNoisyOr extends DiscreteDistribution
 	}
 	
 	@Override
-	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value)
+	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException
 	{
 		double localProduct = 1;
 		for(int i = 0; i < incoming_pis.size(); i++)
 			localProduct *= (1-incoming_pis.get(i).getValue(1)*this.c);
 		local_pi.setValue(0, localProduct);
 		local_pi.setValue(1, 1-localProduct);
+		
+		//TODO Verify the changes - first normalizing local_pi, second normalizing the product of parent pis before returning..
 		
 		if(value!=null)
 		{
@@ -114,8 +124,9 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			double N = N0+stato.pns.get(i).px1;
 			this.q += N/normfac*Math.pow(N0/N, 1/((double)i));
 		}
+		this.c = Math.min(1-q,.99); //TODO evaluate this truncation..
+		this.q = 1-this.c;
 		double change = Math.abs(this.c-(1-q));
-		this.c = 1-q;
 		return change;
 	}
 	
@@ -157,8 +168,20 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			return this;
 		}
 		
+		public boolean anyNan(ScalarNoisyOrSuffStat stat)
+		{
+			for(int i = 0; i < stat.pns.size(); i++)
+			{
+				if(Double.isNaN(this.pns.get(i).px0) || Double.isNaN(this.pns.get(i).px1))
+				{
+					return true;
+				}
+			}
+			return false;
+		}
+		
 		@Override
-		public ScalarNoisyOrSuffStat update(DiscreteMessage lambda, Vector<DiscreteMessage> incomingPis)
+		public ScalarNoisyOrSuffStat update(DiscreteMessage lambda, Vector<DiscreteMessage> incomingPis) throws BNException
 		{
 			double[] pn = this.computePN(incomingPis);
 			double[][] curr = new double[incomingPis.size()+1][2];
@@ -186,10 +209,38 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		// rather than exponential time.
 		private double[] computePN(Vector<DiscreteMessage> incomingPis)
 		{
+			//Changing this method to treat any number < 1e-30 as 0 for numerical stability issue
 			int L = incomingPis.size();
+			Vector<DiscreteMessage> incPis2 = new Vector<DiscreteMessage>();
+			int numZero = 0;
+			for(int i = 0; i < L; i++)
+			{
+				if(incomingPis.get(i).getValue(0) < 1e-30)
+					numZero++;
+				else
+					incPis2.add(incomingPis.get(i));
+			}
+			if(numZero==L)
+			{
+				double[] ret = new double[L+1];
+				ret[L] = 1-1e-30;
+				return ret;
+			}
+			if(numZero > 0)
+			{
+					double[] tmp = this.computePN(incPis2);
+					double[] ret = new double[L+1];
+					for(int i = numZero; i < ret.length; i++)
+						ret[i] = tmp[i-numZero];
+					return ret;
+			}
 			double[] dist = new double[L+1];
 			double[] p = new double[L];
 			double eta = 1;
+	
+			// If zero chance of being off this won't work.  We can just compute pn for the
+			// the guys that could be off and shift everything over to the right appropriately.
+			
 			for(int i = 0; i < L; i++)
 			{
 				p[i] = incomingPis.get(i).getValue(1)/incomingPis.get(i).getValue(0);
@@ -232,13 +283,41 @@ public class ScalarNoisyOr extends DiscreteDistribution
 	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer value) throws BNException
 	{
 		double localProd = 1;
+		int numZeros = 0;
+		double[] pieces = new double[lambdas_out.size()];
 		for(int i = 0; i < lambdas_out.size(); i++)
-			localProd *= (1-this.c*incoming_pis.get(i).getValue(1));
-		localProd *= (local_lambda.getValue(1)-local_lambda.getValue(0));
-		for(int i = 0; i < lambdas_out.size(); i++)  //TODO what to do when observed???  is this okay because local_lambda(~value)=0? i think so..
 		{
-			lambdas_out.get(i).setValue(0, local_lambda.getValue(1) - localProd);
-			lambdas_out.get(i).setValue(1, local_lambda.getValue(1) - this.q*localProd);
+			pieces[i] = (1-this.c*incoming_pis.get(i).getValue(1)/(incoming_pis.get(i).getValue(0)+incoming_pis.get(i).getValue(1)));
+			if(numZeros==1 && pieces[i]==0)
+			{
+				numZeros = 2;
+				localProd = 0;
+				break;
+			}
+			else if(pieces[i]==0)
+				numZeros = 1;
+			else
+				localProd *= pieces[i];
+		}
+		double ll1 = local_lambda.getValue(1);
+		localProd *= (ll1-local_lambda.getValue(0));
+		for(int i = 0; i < lambdas_out.size(); i++)
+		{
+			if(numZeros==0)
+			{
+				lambdas_out.get(i).setValue(0, ll1 - localProd/pieces[i]);
+				lambdas_out.get(i).setValue(1, ll1 - this.q*localProd/pieces[i]);
+			}
+			else if(numZeros==1 && pieces[i]==0)
+			{
+				lambdas_out.get(i).setValue(0, ll1 - localProd);
+				lambdas_out.get(i).setValue(1, ll1 - this.q*localProd);
+			}
+			else if(numZeros==2 || numZeros==1 && pieces[i]>0)
+			{
+				lambdas_out.get(i).setValue(0, ll1);
+				lambdas_out.get(i).setValue(1, ll1);
+			}
 		}
 	}
 	

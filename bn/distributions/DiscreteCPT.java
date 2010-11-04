@@ -342,6 +342,34 @@ public class DiscreteCPT extends DiscreteDistribution
 	}
 	
 	@Override
+	public void print(PrintStream ps)
+	{
+		ps.print("CPT(");
+		ps.print(values[0].length);
+		for(int i = 0; i < dimSizes.length; i++)
+			ps.print(","+dimSizes[i]);
+		ps.println(")");
+		int[] indices = initialIndices(this.dimSizes.length);
+		do
+		{
+			try {
+				int absIndex = getIndex(indices, this.dimSizes);
+				for(int j =0; j < values[absIndex].length; j++)
+				{
+					if(values[absIndex][j]==0)
+						continue;
+					ps.print(indices[0]);
+					for(int i = 1; i < indices.length; i++)
+						ps.print(" " + indices[i]);
+					ps.println(" " + j + " " + values[absIndex][j]);
+				}
+			} catch(BNException e){ps.println("ERROR");return;}
+		}
+		while((indices = incrementIndices(indices, this.dimSizes))!=null);
+		ps.println("***");
+	}
+	
+	@Override
 	public double optimize(SufficientStatistic stat) throws BNException
 	{
 		if(!(stat instanceof CPTSufficient2SliceStat))
@@ -380,6 +408,8 @@ public class DiscreteCPT extends DiscreteDistribution
 		DiscreteCPT copy = new DiscreteCPT(this.dimSizes, this.getCardinality(),newvalues);
 		return copy;
 	}
+	
+	private static final long serialVersionUID = 50L;
 	
 	private int dimprod;
 	private int[] dimSizes;

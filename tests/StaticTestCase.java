@@ -5,7 +5,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 
-import bn.IDiscreteBayesNode;
 import bn.IStaticBayesNet;
 import bn.commandline.StaticNetCommandLine;
 import bn.messages.DiscreteMessage;
@@ -26,14 +25,15 @@ public class StaticTestCase{
 				String[] bits = keyval.split("=");
 				String nname = bits[0];
 				int value = Integer.parseInt(bits[1]);
-				bn.addDiscreteEvidence(nname, value);
+				bn.addEvidence(nname, value);
 				bn.run(100, 0);
 				HashMap<String,Double[]> dists = answers.get(keyval);
 				for(String distnode : dists.keySet())
 				{
-					IDiscreteBayesNode nd = (IDiscreteBayesNode)bn.getNode(distnode);
-					if(!compareMarg(dists.get(nd.getName()), nd.getMarginal()))
-						throw new Exception("Failed: Node " + distnode + " has difference.");
+					//IDiscreteBayesNode nd = (IDiscreteBayesNode)bn.getNode(distnode);
+					//if(!compareMarg(dists.get(nd.getName()), nd.getMarginal()))
+					if(!compareMarg(dists.get(distnode), (DiscreteMessage)bn.getMarginal(distnode)))
+						throw new Exception("Failed: Node " + distnode + " has difference for case " + keyval + ".");
 				}
 			}
 		
@@ -50,7 +50,11 @@ public class StaticTestCase{
 		for(int i = 0; i < m1.length; i++)
 		{
 			if(Math.abs(m1[i]-m2.getValue(i)) > 1e-5)
+			{
+				System.err.println("|" + m1[i] + " - " + m2.getValue(i) + "|=");
+				System.err.println(Math.abs(m1[i]-m2.getValue(i)));
 				return false;
+			}
 		}
 		return true;
 	}

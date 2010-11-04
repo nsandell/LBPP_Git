@@ -64,18 +64,11 @@ public interface IDiscreteDynBayesNode extends IDynBayesNode {
 	 * @throws BNException If t is out of bounds, or if no value
 	 * 	has been set at time t.
 	 */
-	public int getValue(int t) throws BNException;
+	public Integer getValue(int t) throws BNException;
 
 	/**
 	 * Get the cardinality of this node.
 	 * @return The cardinality.
 	 */
 	int getCardinality();
-	
-	/**
-	 * Get the static instance of this node at time 't'.
-	 * @param t The time to get the node instance at.
-	 * @return A discrete static node from time 't'.
-	 */
-	public IDiscreteBayesNode getDiscreteInstance(int t);
 }

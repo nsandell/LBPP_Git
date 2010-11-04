@@ -1,21 +1,24 @@
 package bn.impl;
 
+import java.io.PrintStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import bn.BNException;
 import bn.IBayesNode;
+import bn.impl.InternalIBayesNode;
 import bn.IBayesNet.RunResults;
 import bn.distributions.Distribution.SufficientStatistic;
 
-abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType extends BaseInterface> {
-	
+abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
+
 	protected BayesianNetwork(){}
 	
 	public void validate() throws BNException
 	{
-		HashSet<IBayesNode> marks = new HashSet<IBayesNode>();
-		HashSet<IBayesNode> ancestors = new HashSet<IBayesNode>(); // Can we replace this, we don't need value..
+		HashSet<InternalIBayesNode> marks = new HashSet<InternalIBayesNode>();
+		HashSet<InternalIBayesNode> ancestors = new HashSet<InternalIBayesNode>(); // Can we replace this, we don't need value..
 		
 		for(BaseNodeType node : nodes.values())
 		{
@@ -28,18 +31,27 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		}
 	}
 	
-	public void sample() throws BNException
+	public void print(PrintStream ps)
 	{
-		ArrayList<IBayesNode> frontier = new ArrayList<IBayesNode>();
-		for(BaseNodeType node : nodes.values())
-		{
-			if(node.numParents()==0)
-				frontier.add(node);
-		}
-		frontierSample(new HashSet<IBayesNode>(), frontier);
+		for(BaseNodeType nd : this.nodes.values())
+			nd.print(ps);
 	}
 	
-	public double evidenceLogLikelihood() throws BNException
+	public void print()
+	{
+		this.print(System.out);
+	}
+	
+	public void printDistributionInfo(String name, PrintStream ps) throws BNException
+	{
+		BaseNodeType node = this.getNode(name);
+		if(node==null) throw new BNException("Attempted to print distribution info for a nonexistant node named " + name);
+		node.printDistributionInfo(ps);
+	}
+	
+
+	
+	public double logLikelihood() throws BNException
 	{
 		double ll = 0;
 		for(BaseNodeType node : nodes.values())
@@ -47,14 +59,25 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		return ll;
 	}
 	
-	private void frontierSample(HashSet<IBayesNode> marks, ArrayList<IBayesNode> frontier) throws BNException
+	public void sample() throws BNException
 	{
-		ArrayList<IBayesNode> newFrontier = new ArrayList<IBayesNode>();
-		for(IBayesNode node : frontier)
+		ArrayList<InternalIBayesNode> frontier = new ArrayList<InternalIBayesNode>();
+		for(InternalIBayesNode node : nodes.values())
+		{
+			if(node.numParents()==0)
+				frontier.add(node);
+		}
+		frontierSample(new HashSet<InternalIBayesNode>(), frontier);
+	}
+	
+	private void frontierSample(HashSet<InternalIBayesNode> marks, ArrayList<InternalIBayesNode> frontier) throws BNException
+	{
+		ArrayList<InternalIBayesNode> newFrontier = new ArrayList<InternalIBayesNode>();
+		for(InternalIBayesNode node : frontier)
 		{
 			node.sample();
 			marks.add(node);
-			for(IBayesNode child : node.getChildren())
+			for(InternalIBayesNode child : node.getChildrenI())
 			{
 				if(!marks.contains(child))
 					newFrontier.add(child);
@@ -66,8 +89,14 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 	
 	public void clearAllEvidence()
 	{
-		for(IBayesNode node : this.nodes.values())
+		for(InternalIBayesNode node : this.nodes.values())
 			node.clearEvidence();
+	}
+	
+	public void resetMessages()
+	{
+		for(BaseNodeType nd : this.nodes.values())
+			nd.resetMessages();
 	}
 	
 	public RunResults optimize(int maxLearnIt, double learnErrConvergence, int maxInfIt, double infErrConvergence) throws BNException
@@ -83,17 +112,17 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 			{
 				learnErr = Math.max(node.optimizeParameters(),learnErr);
 			}
-			if(learnErr < learnErrConvergence)
+			if(learnErr <= learnErrConvergence)
 				break;
 			i++;
 		}
 		return new RunResults(i, ((double)(System.currentTimeMillis()-startTime))/1000.0, learnErr);
 	}
 	
-	private void dfs_cycle_detect(HashSet<IBayesNode> marks, HashSet<IBayesNode> ancestors, IBayesNode current) throws BNException
+	private void dfs_cycle_detect(HashSet<InternalIBayesNode> marks, HashSet<InternalIBayesNode> ancestors, InternalIBayesNode current) throws BNException
 	{
 		ancestors.add(current);
-		for(IBayesNode child : current.getChildren())
+		for(InternalIBayesNode child : current.getChildrenI())
 		{
 			if(marks.contains(child))
 				continue;
@@ -110,7 +139,7 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		return this.nodes.get(name);
 	}
 	
-	public void removeNode(BaseInterface node) throws BNException
+	public void removeNode(IBayesNode node) throws BNException
 	{
 		this.removeNode(node.getName());
 	}
@@ -121,9 +150,13 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		if(node!=null)
 		{
 			this.removeNodeI(node);
-			//this.nodes_list.remove(node);
 			this.nodes.remove(name);
 		}
+	}
+	
+	public int numNodes()
+	{
+		return this.nodes.size();
 	}
 	
 	protected final void addNodeI(BaseNodeType node) throws BNException
@@ -166,12 +199,10 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 				catch(BNException e){throw new BNException("Node " + nodeName + " threw an exception while updating : ",e);}
 			}
 		}
-		err = 0;
 		if(nodeOrder==null)
 			nodeOrder = nodes.keySet();
 		long end_time = System.currentTimeMillis();
 		return new RunResults(i, ((double)(end_time-start_time))/1000.0, err);
-		//System.out.println("Converged after " + i + " iterations with max change " + err);
 	}
 	
 	public void clearEvidence(String nodeName) throws BNException
@@ -209,7 +240,8 @@ abstract class BayesianNetwork<BaseInterface extends IBayesNode, BaseNodeType ex
 		}
 	}
 	
+	
 	protected abstract void removeNodeI(BaseNodeType node) throws BNException;
 	private Iterable<String> nodeOrder = null;
-	private HashMap<String, BaseNodeType> nodes = new HashMap<String, BaseNodeType>();
+	protected HashMap<String, BaseNodeType> nodes = new HashMap<String, BaseNodeType>();
 }

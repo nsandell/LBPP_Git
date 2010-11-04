@@ -157,5 +157,7 @@ public abstract class DiscreteDistribution implements Distribution {
 	public abstract void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis,
 										DiscreteMessage local_lambda, Integer value) throws BNException;
 	
+	private static final long serialVersionUID = 50L;
+	
 	private int cardinality;
 }

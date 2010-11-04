@@ -3,13 +3,14 @@ package tests;
 
 import bn.BNException;
 
-import bn.IDiscreteBayesNode;
+import bn.IBayesNode;
 import bn.IDiscreteDynBayesNode;
 import bn.IDynBayesNet;
 import bn.IDynBayesNet.ParallelCallback;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.impl.BayesNetworkFactory;
+import bn.messages.DiscreteMessage;
 
 public class HMMtest {
 	public static void main(String[] args)
@@ -27,22 +28,21 @@ public class HMMtest {
 			DiscreteCPT BCPT = new DiscreteCPT(new int[]{4}, 2, B);
 			DiscreteCPTUC piCPT = new DiscreteCPTUC(pi);
 
-			int[] obs = new int[length];
+			Integer[] obs = new Integer[length];
 			for(int i = 0; i < length; i++)
 			{
 				obs[i] = i % 2;
 			}
 			
 			IDynBayesNet dbn = BayesNetworkFactory.getDynamicNetwork(length);
-			IDiscreteDynBayesNode y = dbn.addDiscreteNode("y", 2);
-			IDiscreteDynBayesNode x = dbn.addDiscreteNode("x", 4);
+			IBayesNode y = dbn.addDiscreteNode("y", 2);
+			IBayesNode x = dbn.addDiscreteNode("x", 4);
 			dbn.addIntraEdge(x, y);
 			dbn.addInterEdge(x, x);
-			x.setInitialDistribution(piCPT);
-			x.setAdvanceDistribution(ACPT);
-			y.setInitialDistribution(BCPT);
-			y.setAdvanceDistribution(BCPT);
-			y.setValue(obs, 0);
+			dbn.setInitialDistribution(x.getName(), piCPT);
+			dbn.setDistribution(x.getName(), ACPT);
+			dbn.setDistribution(y.getName(), BCPT);
+			dbn.setEvidence(y.getName(), 0, obs);
 
 			dbn.validate();
 			
@@ -55,8 +55,9 @@ public class HMMtest {
 				double runtime = ((double)(end-begin))/1000;
 				for(int i = 0; i < 10; ++i)
 				{
-					IDiscreteBayesNode inst = x.getDiscreteInstance(i);
-					System.out.println(inst.getName()+": ["+x.getMarginal(i).getValue(0) +"," + x.getMarginal(i).getValue(1)+x.getMarginal(i).getValue(2) +"," + x.getMarginal(i).getValue(3)+"]");
+					DiscreteMessage msg = (DiscreteMessage)dbn.getMarginal("x", i);
+//					IDiscreteBayesNode inst = x.getDiscreteInstance(i);
+					System.out.println("X("+i+"): ["+msg.getValue(0) +"," + msg.getValue(1)+msg.getValue(2) +"," + msg.getValue(3)+"]");
 				}
 				System.out.println("Converged in " + runtime + " seconds... X Probabilities");
 				System.out.println("Observation likelihood : " + y.getLogLikelihood());
@@ -91,8 +92,8 @@ public class HMMtest {
 				long end = System.currentTimeMillis();
 				for(int i = 0; i < 10; i+=1)
 				{
-					IDiscreteBayesNode inst = x.getDiscreteInstance(i);
-					System.out.println(inst.getName()+": ["+x.getMarginal(i).getValue(0) +"," + x.getMarginal(i).getValue(1)+"]");
+					DiscreteMessage marginal = (DiscreteMessage)dbn.getMarginal("x", i);
+					System.out.println("X: ["+marginal.getValue(0) +"," + marginal.getValue(1)+"]");
 				}
 				System.out.println("Observation likelihood : " + y.getLogLikelihood());
 				double runtime = ((double)(end-starttime))/1000;

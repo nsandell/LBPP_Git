@@ -55,6 +55,27 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		}
 		return lastint;
 	}
+	
+	public void print(PrintStream ps)
+	{
+		ps.print("SparseCPT(" + dimSizes[0]);
+		for(int i = 1; i < this.dimSizes.length; i++)
+			ps.print(","+this.dimSizes[i]);
+		ps.println(")");
+		for(IndexWrapper wr : this.entries.keySet() )
+		{
+			HashMap<Integer, Double> values = this.entries.get(wr);
+			for(java.util.Map.Entry<Integer, Double> ent : values.entrySet())
+			{
+				ps.print(wr.indices[0]);
+				for(int i = 1; i < this.dimSizes.length; i++)
+					ps.print(" " + wr.indices[i]);
+				ps.print(" " + ent.getKey());
+				ps.println(" " + ent.getValue());
+			}
+		}
+		ps.println("***");
+	}
 
 	/**
 	 * Wrap a set of indices for hashing and comparison, for use in our tables.

@@ -1,10 +1,12 @@
 package bn.distributions;
 
 import java.io.PrintStream;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Vector;
 
 import bn.BNException;
+import bn.interfaces.Printable;
 import bn.messages.DiscreteMessage;
 
 /**
@@ -13,7 +15,7 @@ import bn.messages.DiscreteMessage;
  * argument type that will be cast down.
  * @author Nils F. Sandell
  */
-public interface Distribution
+public interface Distribution extends Serializable, Printable
 {
 	/**
 	 * Get an empty sufficient statistic object that this distribution can 
@@ -102,7 +104,7 @@ public interface Distribution
 		 * Constructor if we want to use an ArrayList of objects that have integer values
 		 * @param list The arraylist
 		 */
-		public ValueSet(ArrayList<? extends ValueObject<ValueType>> list)
+		public ValueSet(ArrayList<? extends ValueObject<ValueType>> list, int context)
 		{
 			this.valueObjects = list;
 		}
@@ -118,7 +120,7 @@ public interface Distribution
 			 * @return The integer value
 			 * @throws BNException If the object doesn't currently have a value.
 			 */
-			public ValueType getValue() throws BNException;
+			public ValueType getValue(int context) throws BNException;
 		}
 		
 		/**
@@ -129,7 +131,7 @@ public interface Distribution
 		 */
 		public final ValueType getValue(int i) throws BNException
 		{
-			return values==null ? valueObjects.get(i).getValue() : values[i];
+			return values==null ? valueObjects.get(i).getValue(this.context) : values[i];
 		}
 		
 		/**
@@ -143,5 +145,6 @@ public interface Distribution
 		
 		private ValueType[] values = null;
 		private ArrayList<? extends ValueObject<ValueType>> valueObjects = null;
+		int context;
 	}
 }

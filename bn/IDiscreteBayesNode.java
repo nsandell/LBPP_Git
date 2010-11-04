@@ -52,5 +52,5 @@ public interface IDiscreteBayesNode extends IBayesNode
 	 * or parameters without again running belief propagation.
 	 * @return The marginal distribution. (will be uniform initially)
 	 */
-	DiscreteMessage getMarginal();
+	DiscreteMessage getMarginal() throws BNException;
 }

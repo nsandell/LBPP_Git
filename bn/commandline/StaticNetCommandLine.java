@@ -39,8 +39,14 @@ public class StaticNetCommandLine
 			parser.addHandler(new UniversalCommandHandlers.BNValidate(bn));
 			parser.addHandler(new StaticCommandHandlers.ObservationHandler(bn));
 			parser.addHandler(new UniversalCommandHandlers.LLGetter(bn));
+			parser.addHandler(new UniversalCommandHandlers.NetLLGetter(bn));
 			parser.addHandler(new UniversalCommandHandlers.Optimizer(bn));
 			parser.addHandler(new UniversalCommandHandlers.NodeDistPrinter(bn));
+			parser.addHandler(new UniversalCommandHandlers.BNSampler(bn));
+			parser.addHandler(new UniversalCommandHandlers.NodeRemover(bn));
+			parser.addHandler(new UniversalCommandHandlers.BNResetter(bn));
+			parser.addHandler(new UniversalCommandHandlers.BNSaver(bn));
+			
 			return parser;
 		} catch(Exception e) {
 			System.err.println("Error loading parser : " + e.getMessage());

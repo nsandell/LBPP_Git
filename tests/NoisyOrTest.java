@@ -7,6 +7,7 @@ import java.util.Random;
 import bn.BNException;
 import bn.IDiscreteBayesNode;
 import bn.IStaticBayesNet;
+import bn.IBayesNet.RunResults;
 import bn.distributions.DiscreteCPTUC;
 import bn.distributions.ScalarNoisyOr;
 import bn.distributions.Distribution.SufficientStatistic;
@@ -16,16 +17,16 @@ public class NoisyOrTest
 {
 	public static void main(String[] args) throws BNException
 	{
-		test1();
+		test3();
 	}
 	
 	public static void test1() throws BNException
 	{
 		IStaticBayesNet snet = BayesNetworkFactory.getStaticNetwork();
 
-		IDiscreteBayesNode x = snet.addDiscreteNode("X", 2);
-		IDiscreteBayesNode y = snet.addDiscreteNode("Y", 2);
-		snet.addEdge(x, y);
+		snet.addDiscreteNode("X", 2);
+		snet.addDiscreteNode("Y", 2);
+		snet.addEdge("X", "Y");
 		snet.setDistribution("X",new DiscreteCPTUC(new double[]{.5,.5}));
 		snet.setDistribution("Y",new ScalarNoisyOr(.85));
 	
@@ -53,12 +54,12 @@ public class NoisyOrTest
 			HashMap<String, SufficientStatistic> stats = new HashMap<String, SufficientStatistic>();
 			for(int trial = 0; trial < 1000; trial++)
 			{
-				y.setValue(ydat[trial]);
+				snet.addEvidence("Y", ydat[trial]);
 				snet.run(100, 0);
 				snet.collectSufficientStatistics(names, stats);
 			}
 			System.out.println(1-onesFrac/.5);
-			y.optimizeParameters(stats.get("Y"));
+			snet.optimize(names, stats);
 		}
 		int a = 3;
 		a*=3;
@@ -68,11 +69,11 @@ public class NoisyOrTest
 	{
 		IStaticBayesNet snet = BayesNetworkFactory.getStaticNetwork();
 
-		IDiscreteBayesNode y = snet.addDiscreteNode("Y", 2);
-		IDiscreteBayesNode x = snet.addDiscreteNode("X", 2);
-		IDiscreteBayesNode x2 = snet.addDiscreteNode("X2", 2);
-		snet.addEdge(x, y);
-		snet.addEdge(x2,y);
+		snet.addDiscreteNode("Y", 2);
+		snet.addDiscreteNode("X", 2);
+		snet.addDiscreteNode("X2", 2);
+		snet.addEdge("X", "Y");
+		snet.addEdge("X2","Y");
 		snet.setDistribution("X",new DiscreteCPTUC(new double[]{.5,.5}));
 		snet.setDistribution("X2",new DiscreteCPTUC(new double[]{.3,.7}));
 		snet.setDistribution("Y",new ScalarNoisyOr(.8));
@@ -86,10 +87,12 @@ public class NoisyOrTest
 		for(int trial = 0; trial < N; trial++)
 		{
 			snet.sample();
-			ydat[trial] = y.getValue();
-			if(x.getValue()==1 && x2.getValue()==1)
+			ydat[trial] = (Integer)snet.getEvidence("Y");//y.getValue();
+			int x1val = (Integer)snet.getEvidence("X");
+			int x2val = (Integer)snet.getEvidence("X2");
+			if(x1val==1 && x2val==1)
 				twosFrac++;
-			else if(x.getValue()==1 || x2.getValue()==1)
+			else if(x1val==1 || x2val==1)
 				onesFrac++;
 		}
 		snet.setDistribution("Y", new ScalarNoisyOr(.9));
@@ -99,14 +102,66 @@ public class NoisyOrTest
 			HashMap<String, SufficientStatistic> stats = new HashMap<String, SufficientStatistic>();
 			for(int trial = 0; trial < N; trial++)
 			{
-				y.setValue(ydat[trial]);
+				snet.addEvidence("Y", ydat[trial]);
+				//y.setValue(ydat[trial]);
 				snet.run(100, 0);
 				snet.collectSufficientStatistics(names, stats);
 			}
 			System.out.println(1-onesFrac/.5);
-			y.optimizeParameters(stats.get("Y"));
+			snet.optimize(names, stats);
+			//y.optimizeParameters(stats.get("Y"));
 		}
 		int a = 3;
 		a*=3;
+	}
+	
+	public static void test3() throws BNException
+	{
+		IStaticBayesNet snet = BayesNetworkFactory.getStaticNetwork();
+
+		IDiscreteBayesNode y = snet.addDiscreteNode("Y", 2);
+		IDiscreteBayesNode y2 = snet.addDiscreteNode("Y2", 2);
+		IDiscreteBayesNode x = snet.addDiscreteNode("X", 2);
+		snet.addEdge("X", "Y");
+		snet.addEdge("X", "Y2");
+		
+		snet.setDistribution("X",new DiscreteCPTUC(new double[]{.7,.3}));
+		snet.setDistribution("Y",new ScalarNoisyOr(.8));
+		snet.setDistribution("Y2",new ScalarNoisyOr(.9));
+		
+		y.setValue(0);
+		y2.setValue(1);
+		
+		RunResults rr = snet.run(20, 0);
+		System.out.println("No X2");
+		System.out.println(rr.numIts + " iterations.");
+		System.out.println("P(X1==1)=" + x.getMarginal().getValue(1));
+
+		IDiscreteBayesNode x2 =snet.addDiscreteNode("X2", 2);
+		snet.addEdge("X2","Y2");
+		snet.setDistribution("X2",new DiscreteCPTUC(new double[]{.6,.4}));
+
+
+		rr = snet.run(20, 0);
+		System.out.println("X2");
+		System.out.println(rr.numIts + " iterations.");	
+		System.out.println("P(X1==1)=" + x.getMarginal().getValue(1));
+		System.out.println("P(X2==1)=" + x2.getMarginal().getValue(1));
+		
+		snet.removeNode(x2);
+		rr = snet.run(20,0);
+		System.out.println("No X2");
+		System.out.println(rr.numIts + " iterations.");
+		System.out.println("P(X1==1)=" + x.getMarginal().getValue(1));
+		
+		x2 =snet.addDiscreteNode("X2", 2);
+		snet.addEdge("X2","Y2");
+		snet.setDistribution("X2",new DiscreteCPTUC(new double[]{.6,.4}));
+
+		rr = snet.run(20, 0);
+		System.out.println("X2");
+		System.out.println(rr.numIts + " iterations.");	
+		System.out.println("P(X1==1)=" + x.getMarginal().getValue(1));
+		System.out.println("P(X2==1)=" + x2.getMarginal().getValue(1));
 	}
 }

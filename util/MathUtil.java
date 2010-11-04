@@ -1,8 +1,9 @@
 package util;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Random;
-
-import Jama.Matrix;
 
 /**
  * Generic math and random number generation utilities.
@@ -11,6 +12,54 @@ import Jama.Matrix;
  */
 public class MathUtil
 {
+	public static void main(String[] args)
+	{
+		boolean[][] input = {{false,true,false,true},{true,true,false,false},{false,true,true,true},{false,true,true,false},{true,false,false,false}};
+		input = lofSort(input);
+		for(int j = 0; j < input[0].length; j++)
+		{
+			for(int i = 0; i < input.length; i++)
+			{
+				if(input[i][j])
+					System.out.print(" 1");
+				else 
+					System.out.print(" 0");
+			}
+			System.out.println();
+		}
+	}
+	
+	public static boolean[][] lofSort(boolean[][] input)
+	{
+		ArrayList<boolean[]> entries = new ArrayList<boolean[]>();
+		for(int i = 0; i < input.length; i++)
+			entries.add(input[i]);
+		Collections.sort(entries,LOFCOLComparer.singleton);
+		for(int i = 0; i < input.length; i++)
+			input[i] = entries.get(i);
+		return input;
+	}
+	
+	private static class LOFCOLComparer implements Comparator<boolean[]>
+	{
+		public static LOFCOLComparer singleton = new LOFCOLComparer();
+		
+		@Override
+		public int compare(boolean[] o1, boolean[] o2) throws ClassCastException
+		{
+			if(o1.length!=o2.length) throw new ClassCastException();
+			for(int i = o1.length-1; i >= 0; i--)
+			{
+				if(o1[i] && !o2[i])
+					return -1;
+				if(o2[i] && !o1[i])
+					return 1;
+			}
+			return 0;
+		}
+		
+	}
+	
 	public static class MathUtilException extends Exception
 	{
 		private static final long serialVersionUID = 1L;
@@ -33,14 +82,14 @@ public class MathUtil
 			innersum += Math.exp(vals[i]-max);
 		return max+Math.log(innersum);	
 	}
-	
+	/*
 	public static Matrix normalVector(int len)
 	{
 		Matrix ret = new Matrix(len, 1);
 		for(int i =0; i < len; i++)
 			ret.set(i, 0, rand.nextGaussian());
 		return ret;
-	}
+	}*/
 	
 	public static Random rand = new Random();
 }

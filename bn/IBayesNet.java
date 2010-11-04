@@ -1,9 +1,11 @@
 package bn;
 
+import java.io.PrintStream;
 import java.util.HashMap;
 
 import bn.distributions.Distribution;
 import bn.distributions.Distribution.SufficientStatistic;
+import bn.interfaces.Printable;
 /**
  * Highest level bayesian network interface - functions that are in common both with 
  * static and dynamic bayesian networks.  Probably shouldn't be carried around by
@@ -13,7 +15,7 @@ import bn.distributions.Distribution.SufficientStatistic;
  * @param <BaseInterface> This determines what interface a general node in this network
  * 						  will use.
  */
-public interface IBayesNet<BaseInterface>
+public interface IBayesNet<BaseInterface> extends Printable
 {
 	/**
 	 * Remove a node corresonding to provided name from the network.  
@@ -28,6 +30,11 @@ public interface IBayesNet<BaseInterface>
 	 * @throws BNException If node can't be removed, or doesn't exist (or is null).
 	 */
 	public void removeNode(BaseInterface node) throws BNException;
+	
+	public void resetMessages();
+	
+	public int numNodes();
+	
 	
 	/**
 	 * Set the conditional distribution for use by a node.
@@ -48,7 +55,7 @@ public interface IBayesNet<BaseInterface>
 	 * @param name Name of the node desired.
 	 * @return The node, null if no node exists with provided name.
 	 */
-	public BaseInterface getNode(String name);
+	public BaseInterface getNode(String name) throws BNException;
 	
 	/**
 	 * Sample all nodes in this network.  The nodes will be set as observed and the values
@@ -118,12 +125,17 @@ public interface IBayesNet<BaseInterface>
 		public double error;
 	}
 	
+	
 	/**
 	 * Get the log likelihood of all of the evidence present in the network.
 	 * @return The log likelihood, 0 if there is no evidence.
 	 * @throws BNException if message passing hasn't been run yet.
 	 */
-	public double evidenceLogLikelihood() throws BNException;
+	public double logLikelihood() throws BNException;
+	
+	public void print();
+	
+	public void printDistributionInfo(String name, PrintStream ps) throws BNException;
 	
 	/**
 	 * Run belief propagation on this network.

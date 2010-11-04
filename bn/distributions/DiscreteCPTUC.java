@@ -66,6 +66,16 @@ public class DiscreteCPTUC extends DiscreteDistribution
 			newdist[i] = this.dist[i];
 		return new DiscreteCPTUC(newdist);
 	}
+	
+	@Override
+	public void print(PrintStream ps)
+	{
+		ps.println("PV("+this.getCardinality()+")");
+		ps.print(dist[0]);
+		for(int i = 1; i < this.dist.length; i++)
+			ps.print(" " + dist[i]);
+		ps.println();
+	}
 
 	/**
 	 * Get a uniform distribution probability vector.
@@ -202,5 +212,6 @@ public class DiscreteCPTUC extends DiscreteDistribution
 	@Override //Should have no parents so this method has no functionality.
 	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer value) throws BNException{}
 	
+	private static final long serialVersionUID = 50L;
 	private final double[] dist;
 }

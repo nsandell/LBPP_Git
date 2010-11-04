@@ -13,32 +13,25 @@ public interface IDynBayesNode extends IBayesNode
 	 * Get an iterator over children in the next slice.
 	 * @return Iterator over those nodes.
 	 */
-	Iterable<IDynBayesNode> getInterChildren();
+	Iterable<? extends IDynBayesNode> getInterChildren();
 	
 	/**
 	 * Get an iterator over children in the same slice.
 	 * @return Iterator over those nodes.
 	 */
-	Iterable<IDynBayesNode> getIntraChildren();
+	Iterable<? extends IDynBayesNode> getIntraChildren();
 	
 	/**
 	 * Get an iterator over parents in the previous slice.
 	 * @return Iterator over those nodes.
 	 */
-	Iterable<IDynBayesNode> getInterParents();
+	Iterable<? extends IDynBayesNode> getInterParents();
 	
 	/**
 	 * Get an iterator over parents in the same slice.
 	 * @return Iterator over those nodes.
 	 */	
-	Iterable<IDynBayesNode> getIntraParents();
-	
-	/**
-	 * Get the static instance node of this node at time t
-	 * @param t Time of the node desired
-	 * @return Static node.
-	 */
-	IBayesNode getInstance(int t);
+	Iterable<? extends IDynBayesNode> getIntraParents();
 	
 	/**
 	 * Get the log likelihood of all the observed instances of this node given
@@ -46,6 +39,13 @@ public interface IDynBayesNode extends IBayesNode
 	 * @return The log likelihood.
 	 */
 	double getLogLikelihood() throws BNException;
+	
+	double getLogLikelihood(int t) throws BNException;
+	
+	boolean hasInterChild(IDynBayesNode child);
+	boolean hasIntraChild(IDynBayesNode child);
+	boolean hasInterParent(IDynBayesNode child);
+	boolean hasIntraParent(IDynBayesNode child);
 	
 	/**
 	 * Get the initial distribution for this node.

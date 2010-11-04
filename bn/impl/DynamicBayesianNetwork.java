@@ -1,46 +1,59 @@
 package bn.impl;
 
+
+import java.io.PrintStream;
 import java.util.HashMap;
 
 import bn.BNException;
+import bn.IBayesNode;
+import bn.IDiscreteDynBayesNode;
 import bn.IDynBayesNet;
-import bn.IDynBayesNode;
-import bn.distributions.DiscreteDistribution;
 import bn.distributions.Distribution;
+import bn.messages.Message;
 
-class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> implements IDynBayesNet{
-
+class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynBayesNet
+{
 	public DynamicBayesianNetwork(int T){this.T = T;}
 
-	public DiscreteDBNNode addDiscreteNode(String name, int cardinality) throws BNException
+	public IDiscreteDynBayesNode addDiscreteNode(String name, int cardinality) throws BNException
 	{
 		if(this.getNode(name)!=null)
 			throw new BNException("Node " + name + " already exists in this DBN.");
-		DiscreteDBNNode nd = new DiscreteDBNNode(this, unrolled_network, name, cardinality);
+		DBNNode.DiscreteDBNNode nd = new DBNNode.DiscreteDBNNode(this, name, cardinality);
 		this.dnodes.put(name, nd);
 		this.addNodeI(nd);
 		return nd;
 	}
+	
+	@Override
+	public void print(PrintStream pr)
+	{
+		pr.println(this.T); pr.println();
+
+		super.print(pr);
+		
+		for(DBNNode node : this.dnodes.values())
+		{
+			for(DBNNode child : node.getInterChildren())
+				pr.println(node.getName() + "=>" + child.getName());
+			
+			for(DBNNode child : node.getIntraChildren())
+				pr.println(node.getName() + "->" + child.getName());
+		}
+	}
 
 	public void addInterEdge(String fromname, String toname) throws BNException
 	{
-		DBNNode<?> from = this.getNode(fromname), to = this.getNode(toname);
+		DBNNode from = this.getNode(fromname), to = this.getNode(toname);
 		if(from==null || to==null)
 			throw new BNException("Failed to add interconnection, either (or both) node " + from + " or node " + to + " doesn't exist.");
 		try
 		{
 			from.addInterChild(to);
 		} catch(BNException e) {throw new BNException("Whilst interconnecting "+from+"=>"+to+":",e);}
-		try
-		{
-			to.addInterParent(from);
-		} catch(BNException e) {
-			from.removeInterChild(to);
-			throw new BNException("Whilst interconnecting "+from+"=>"+to+":",e);
-		}
 	}
 
-	public void addInterEdge(IDynBayesNode from, IDynBayesNode to) throws BNException
+	public void addInterEdge(IBayesNode from, IBayesNode to) throws BNException
 	{
 		if(from==null || to==null)
 			throw new BNException("Null argument passed to addInterEdge...");
@@ -49,23 +62,23 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 
 	public void addIntraEdge(String fromname, String toname) throws BNException
 	{		
-		DBNNode<?> from = this.getNode(fromname), to = this.getNode(toname);
+		DBNNode from = this.getNode(fromname), to = this.getNode(toname);
 		if(from==null || to==null)
 			throw new BNException("Failed to add intraconnection, either (or both) node " + from + " or node " + to + " doesn't exist.");
 		try
 		{
 			from.addIntraChild(to);
 		} catch(BNException e) {throw new BNException("Whilst intraconnecting "+from+"=>"+to+":",e);}
-		try
-		{
-			to.addIntraParent(from);
-		} catch(BNException e) {
-			from.removeIntraChild(to);
-			throw new BNException("Whilst intraconnecting "+from+"=>"+to+":",e);
-		}
+	}
+	
+	public Message getMarginal(String name, int t) throws BNException
+	{
+		DBNNode node = this.getNode(name);
+		if(node==null) throw new BNException("Attempted to get marginal for nonexistant node : " + name);
+		return node.getMarginal(t);
 	}
 
-	public void addIntraEdge(IDynBayesNode from, IDynBayesNode to) throws BNException
+	public void addIntraEdge(IBayesNode from, IBayesNode to) throws BNException
 	{
 		if(from==null || to==null)
 			throw new BNException("Null argument passed to addIntraEdge...");
@@ -86,10 +99,8 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		{
 			learnErr = 0;
 			this.run_parallel_block(maxInfIt, infErrConvergence);
-			for(DBNNode<?> node : this.dnodes.values())
-			{
+			for(DBNNode node : this.dnodes.values())
 				learnErr = Math.max(node.optimizeParameters(),learnErr);
-			}
 			if(learnErr < learnErrConvergence)
 				break;
 			i++;
@@ -98,37 +109,27 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 	}
 
 	@Override
-	protected void removeNodeI(DBNNode<?> node) throws BNException
+	protected void removeNodeI(DBNNode node) throws BNException
 	{
-		for(DBNNode<?> intrachild : node.getIntraChildrenI())
-			intrachild.removeIntraParent(node);
-		for(DBNNode<?> interchild : node.getInterChildrenI())
-			interchild.removeInterParent(node);
-		for(DBNNode<?> intraparent : node.getIntraParentsI())
-			intraparent.removeIntraChild(node);
-		for(DBNNode<?> interparent: node.getInterParentsI())
-			interparent.removeInterChild(node);
+		node.invalidate();
+		node.removeAllChildren();
+		node.removeAllParents();
+		this.dnodes.remove(node.getName());
 	}
 	
 	public void setDistribution(String nodeName, Distribution dist) throws BNException
 	{
-		DBNNode<?> node = this.getNode(nodeName);
-		if(node instanceof DiscreteDBNNode && dist instanceof DiscreteDistribution)
-			((DiscreteDBNNode)node).setAdvanceDistribution((DiscreteDistribution)dist);
-		else
-			throw new BNException("Unsupported node/distribution pair.");
+		DBNNode node = this.getNode(nodeName);
+		node.setAdvanceDistribution(dist);
 	}
 	
 	public void setInitialDistribution(String nodeName, Distribution dist) throws BNException
 	{	
-		DBNNode<?> node = this.getNode(nodeName);
-		if(node instanceof DiscreteDBNNode && dist instanceof DiscreteDistribution)
-			((DiscreteDBNNode)node).setInitialDistribution((DiscreteDistribution)dist);
-		else
-			throw new BNException("Unsupported node/distribution pair.");
+		DBNNode node = this.getNode(nodeName);
+		node.setInitialDistribution(dist);
 	}
 	
-	private static class BlockCallback2 implements ParallelCallback
+	static class BlockCallback2 implements ParallelCallback
 	{
 		public void callback(IDynBayesNet net, int numIts, double err, double time) {
 			synchronized (blockLock) {
@@ -138,16 +139,18 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 				this.blockLock.notify();
 			}
 		}
-		
+
 		public void error(IDynBayesNet net, String error)
 		{
-			this.error = error;
-			this.blockLock.notify();
+			synchronized (blockLock) {
+				this.error = error;
+				this.blockLock.notify();
+			}
 		}
 	
 		double timeElapsed, errorD;
 		int numIts;
-		private String error = null;
+		String error = null;
 		Object blockLock = new Object();
 	}
 	
@@ -182,7 +185,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 	{
 		double nnb = this.T - (status.maxThreads -1);
 		int numEarlySlice = (int)Math.floor(nnb/status.maxThreads);
-		int numLastSlice = T - numEarlySlice*(status.maxThreads-1);
+		int numLastSlice = ((int)nnb) - numEarlySlice*(status.maxThreads-1);
 		
 		for(int i = 0; i < status.maxThreads-1; i++)
 		{
@@ -205,8 +208,9 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 			for(int i = 0; i < status.maxThreads-1; i++)
 			{
 				int border = i+ (i+1)*numEarlySlice;
-				for(DBNNode<?> node : status.nodes)
-					node.updateMessages(border, border);
+				
+				for(DBNNode node : status.nodes)
+					node.updateMessages(border, border,status.forward);
 			}
 		} catch(BNException e)
 		{
@@ -215,26 +219,38 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		}
 	}
 	
-	public void setDiscreteEvidence(String nodename, int t0, int[] obs) throws BNException
+	public void setEvidence(String nodename, int t0, Object[] obs) throws BNException
 	{
-		DBNNode<?> node = this.getNode(nodename);
-		if(!(node instanceof DiscreteDBNNode))
-			throw new BNException("Attempted to add discrete evidence to non-discrete node.");
-		((DiscreteDBNNode)node).setValue(obs, t0);
+		DBNNode node = this.getNode(nodename);
+		node.setEvidence(t0, obs);
+	}
+	
+	public void setEvidence(String nodename, int t, Object obs) throws BNException
+	{
+		DBNNode node = this.getNode(nodename);
+		node.setEvidence(t, obs);
 	}
 	
 	public double nodeLogLikelihood(String name) throws BNException
 	{
-		DBNNode<?> node = this.getNode(name);
+		DBNNode node = this.getNode(name);
 		if(node==null)
 			throw new BNException("Attempted to get log likelihood of a node that does not exist!");
 		return node.getLogLikelihood();
 	}
 	
+	public double logLikelihood(int t) throws BNException
+	{
+		double ll = 0;
+		for(DBNNode nd : this.nodes.values())
+			ll += nd.getLogLikelihood(t);
+		return ll;
+	}
+	
 	private static class ParallelStatus
 	{
 		
-		public ParallelStatus(DynamicBayesianNetwork bn, double tolerance, int maxIterations, ParallelCallback callback, Iterable<DBNNode<?>> nodes)
+		public ParallelStatus(DynamicBayesianNetwork bn, double tolerance, int maxIterations, ParallelCallback callback, Iterable<DBNNode> nodes)
 		{
 			this.bn = bn;
 			this.tolerance = tolerance;
@@ -286,6 +302,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 						if(this.iteration!=this.maxIterations && this.getError() > this.tolerance)
 						{
 							this.reset();
+							this.forward = !this.forward;
 							this.bn.parallel_iteration_regions(this);
 						}
 						else
@@ -300,12 +317,13 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		}
 		
 		long start_time;
+		public boolean forward = true;
 		public boolean ok = true;
 		public String message;
 		public int iteration = 0;
 		public int maxIterations;
 		public int maxThreads = availableProcs;
-		public Iterable<DBNNode<?>> nodes;
+		public Iterable<DBNNode> nodes;
 		private ParallelCallback callback;
 		private int doneThreads;
 		private double tolerance;
@@ -318,7 +336,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 	
 	private static class SliceRangeSample extends Thread
 	{
-		public SliceRangeSample(ParallelStatus status, Iterable<DBNNode<?>> nodes, int tmin, int tmax)
+		public SliceRangeSample(ParallelStatus status, Iterable<DBNNode> nodes, int tmin, int tmax)
 		{
 			this.nodes = nodes; this.tmin = tmin; this.tmax = tmax;  this.status = status;
 		}
@@ -329,8 +347,8 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 			try
 			{
 				double maxerr = 0;
-				for(DBNNode<?> node : this.nodes)
-					maxerr = Math.max(maxerr,node.updateMessages(this.tmin, this.tmax));
+				for(DBNNode node : this.nodes)
+					maxerr = Math.max(maxerr,node.updateMessages(this.tmin, this.tmax,this.status.forward));
 				status.setIfErrorBigger(maxerr);
 			} catch(BNException e) {
 				status.ok = false;
@@ -342,41 +360,39 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 		
 		private ParallelStatus status;
 		private int tmin, tmax;
-		private Iterable<DBNNode<?>> nodes;
+		private Iterable<DBNNode> nodes;
 	}
 	
 	@Override
 	public void removeInterEdge(String from, String to) throws BNException {
-		DBNNode<?> fromN = this.getNode(from);
-		DBNNode<?> toN = this.getNode(to);
+		DBNNode fromN = this.getNode(from);
+		DBNNode toN = this.getNode(to);
 		
 		if(fromN==null || toN==null)
 			throw new BNException("Failed to remove edge, node " + from + " or " + to + " doesn't exist.");
 		
 		fromN.removeInterChild(toN);
-		toN.removeInterParent(fromN);	
 	}
 
 	@Override
 	public void removeIntraEdge(String from, String to) throws BNException {
-		DBNNode<?> fromN = this.getNode(from);
-		DBNNode<?> toN = this.getNode(to);
+		DBNNode fromN = this.getNode(from);
+		DBNNode toN = this.getNode(to);
 		
 		if(fromN==null || toN==null)
 			throw new BNException("Failed to remove edge, node " + from + " or " + to + " doesn't exist.");
 		
 		fromN.removeIntraChild(toN);
-		toN.removeIntraParent(fromN);
 	}
 
 	@Override
-	public void removeInterEdge(IDynBayesNode from, IDynBayesNode to)
+	public void removeInterEdge(IBayesNode from, IBayesNode to)
 			throws BNException {
 		this.removeInterEdge(from.getName(), to.getName());
 	}
 
 	@Override
-	public void removeIntraEdge(IDynBayesNode from, IDynBayesNode to)
+	public void removeIntraEdge(IBayesNode from, IBayesNode to)
 			throws BNException {
 		this.removeIntraEdge(from.getName(), to.getName());
 	}
@@ -384,8 +400,8 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 	@Override
 	public boolean existsInterEdge(String fromName, String toName)
 			throws BNException {
-		DBNNode<?> fromN = this.getNode(fromName);
-		DBNNode<?> toN = this.getNode(toName);
+		DBNNode fromN = this.getNode(fromName);
+		DBNNode toN = this.getNode(toName);
 		if(fromN==null || toN==null)
 			throw new BNException("Failure removing interedge : Either node " + fromName + " or node " + toName + " does not exist.");
 		return fromN.hasInterChild(toN);
@@ -394,15 +410,14 @@ class DynamicBayesianNetwork extends BayesianNetwork<IDynBayesNode,DBNNode<?>> i
 	@Override
 	public boolean existsIntraEdge(String fromName, String toName)
 			throws BNException {
-		DBNNode<?> fromN = this.getNode(fromName);
-		DBNNode<?> toN = this.getNode(toName);
+		DBNNode fromN = this.getNode(fromName);
+		DBNNode toN = this.getNode(toName);
 		if(fromN==null || toN==null)
 			throw new BNException("Failure removing intraedge : Either node " + fromName + " or node " + toName + " does not exist.");
 		return fromN.hasIntraChild(toN);
 	}
 	
 	protected int T;
-	protected StaticBayesianNetwork unrolled_network = new StaticBayesianNetwork();
 	protected static int availableProcs = Runtime.getRuntime().availableProcessors();
-	HashMap<String, DBNNode<?>> dnodes = new HashMap<String, DBNNode<?>>();
+	HashMap<String, DBNNode> dnodes = new HashMap<String, DBNNode>();
 }

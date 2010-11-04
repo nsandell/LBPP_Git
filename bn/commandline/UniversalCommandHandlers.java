@@ -10,7 +10,6 @@ import util.Parser.ParserFunction;
 import bn.BNException;
 import bn.IBayesNet;
 import bn.IBayesNet.RunResults;
-import bn.IBayesNode;
 import bn.distributions.Distribution;
 
 public class UniversalCommandHandlers {
@@ -28,6 +27,62 @@ public class UniversalCommandHandlers {
 		public String getPrompt() {return null;}
 		private static int[] groups = new int[]{1,2};
 		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*~\\s*(\\w+)$");
+	}
+	
+	static class BNResetter extends MethodWrapperHandler<Object>
+	{
+		public BNResetter(IBayesNet<?> net) throws Exception
+		{
+			super(net,IBayesNet.class.getMethod("resetMessages", new Class<?>[]{}),new String[]{},null);
+		}
+		
+		public int[] getGroups(){return groups;}
+		public Pattern getRegEx(){return patt;}
+		public String getPrompt(){return null;}
+		
+		private static Pattern patt = Pattern.compile("^\\s*reset\\s*$");
+		private static int[] groups = new int[]{};
+	}
+	
+	static class BNSaver implements ParserFunction
+	{
+		public BNSaver(IBayesNet<?> net)
+		{
+			this.net = net;
+		}
+		private IBayesNet<?> net;
+		@Override
+		public Pattern getRegEx() {return regex;}
+		@Override
+		public int[] getGroups() {return groups;}
+		@Override
+		public String getPrompt() {return null;}
+		@Override
+		public void finish() throws ParserException{}
+		@Override
+		public ParserFunction parseLine(String[] args, PrintStream output)
+				throws ParserException {
+			net.print(output);
+			return null;
+		}
+		
+		private int[] groups = new int[]{};
+		private Pattern regex = Pattern.compile("^\\s*save\\s*$");
+	}
+	
+	static class BNSampler extends MethodWrapperHandler<Object>
+	{
+		public BNSampler(IBayesNet<?> net) throws Exception
+		{
+			super(net,IBayesNet.class.getMethod("sample", new Class<?>[]{}),new String[]{},null);
+		}
+		
+		public int[] getGroups(){return groups;}
+		public Pattern getRegEx(){return patt;}
+		public String getPrompt(){return null;}
+		
+		private static Pattern patt = Pattern.compile("^\\s*samplenet\\s*$");
+		private static int[] groups = new int[]{};
 	}
 	
 	static class BNValidate extends MethodWrapperHandler<Object>
@@ -112,14 +167,8 @@ public class UniversalCommandHandlers {
 		@Override
 		public ParserFunction parseLine(String[] args, PrintStream output)
 				throws ParserException {
-			IBayesNode nd = (IBayesNode)net.getNode(args[0]);
-			if(nd ==null)
-				throw new ParserException("Node " + args[0] + " doesn't exist.");
-			else
-			{
-				try {nd.printDistributionInfo(output);}
-				catch(BNException e) { throw new ParserException(e.getMessage());}
-			}
+			try {net.printDistributionInfo(args[0], output);}
+			catch(BNException e) { throw new ParserException(e.getMessage());}
 			return null;
 		}
 		
@@ -148,4 +197,49 @@ public class UniversalCommandHandlers {
 		private static Pattern patt = Pattern.compile("^\\s*ll\\(\\s*(\\w+)\\s*\\)\\s*$");
 		private static int[] groups = new int[]{1};
 	}
+	
+	static class NodeRemover extends MethodWrapperHandler<Object>
+	{
+		NodeRemover(IBayesNet<?> net) throws Exception
+		{
+			super(net,IBayesNet.class.getMethod("removeNode",new Class[]{String.class}),
+					new String[]{"node name"}, null);
+		}
+		
+		@Override
+		protected void handleReturn(PrintStream pr)
+		{
+			pr.println((Double)this.retObj);
+		}
+		
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+		
+		private static Pattern patt = Pattern.compile("^\\s*remove\\(\\s*(\\w+)\\s*\\)\\s*$");
+		private static int[] groups = new int[]{1};
+	}
+	
+	static class NetLLGetter extends MethodWrapperHandler<Object>
+	{
+		NetLLGetter(IBayesNet<?> net) throws Exception
+		{
+			super(net,IBayesNet.class.getMethod("logLikelihood",new Class[]{}),
+					new String[]{}, null);
+		}
+		
+		@Override
+		protected void handleReturn(PrintStream pr)
+		{
+			pr.println((Double)this.retObj);
+		}
+		
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+		
+		private static Pattern patt = Pattern.compile("^\\s*ll\\s*$");
+		private static int[] groups = new int[]{};
+	}
+	
 }

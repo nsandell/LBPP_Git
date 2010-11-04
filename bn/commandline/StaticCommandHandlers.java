@@ -7,9 +7,9 @@ import util.Parser;
 import util.Parser.MethodWrapperHandler;
 import util.Parser.ParserException;
 import util.Parser.ParserFunction;
-import bn.IBayesNode;
-import bn.IDiscreteBayesNode;
+import bn.BNException;
 import bn.IStaticBayesNet;
+import bn.messages.DiscreteMessage;
 
 class StaticCommandHandlers {
 	static class DiscreteNodeAdder extends Parser.MethodWrapperHandler<Object>
@@ -54,17 +54,15 @@ class StaticCommandHandlers {
 		public void finish() throws ParserException {}
 		public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException
 		{
-			IBayesNode node = net.getNode(args[0]);
-			if(node==null)
-				throw new ParserException("Unknown node: " + args[0]);
-			if(node instanceof IDiscreteBayesNode)
+			//TODO have to worry about how to do this when there are other node types
+			try
 			{
-				IDiscreteBayesNode dnode = (IDiscreteBayesNode)node;
-				for(int i = 0; i < dnode.getCardinality(); i++)
-					System.out.println(dnode.getMarginal().getValue(i)+" ");
+				DiscreteMessage msg = (DiscreteMessage)net.getMarginal(args[0]);
+				for(int i = 0; i < msg.getCardinality(); i++)
+					System.out.println(msg.getValue(i)+" ");
+			} catch(BNException e) {
+				throw new ParserException("Error printing marginal : " + e.getMessage());
 			}
-			else
-				throw new ParserException("Don't know how to print marginal for node.");
 			return null;
 		}
 		
@@ -77,8 +75,8 @@ class StaticCommandHandlers {
 	{
 		public ObservationHandler(IStaticBayesNet bn) throws Exception
 		{
-			super(bn,IStaticBayesNet.class.getMethod("addDiscreteEvidence", new Class<?>[]{String.class,int.class}),
-					new String[]{"node name","observation"},null);
+			super(bn,IStaticBayesNet.class.getMethod("addEvidence", new Class<?>[]{String.class, Object.class}),
+					new Class<?>[]{String.class, Integer.class},new String[]{"node name","observation"},null);
 		}
 		
 		public int[] getGroups() {return groups;}

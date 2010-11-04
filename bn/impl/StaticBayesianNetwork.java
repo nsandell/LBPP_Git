@@ -1,12 +1,14 @@
 package bn.impl;
 
-import bn.BNException;
-import bn.IBayesNode;
-import bn.IStaticBayesNet;
-import bn.distributions.DiscreteDistribution;
-import bn.distributions.Distribution;
+import java.io.PrintStream;
 
-class StaticBayesianNetwork extends BayesianNetwork<IBayesNode,BNNode> implements IStaticBayesNet
+import bn.BNException;
+import bn.IDiscreteBayesNode;
+import bn.IStaticBayesNet;
+import bn.distributions.Distribution;
+import bn.messages.Message;
+
+class StaticBayesianNetwork extends BayesianNetwork<BNNode> implements IStaticBayesNet
 {
 	public StaticBayesianNetwork(){}
 	
@@ -19,20 +21,29 @@ class StaticBayesianNetwork extends BayesianNetwork<IBayesNode,BNNode> implement
 		this.addEdgeI(fromN,toN);
 	}
 	
-	public void addEdge(IBayesNode from, IBayesNode to) throws BNException
+	public void addEdge(InternalIBayesNode from, InternalIBayesNode to) throws BNException
 	{
 		if(!(from instanceof BNNode) || !(to instanceof BNNode))
 			throw new BNException("Attempted to connect nodes of unknown type...");
 		this.addEdgeI((BNNode)from,(BNNode)to);
 	}
 	
+	@Override
+	public void print(PrintStream pr)
+	{
+		super.print(pr);
+		
+		for(BNNode node : this.nodes.values())
+		{
+			for(BNNode child : node.getChildrenI())
+				pr.println(node.getName() + "->" + child.getName());
+		}
+	}
+	
 	public void setDistribution(String nodeName, Distribution dist) throws BNException
 	{
 		BNNode node = this.getNode(nodeName);
-		if(node instanceof DiscreteBNNode && dist instanceof DiscreteDistribution)
-			((DiscreteBNNode)node).setDistribution((DiscreteDistribution)dist);
-		else
-			throw new BNException("Unsupported node/distribution pair.");
+		node.setDistribution(dist);
 	}
 	
 	private void addEdgeI(BNNode fromN, BNNode toN) throws BNException
@@ -41,31 +52,40 @@ class StaticBayesianNetwork extends BayesianNetwork<IBayesNode,BNNode> implement
 		{
 			fromN.addChild(toN);
 		} catch(BNException e) {
+			fromN.removeChild(toN);
 			throw new BNException("Failed to add child : ",e);
 		}	
-		try
-		{
-			toN.addParent(fromN);
-		} catch(BNException e) {
-			fromN.removeChild(toN);
-			throw new BNException("Failed to add parent : ",e);
-		}
 	}
 	
-	public DiscreteBNNode addDiscreteNode(String name, int cardinality) throws BNException
+	public Message getMarginal(String name) throws BNException
+	{
+		BNNode node = this.getNode(name);
+		if(node==null) throw new BNException("Attempted to get marginal for node " + name + ", doesn't exist..");
+		return node.getMarginal();
+	}
+	
+	public Object getEvidence(String name) throws BNException
+	{
+		BNNode node = this.getNode(name);
+		if(node==null) throw new BNException("Attempted to get evidence for node " + name + ", doesn't exist..");
+		return node.contextManager.getValue(null);
+	}
+	
+	public IDiscreteBayesNode addDiscreteNode(String name, int cardinality) throws BNException
 	{
 		if(this.getNode(name)!=null)
 			throw new BNException("Attempted to add nodes with existing name : " + name);
-		DiscreteBNNode node = new DiscreteBNNode(this,name,cardinality);
-		this.addNodeI(node);
-		return node;
+		BNNode.DiscreteBNNode nd = new BNNode.DiscreteBNNode(this, name, cardinality);
+		this.addNodeI(nd);
+		return nd;
 	}
 	
 	@Override
 	protected void removeNodeI(BNNode node) throws BNException
 	{
-		for(BNNode child : node.getChildrenI())
-			child.removeParent(node);
+		node.removeAllChildren();
+		for(BNNode parent : node.getParentsI())
+			parent.removeChild(node);
 	}
 	
 	public double nodeLogLikelihood(String nodename) throws BNException
@@ -76,16 +96,15 @@ class StaticBayesianNetwork extends BayesianNetwork<IBayesNode,BNNode> implement
 		return node.getLogLikelihood();
 	}
 	
-	public void addDiscreteEvidence(String nodename, int evidence) throws BNException
+	public void addEvidence(String nodename, Object evidence) throws BNException
 	{
 		BNNode node = this.getNode(nodename);
-		if(!(node instanceof DiscreteBNNode))
-			throw new BNException("Attempted to add discrete evidence to non-discrete node.");
-		else
-			((DiscreteBNNode)node).setValue(evidence);
+		if(node==null)
+			throw new BNException("Error while adding evidence : Node " + nodename + " does not exist.");
+		node.setValue(evidence);
 	}
 	
-	public void removeEdge(IBayesNode from, IBayesNode to) throws BNException
+	public void removeEdge(InternalIBayesNode from, InternalIBayesNode to) throws BNException
 	{
 		this.removeEdge(from.getName(), to.getName());
 	}
@@ -97,7 +116,6 @@ class StaticBayesianNetwork extends BayesianNetwork<IBayesNode,BNNode> implement
 		if(fromN==null || toN==null)
 			throw new BNException("Attempted to remove edge ("+from+","+to+") where one of the nodes doesn't exist.");
 		fromN.removeChild(toN);
-		toN.removeParent(fromN);
 	}
 	
 	public boolean edgeExists(String from, String to) throws BNException
@@ -109,4 +127,5 @@ class StaticBayesianNetwork extends BayesianNetwork<IBayesNode,BNNode> implement
 			throw new BNException("Either node " + from + " or node " + to + " doesn't exist in this network.");
 		return fromN.hasChild(toN);
 	}
+	
 }

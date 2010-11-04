@@ -100,6 +100,18 @@ public class Parser {
 		{
 			if(this.getGroups().length!=argumentNames.length || this.getGroups().length!=method.getParameterTypes().length)
 				throw new Exception("Failed MethodWrapper instantiation for "+ method.getName() +" ..");
+			this.parameterTypes = method.getParameterTypes();
+			this.obj = obj;
+			this.method = method;
+			this.environmentObjects = environmentObjects;
+			this.argumentNames = argumentNames;
+		}
+		
+		public MethodWrapperHandler(Object obj, Method method, Class<?>[] parameterTypes, String[] argumentNames, HashMap<String, EnvObj> environmentObjects) throws Exception
+		{
+			if(this.getGroups().length!=argumentNames.length || this.getGroups().length!=method.getParameterTypes().length)
+				throw new Exception("Failed MethodWrapper instantiation for "+ method.getName() +" ..");
+			this.parameterTypes = parameterTypes;
 			this.obj = obj;
 			this.method = method;
 			this.environmentObjects = environmentObjects;
@@ -119,8 +131,7 @@ public class Parser {
 		public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException
 		{
 			Object[] objargs = new Object[args.length];
-			Class<?>[] parametersTypes = this.method.getParameterTypes();
-			if(parametersTypes.length!=args.length) // Make sure we get appropriate number of arguments.
+			if(parameterTypes.length!=args.length) // Make sure we get appropriate number of arguments.
 				throw new ParserException("Method takes more arguments than specified...");
 			int i = 0;
 			try
@@ -129,11 +140,11 @@ public class Parser {
 				//  throwing an error if the argument is improper (String when expecting Int, etc)
 				while(i < args.length)
 				{
-					if(String.class.equals(parametersTypes[i]))
+					if(String.class.equals(parameterTypes[i]))
 						objargs[i] = args[i]; 
-					else if(Integer.class.equals(parametersTypes[i]) || int.class.equals(parametersTypes[i]))
+					else if(Integer.class.equals(parameterTypes[i]) || int.class.equals(parameterTypes[i]))
 						objargs[i] = Integer.parseInt(args[i]); 
-					else if(Double.class.equals(parametersTypes[i]) || double.class.equals(parametersTypes[i]))
+					else if(Double.class.equals(parameterTypes[i]) || double.class.equals(parameterTypes[i]))
 						objargs[i] = Double.parseDouble(args[i]);
 					else if(environmentObjects!=null)
 					{
@@ -164,6 +175,7 @@ public class Parser {
 		}
 	
 		protected Object retObj;
+		private Class<?>[] parameterTypes;
 		private String[] argumentNames;
 		private Object obj;
 		private Method method;

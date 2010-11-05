@@ -111,7 +111,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynBay
 	@Override
 	protected void removeNodeI(DBNNode node) throws BNException
 	{
-		node.invalidate();
+		//node.invalidate(); //TODO Verify this gone.
 		node.removeAllChildren();
 		node.removeAllParents();
 		this.dnodes.remove(node.getName());
@@ -229,22 +229,6 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynBay
 	{
 		DBNNode node = this.getNode(nodename);
 		node.setEvidence(t, obs);
-	}
-	
-	public double nodeLogLikelihood(String name) throws BNException
-	{
-		DBNNode node = this.getNode(name);
-		if(node==null)
-			throw new BNException("Attempted to get log likelihood of a node that does not exist!");
-		return node.getLogLikelihood();
-	}
-	
-	public double logLikelihood(int t) throws BNException
-	{
-		double ll = 0;
-		for(DBNNode nd : this.nodes.values())
-			ll += nd.getLogLikelihood(t);
-		return ll;
 	}
 	
 	private static class ParallelStatus

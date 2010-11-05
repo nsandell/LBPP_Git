@@ -2,6 +2,7 @@ package bn.distributions;
 
 import java.io.PrintStream;
 import java.io.Serializable;
+
 import java.util.ArrayList;
 import java.util.Vector;
 
@@ -15,7 +16,7 @@ import bn.messages.DiscreteMessage;
  * argument type that will be cast down.
  * @author Nils F. Sandell
  */
-public interface Distribution extends Serializable, Printable
+public interface Distribution extends Printable, Serializable
 {
 	/**
 	 * Get an empty sufficient statistic object that this distribution can 

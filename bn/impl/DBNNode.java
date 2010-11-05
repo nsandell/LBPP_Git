@@ -1,7 +1,7 @@
 package bn.impl;
 
 import java.io.PrintStream;
-import java.io.Serializable;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Vector;
@@ -25,10 +25,9 @@ import bn.messages.Message.MessageInterface;
 abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 {
 	protected DBNNode(DynamicBayesianNetwork net,String name,
-						InnerNode inner)
+						InnerNode<Integer> inner)
 	{
 		this.innerNode = inner;
-		this.contextManager = (DynamicContextManager)inner.getContextManager();
 		this.bayesNet = net;
 		this.name = name;
 	}
@@ -58,11 +57,6 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		return this.intraChildren.size()+this.interChildren.size();
 	}
 	
-	public double getLogLikelihood(int t) throws BNException
-	{
-		return this.contextManager.getLogLikelihood(t);
-	}
-	
 	public final String getName()
 	{
 		return this.name;
@@ -72,7 +66,7 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 	{
 		if(this.interChildren.containsKey(child))
 			throw new BNException("Attempted to add child that already exists.");
-		MessageInterface<?>[] added = new MessageInterface<?>[this.bayesNet.getT()-1];
+		MessageInterface[] added = new MessageInterface[this.bayesNet.getT()-1];
 		int t = -1;
 		try
 		{
@@ -109,15 +103,14 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 	
 	public void resetMessages()
 	{
-		for(int t = 0; t < this.bayesNet.getT(); t++)
-			this.contextManager.resetMessages(t);
+		this.innerNode.resetMessages();
 	}
 	
 	public final void addIntraChild(DBNNode child) throws BNException
 	{
 		if(this.intraChildren.containsKey(child))
 			throw new BNException("Atttempted to add child that already exists.");
-		MessageInterface<?>[] added = new MessageInterface<?>[this.bayesNet.getT()];
+		MessageInterface[] added = new MessageInterface[this.bayesNet.getT()];
 		int t = -1;
 		try
 		{
@@ -143,7 +136,7 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 	{
 		if(!this.intraChildren.containsKey(child))
 			throw new BNException("Attempted to remove inter-child " + child.name + " from node " + this.name + " where it is not a child.");
-		MessageInterface<?>[] ints = this.interChildren.get(child);
+		MessageInterface[] ints = this.interChildren.get(child);
 		try
 		{
 			for(int i = 0; i < ints.length; i++)
@@ -157,13 +150,12 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		}
 		child.interParents.remove(this);
 		child.removeParentPair(this);
-		child.clearInterParentsLocalPis(this);
 		this.interChildren.remove(child);
 	}
 	
 	public final void removeAllChildren() throws BNException
 	{
-		for(Entry<DBNNode, MessageInterface<?>[]> entry : this.intraChildren.entrySet())
+		for(Entry<DBNNode, MessageInterface[]> entry : this.intraChildren.entrySet())
 		{
 			for(int i = 0; i < entry.getValue().length; i++)
 				entry.getValue()[i].invalidate();
@@ -172,7 +164,7 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		}
 		this.innerNode.clearInvalidChildren();
 		this.intraChildren.clear();
-		for(Entry<DBNNode, MessageInterface<?>[]> entry : this.interChildren.entrySet())
+		for(Entry<DBNNode, MessageInterface[]> entry : this.interChildren.entrySet())
 		{
 			for(int i = 0; i < entry.getValue().length; i++)
 				entry.getValue()[i].invalidate();
@@ -186,7 +178,7 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 	
 	public Message getMarginal(int t) throws BNException
 	{
-		return this.contextManager.getMarginal(t);
+		return this.innerNode.getMarginal(t);
 	}
 	
 	public final void removeAllParents() throws BNException
@@ -205,13 +197,13 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 			this.innerNode.setValue(t0+t, ev[t]);
 	}
 	
-	public void invalidate()
+	/*public void invalidate() //TODO THink this is no longer needed, verify!
 	{
 		for(int t = 0; t < this.bayesNet.getT(); t++)
 			this.contextManager.getLocalLambda(t).invalidate();
 		for(int t = 0; t < this.bayesNet.getT(); t++)
 			this.contextManager.getLocalPi(t).invalidate();
-	}
+	}*/
 	
 	public void setEvidence(int t, Object ev) throws BNException
 	{
@@ -220,29 +212,29 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 	
 	public Distribution getInitialDistribution() 
 	{
-		return this.contextManager.getInitial();
+		return this.innerNode.getDistribution(0);
 	}
 	
 	public void setInitialDistribution(Distribution dist) throws BNException
 	{
-		this.contextManager.setInitialDistribution(dist.copy());
+		this.innerNode.setDistribution(0,dist.copy());
 	}
 	
 	public void setAdvanceDistribution(Distribution dist) throws BNException
 	{
-		this.contextManager.setAdvanceDistribution(dist.copy());
+		this.innerNode.setDistribution(1,dist.copy());
 	}
 	
 	public void setDistribution(Distribution dist) throws BNException
 	{
-		this.contextManager.setAdvanceDistribution(dist.copy());
+		this.innerNode.setDistribution(1,dist.copy());
 	}
 	
 	public final void removeIntraChild(DBNNode child) throws BNException
 	{
 		if(!this.intraChildren.containsKey(child))
 			throw new BNException("Attempted to remove intra-child " + child.name + " from node " + this.name + " where it is not a child.");
-		MessageInterface<?>[] ints = this.intraChildren.get(child);
+		MessageInterface[] ints = this.intraChildren.get(child);
 		try
 		{
 			for(int i = 0; i < ints.length; i++)
@@ -256,7 +248,6 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		}
 		child.intraParents.remove(this);
 		child.removeParentPair(this);
-		child.clearIntraParentsLocalPis(this);
 		this.intraChildren.remove(child);
 	}
 	
@@ -397,15 +388,10 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		this.innerNode.clearValue();
 	}
 	
-	public double getLogLikelihood()
-	{
-		return this.innerNode.getLogLikelihood();
-	}
-	
 	public TwoSliceStatistics<SufficientStatistic> getSufficientStatistic() throws BNException
 	{
 		TwoSliceStatistics<SufficientStatistic> tss = new TwoSliceStatistics<Distribution.SufficientStatistic>();
-		if(this.contextManager.hasInitial())
+		if(this.innerNode.getDistribution(0)!=this.innerNode.getDistribution(1))
 		{
 			tss.initialStat = this.innerNode.getSufficientStatistic(0);
 			tss.advanceStat = this.innerNode.getSufficientStatistic(1);
@@ -426,7 +412,7 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 			throw new BNException("Failure to optimize parametrs on dynamic node - expected two slice statistic!");
 		TwoSliceStatistics<?> tss = (TwoSliceStatistics<?>)stat;
 		
-		if(this.contextManager.hasInitial())
+		if(this.innerNode.getDistribution(0)!=this.innerNode.getDistribution(1))
 		{
 			this.innerNode.updateSufficientStatistic(0, tss.initialStat);
 			this.innerNode.updateSufficientStatistic(1, tss.advanceStat);
@@ -443,7 +429,7 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 	public double optimizeParameters() throws BNException
 	{
 		TwoSliceStatistics<SufficientStatistic> tss = this.getSufficientStatistic();
-		if(this.contextManager.hasInitial())
+		if(this.innerNode.getDistribution(0)!=this.innerNode.getDistribution(1))
 		{
 			double err = 0;
 			if(tss.initialStat!=null)
@@ -460,7 +446,7 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		if(!(stat instanceof TwoSliceStatistics))
 			throw new BNException("Failure to optimize parametrs on dynamic node - expected two slice statistic!");
 		TwoSliceStatistics<?> tss = (TwoSliceStatistics<?>)stat;
-		if(this.contextManager.hasInitial() && tss.initialStat!=null)
+		if(this.innerNode.getDistribution(0)!=this.innerNode.getDistribution(1))
 		{
 			double err = this.innerNode.optimize(0, tss.initialStat);
 			return Math.max(err,this.innerNode.optimize(1, tss.advanceStat));
@@ -471,15 +457,15 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 	
 	public void printDistributionInfo(PrintStream ps)
 	{
-		if(this.contextManager.hasInitial())
+		if(this.innerNode.getDistribution(0)!=this.innerNode.getDistribution(1))
 		{
 			ps.println("Initial distribution for node " + this.getName() + " : ");
-			this.contextManager.getInitial().printDistribution(ps);
+			this.innerNode.getDistribution(0).printDistribution(ps);
 		}
-		if(this.contextManager.getAdvance()!=null)
+		if(this.innerNode.getDistribution(1)!=null)
 		{
 			ps.println("Advance distribution for node " + this.getName() + " : ");
-			this.contextManager.getAdvance().printDistribution(ps);
+			this.innerNode.getDistribution(1).printDistribution(ps);
 		}
 	}
 	
@@ -494,7 +480,7 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		{
 			try
 			{
-				Object value = this.contextManager.getValue(t);
+				Object value = this.innerNode.getValue(t);
 				if(startSpot==-1 && value!=null)
 					startSpot = t;
 				else if(startSpot!=-1 && value==null)
@@ -517,14 +503,14 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 			}
 		}
 		
-		if(this.contextManager.hasInitial())
+		if(this.innerNode.getDistribution(0)!=this.innerNode.getDistribution(1));
 		{
 			ps.print(this.getName()+"___CPD__INIT < ");
-			this.contextManager.getCPD(0).print(ps);
+			this.innerNode.getDistribution(0).print(ps);
 			ps.println(this.getName() + " ~~ " + this.getName() + "___CPD__INIT");
 		}
 		ps.print(this.getName()+"___CPD__ADVA < ");
-		this.contextManager.getCPD(1).print(ps);
+		this.innerNode.getDistribution(1).print(ps);
 		ps.println(this.getName() + " ~ " + this.getName() + "___CPD__ADVA");
 	}
 	
@@ -535,20 +521,6 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		return updateMessages(0,this.bayesNet.getT()-1);
 	}
 
-	private void clearInterParentsLocalPis(DBNNode parent) throws BNException
-	{
-		MessageInterface<? extends Message>[] msg = parent.interChildren.get(this);
-		for(int t = 0; t < msg.length; t++)
-			this.contextManager.removeParentPi(t, msg[t].parent_local_pi);
-	}
-
-	private void clearIntraParentsLocalPis(DBNNode parent) throws BNException
-	{
-		MessageInterface<? extends Message>[] msg = parent.intraChildren.get(this);
-		for(int t = 0; t < msg.length; t++)
-			this.contextManager.removeParentPi(t, msg[t].parent_local_pi);
-	}
-	
 	protected int getT()
 	{
 		return this.bayesNet.getT();
@@ -578,57 +550,28 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 			for(int t = 0; t < this.bayesNet.getT(); t++)
 				this.sample(t);
 		}
-		
 
 		@Override
 		protected void printCreation(PrintStream pr)
 		{
 			pr.println(this.getName()+":Discrete("+this.getCardinality()+")");
-//			Vector<Integer> values = new Vector<Integer>(); 
-//			int startSpot = -1;
-//			for(int t = 0; t < this.getT(); t++)
-//			{
-//				try
-//				{
-//					Integer value = (Integer)this.contextManager.getValue(t);
-//					if(startSpot==-1 && value!=null)
-//						startSpot = t;
-//					else if(startSpot!=-1 && value==null)
-//					{
-//						pr.print(this.getName()+"("+startSpot+") =");
-//						for(int i = 0; i < values.size(); i++)
-//							pr.print(" "  + values.get(i));
-//						pr.println();
-//						startSpot =-1;
-//						values.clear();
-//					}
-//					
-//					if(value!=null)
-//					{
-//						values.add(value);
-//					}
-//				} catch(BNException e) {
-//					pr.println("ERROR " + e.getMessage());
-//					return;
-//				}
-//			}
 		}
 		
 		@Override
 		public DiscreteDistribution getInitialDistribution() {
-			return (DiscreteDistribution) this.contextManager.getInitial();
+			return (DiscreteDistribution) this.innerNode.getDistribution(0);
 		}
 
 		@Override
 		public void setInitialDistribution(DiscreteDistribution dist)
 				throws BNException {
-			this.contextManager.setInitialDistribution(dist);
+			this.innerNode.setDistribution(0,dist);
 		}
 
 		@Override
 		public void setAdvanceDistribution(DiscreteDistribution dist)
 				throws BNException {
-			this.contextManager.setAdvanceDistribution(dist);
+			this.innerNode.setDistribution(1,dist);
 		}
 
 		@Override
@@ -655,7 +598,7 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		@Override
 		public DiscreteMessage getMarginal(int t) throws BNException
 		{
-			return (DiscreteMessage)this.contextManager.getMarginal(t);
+			return (DiscreteMessage)this.innerNode.getMarginal(t);
 		}
 		
 		public void sample(int t) throws BNException
@@ -673,20 +616,20 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 				for(int i = 0; i < pvals.length; i++)
 					pvals[i] = ((DiscreteDBNNode)this.parents.get(i).parent).getValue(t - (this.parents.get(i).inter ? 1 : 0));
 			}
-			this.setValue(t, ((DiscreteDistribution)this.contextManager.getCPD(t)).sample(new Distribution.ValueSet<Integer>(pvals)));
+			this.setValue(t, ((DiscreteDistribution)this.innerNode.getDistribution(t)).sample(new Distribution.ValueSet<Integer>(pvals)));
 		}
 		
 	}
 	
-	
-	protected InnerNode<Integer,Message,Object> innerNode;
-	protected DynamicContextManager<Distribution,Message,Object> contextManager;
-	
-	private HashMap<DBNNode,MessageInterface<?>[]> interChildren = new HashMap<DBNNode, Message.MessageInterface<?>[]>();
-	private HashMap<DBNNode,MessageInterface<?>[]> intraChildren = new HashMap<DBNNode, Message.MessageInterface<?>[]>();
+	protected InnerNode<Integer> innerNode;
+	private HashMap<DBNNode,MessageInterface[]> interChildren = new HashMap<DBNNode, MessageInterface[]>();
+	private HashMap<DBNNode,MessageInterface[]> intraChildren = new HashMap<DBNNode, MessageInterface[]>();
 	protected ArrayList<DBNNode> interParents = new ArrayList<DBNNode>();
 	protected ArrayList<DBNNode> intraParents = new ArrayList<DBNNode>();
 	protected ArrayList<ParentPair> parents = new ArrayList<ParentPair>();
+	protected DynamicBayesianNetwork bayesNet;
+	protected DBNNode llTreeParent = null;
+	protected String name;
 	
 	class ParentPair
 	{
@@ -699,7 +642,4 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		DBNNode parent;
 		boolean inter;
 	}
-
-	DynamicBayesianNetwork bayesNet;
-	String name;
 }

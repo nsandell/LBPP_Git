@@ -1,8 +1,6 @@
 package bn.impl;
 
 import java.io.PrintStream;
-import java.io.Serializable;
-
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
@@ -63,6 +61,13 @@ public class CompositeDBN implements IDynBayesNet {
 		} catch(RemoteException e) {
 			throw new BNException("Failure to create composite DBN, remote error : " + e.getMessage());
 		}
+	}
+	
+	@Override
+	public double logLikelihood()
+	{
+		//TODO Implement this.
+		return 0;
 	}
 	
 	private DBNFragment localFragment;
@@ -192,31 +197,6 @@ public class CompositeDBN implements IDynBayesNet {
 	}
 
 	@Override
-	public double nodeLogLikelihood(String nodeName) throws BNException {
-		try {
-			double ll = 0;
-			for(int i = 0; i < fragments.length; i++)
-				ll += fragments[i].nodeLogLikelihood(nodeName);
-			return ll;
-		} catch(RemoteException e) {
-			throw new BNException("RMI error while collecting a node's log likelihood : " + e.getMessage());
-		}
-	}
-
-	@Override
-	public double logLikelihood() throws BNException {
-		try
-		{
-			double ll = 0;
-			for(int i = 0; i < fragments.length; i++)
-				ll += fragments[i].logLikelihood();
-			return ll;
-		} catch(RemoteException e) {
-			throw new BNException("RMI error while collecting network log likelihood : " + e.getMessage());
-		}
-	}
-
-	@Override
 	public void printDistributionInfo(String name, PrintStream ps)
 	throws BNException {
 		// TODO not sure about this.. what would be most efficient.
@@ -282,16 +262,6 @@ public class CompositeDBN implements IDynBayesNet {
 				fragments[i].addIntraEdge(from, to);
 		} catch(RemoteException e) {
 			throw new BNException("RMI error while adding intraedge : " + e.getMessage());
-		}
-	}
-
-	@Override
-	public double logLikelihood(int t) throws BNException {
-		try {
-			int idx = this.getFragmentIndex(t);
-			return fragments[idx].logLikelihood(t-this.time_offsets[idx]);
-		} catch(RemoteException e) {
-			throw new BNException("RMI Error while getting likelihood : " + e.getMessage());
 		}
 	}
 
@@ -501,8 +471,9 @@ public class CompositeDBN implements IDynBayesNet {
 		private double maxErr;
 		private double time = 0;
 		private double err = 0;
-		private RemoteCallback thisStub;
 		private ParallelCallback pcb;
+		
+		private static final long serialVersionUID = 50L;
 	}
 
 	@Override

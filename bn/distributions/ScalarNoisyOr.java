@@ -84,24 +84,13 @@ public class ScalarNoisyOr extends DiscreteDistribution
 	}
 	
 	@Override
-	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException
+	public void computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Integer value) throws BNException
 	{
 		double localProduct = 1;
 		for(int i = 0; i < incoming_pis.size(); i++)
 			localProduct *= (1-incoming_pis.get(i).getValue(1)*this.c);
 		local_pi.setValue(0, localProduct);
 		local_pi.setValue(1, 1-localProduct);
-		
-		//TODO Verify the changes - first normalizing local_pi, second normalizing the product of parent pis before returning..
-		
-		if(value!=null)
-		{
-			localProduct = 1;
-			for(int i = 0; i < parent_pis.size(); i++)
-				localProduct *= (1-parent_pis.get(i).getValue(1)*this.c);
-			return value==0 ? Math.log(localProduct) : Math.log(1-localProduct);
-		}
-		else return 0;
 	}
 	
 	@Override
@@ -323,4 +312,6 @@ public class ScalarNoisyOr extends DiscreteDistribution
 	
 	private double c;
 	private double q;
+	
+	private static final long serialVersionUID = 50L;
 }

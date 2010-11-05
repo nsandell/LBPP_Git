@@ -51,15 +51,6 @@ public interface IBayesNode extends Printable
 	void validate() throws BNException;
 	
 	/**
-	 * Get the log likelihood of this node given the evidence "above" it
-	 * in the network.
-	 * @return The log likelihood.
-	 * @throws BNException If the graph is invalid or hasn't run message
-	 * passing yet.
-	 */
-	double getLogLikelihood() throws BNException;
-	
-	/**
 	 * Set the conditional distribution for use by a node.
 	 * @param dist The distribution for the node.
 	 * @throws BNException If the distribution is invalid for the node (e.g., discrete/continuous).

@@ -1,32 +1,32 @@
 package bn.impl;
 
 import java.io.Serializable;
+
 import java.util.Vector;
 
 import bn.BNException;
 import bn.distributions.DiscreteDistribution;
+import bn.distributions.Distribution;
 import bn.distributions.Distribution.DiscreteSufficientStatistic;
 import bn.distributions.Distribution.SufficientStatistic;
 import bn.interfaces.InnerNode;
 import bn.interfaces.ContextManager;
 import bn.messages.DiscreteMessage;
-import bn.messages.Message;
+import bn.messages.Message.MessageInterface;
 
-public class DiscreteNode<Context> implements InnerNode<Context,DiscreteMessage,Integer>, Serializable
+public class DiscreteNode<Context> implements InnerNode<Context>, Serializable
 {
 	public DiscreteNode(int cardinality, ContextManager<DiscreteDistribution,Context,DiscreteMessage,Integer> contextManager)
 	{
 		this.cardinality = cardinality;
 		this.contextManager = contextManager;
 	}
-
 	
-	@Override
-	public ContextManager getContextManager()
+	public void resetMessages()
 	{
-		return this.contextManager;
+		this.contextManager.resetMessages();
 	}
-	
+
 	@Override
 	public double updateMessages(Context ctxt) throws BNException
 	{
@@ -53,6 +53,20 @@ public class DiscreteNode<Context> implements InnerNode<Context,DiscreteMessage,
 		}
 	}
 	
+	@Override
+	public Distribution getDistribution(Context ctxt)
+	{
+		return this.contextManager.getCPD(ctxt);
+	}
+	
+	@Override
+	public void setDistribution(Context ctxt, Distribution dist) throws BNException
+	{
+		if(!(dist instanceof DiscreteDistribution))
+			throw new BNException("Attempted to set CPD of discrete node to non-discrete distribution.");
+		this.contextManager.setCPD(ctxt,(DiscreteDistribution) dist);
+	}
+	
 	protected void updateLocalMessages(Context ctxt) throws BNException
 	{
 		DiscreteMessage local_lambda = contextManager.getLocalLambda(ctxt);
@@ -62,7 +76,6 @@ public class DiscreteNode<Context> implements InnerNode<Context,DiscreteMessage,
 		
 		Vector<DiscreteMessage> incomingLambdaMessages = contextManager.getIncomingLambdas(ctxt);
 		Vector<DiscreteMessage> incomingPiMessages = contextManager.getIncomingPis(ctxt);
-		Vector<DiscreteMessage> parents_local_pis = contextManager.getParentLocalPis(ctxt);
 		DiscreteDistribution cpt = contextManager.getCPD(ctxt);
 		if(this.contextManager.isObserved(ctxt))
 		{
@@ -90,7 +103,7 @@ public class DiscreteNode<Context> implements InnerNode<Context,DiscreteMessage,
 			local_pi.setValue(i, 0);
 	
 		Integer valueTmp = this.contextManager.isObserved(ctxt) ? this.contextManager.getValue(ctxt) : null;
-		this.contextManager.setLogLikelihood(ctxt,cpt.computeLocalPi(local_pi, incomingPiMessages, parents_local_pis, valueTmp));
+		cpt.computeLocalPi(local_pi, incomingPiMessages, valueTmp);
 	}
 	
 	protected void updateLambdas(Context ctxt) throws BNException
@@ -107,9 +120,11 @@ public class DiscreteNode<Context> implements InnerNode<Context,DiscreteMessage,
 	
 
 	@Override
-	public void setValue(Context ctxt, Integer value) throws BNException
+	public void setValue(Context ctxt, Object value) throws BNException
 	{
-		this.contextManager.setValue(ctxt, value);
+		if(!(value instanceof Integer))
+			throw new BNException("Discrete node only holds integer-values.");
+		this.contextManager.setValue(ctxt,(Integer)value);
 	}
 	
 	@Override
@@ -197,20 +212,20 @@ public class DiscreteNode<Context> implements InnerNode<Context,DiscreteMessage,
 	}
 
 	@Override
-	public Message.MessageInterface<DiscreteMessage> newChildInterface(Context ctxt)
+	public MessageInterface newChildInterface(Context ctxt)
 	{
 		DiscreteMessage pi = DiscreteMessage.normalMessage(this.cardinality);
 		DiscreteMessage lambda = DiscreteMessage.normalMessage(this.cardinality);
 		this.contextManager.newChild(pi, lambda, ctxt);
-		return new Message.MessageInterface<DiscreteMessage>(lambda, pi, this.contextManager.getLocalPi(ctxt));
+		return new MessageInterface(lambda, pi);
 	}
 	
 	@Override
-	public void addParentInterface(Message.MessageInterface<?> interfce, Context ctxt) throws BNException
+	public void addParentInterface(MessageInterface interfce, Context ctxt) throws BNException
 	{
-		if(!(interfce.lambda instanceof DiscreteMessage && interfce.parent_local_pi instanceof DiscreteMessage && interfce.pi instanceof DiscreteMessage))
+		if(!(interfce.lambda instanceof DiscreteMessage && interfce.pi instanceof DiscreteMessage))
 			throw new BNException("Failed to add parent to discrete node.. must have discrete-message only interface.");
-		this.contextManager.newParent((DiscreteMessage)interfce.pi,(DiscreteMessage) interfce.parent_local_pi, (DiscreteMessage)interfce.lambda, ctxt);
+		this.contextManager.newParent((DiscreteMessage)interfce.pi,(DiscreteMessage)interfce.lambda, ctxt);
 	}
 	
 	public void updateSufficientStat(Context ctxt, DiscreteSufficientStatistic stat) throws BNException
@@ -229,16 +244,6 @@ public class DiscreteNode<Context> implements InnerNode<Context,DiscreteMessage,
 	public double optimize(Context ctxt, SufficientStatistic stat) throws BNException
 	{
 		return this.contextManager.getCPD(ctxt).optimize(stat);
-	}
-	
-	public double getLogLikelihood()
-	{
-		return this.contextManager.getLogLikelihood();
-	}
-	
-	public double getLogLikelihood(Context ctxt)
-	{
-		return this.contextManager.getLogLikelihood(ctxt);
 	}
 	
 	public final int getCardinality()

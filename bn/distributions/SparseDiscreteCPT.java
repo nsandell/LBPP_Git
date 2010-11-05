@@ -302,27 +302,17 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 	}
 	
 	@Override
-	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException
+	public void computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Integer value) throws BNException
 	{
-		boolean observed = value!=null;
-		double ll = 0;
 		for(IndexWrapper indexset : this.entries.keySet())
 		{
 			double tmp = 1;
-			double observation_ll_tmp = 1;
 			for(int j = 0; j < indexset.indices.length; j++)
-			{
 				tmp *= incoming_pis.get(j).getValue(indexset.indices[j]);
-				if(observed)
-					observation_ll_tmp *= parent_pis.get(j).getValue(indexset.indices[j]);
-			}
 			for(Integer i : this.entries.get(indexset).keySet())
 				local_pi.setValue(i, local_pi.getValue(i)+tmp*this.evaluate(indexset, i));
-			if(observed)
-				ll += observation_ll_tmp*this.evaluate(indexset.indices, value);
 		}
 		local_pi.normalize();
-		return observed ? Math.log(ll) : 0;
 	}
 	
 	@Override
@@ -532,6 +522,8 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		private HashMap<IndexWrapper,HashMap<Integer,Double>> expected_trans;
 	}
 	
-	int[] dimSizes;
-	HashMap<IndexWrapper,HashMap<Integer,Double>> entries;
+	private int[] dimSizes;
+	private HashMap<IndexWrapper,HashMap<Integer,Double>> entries;
+	
+	private static final long serialVersionUID = 50L;
 }

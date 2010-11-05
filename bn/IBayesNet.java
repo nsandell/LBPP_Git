@@ -104,14 +104,6 @@ public interface IBayesNet<BaseInterface> extends Printable
 	 */
 	public void validate() throws BNException;
 	
-	/**
-	 * Get the log likelihood of an observed node given all the evidence 'above' it in the graph.
-	 * @param nodeName Node to get the log likelihood of.
-	 * @return The log likelihood.
-	 * @throws BNException If the node isn't observed or doesn't exist.
-	 */
-	public double nodeLogLikelihood(String nodeName) throws BNException;
-	
 	public static class RunResults
 	{
 		public RunResults(int numIts, double timeElapsed, double error)

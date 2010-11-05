@@ -110,12 +110,10 @@ public class DiscreteCPTUC extends DiscreteDistribution
 	}
 	
 	@Override
-	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException
+	public void computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Integer value) throws BNException
 	{
 		for(int i = 0; i < local_pi.getCardinality(); i++)
 			local_pi.setValue(i, dist[i]);
-		
-		return value==null ? 0 : Math.log(dist[value]);
 	}
 	
 	@Override

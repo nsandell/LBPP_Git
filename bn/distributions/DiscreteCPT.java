@@ -160,31 +160,21 @@ public class DiscreteCPT extends DiscreteDistribution
 	public int[] getConditionDimensions(){return this.dimSizes;}
 	
 	@Override
-	public double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Vector<DiscreteMessage> parent_pis, Integer value) throws BNException
+	public void computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Integer value) throws BNException
 	{
-		boolean observed = value!=null;
-		double p = 0;
 		int[] indices = initialIndices(dimSizes.length);
 		do
 		{
 			int compositeindex = getIndex(indices,dimSizes);
 			double tmp = 1;
-			double observation_p_tmp = 1;
 			for(int j = 0; j < indices.length; j++)
-			{
 				tmp *= incoming_pis.get(j).getValue(indices[j]);
-				if(observed)
-					observation_p_tmp *= parent_pis.get(j).getValue(indices[j]);
-			}
 			for(int i = 0; i < this.getCardinality(); i++)
 				local_pi.setValue(i, local_pi.getValue(i)+tmp*this.values[compositeindex][i]);
-			if(observed)
-				p += observation_p_tmp*this.values[compositeindex][value];
 		}
 		while((indices = DiscreteDistribution.incrementIndices(indices, dimSizes))!=null);
 		
 		local_pi.normalize();
-		return observed ? Math.log(p) : 0;
 		//TODO Evaluate underflow and whether this should be built logarithmically
 	}
 	

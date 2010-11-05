@@ -1,6 +1,7 @@
 package bn.impl;
 
 import java.rmi.RemoteException;
+
 import java.util.HashMap;
 
 import java.util.Map.Entry;
@@ -10,7 +11,7 @@ import bn.IDiscreteDynBayesNode;
 import bn.IDynBayesNet;
 import bn.impl.IDBNFragmentServer.IRemoteDBNFragment;
 import bn.impl.IDBNFragmentServer.RemoteCallback;
-import bn.messages.Message;
+import bn.messages.Message.MessageInterface;
 
 public class DBNFragment extends DynamicBayesianNetwork implements IDBNFragmentServer.IRemoteDBNFragment
 {
@@ -26,9 +27,9 @@ public class DBNFragment extends DynamicBayesianNetwork implements IDBNFragmentS
 		super(T);
 		this.fragSpot = spot;
 		if(spot!=FragmentSpot.Back)
-			this.fwdMessageInterface = new HashMap<String, HashMap<String,Message.MessageInterface<? extends Message>>>();
+			this.fwdMessageInterface = new HashMap<String, HashMap<String,MessageInterface>>();
 		if(spot!=FragmentSpot.Front)
-			this.bwdMessageInterface = new HashMap<String, HashMap<String,Message.MessageInterface<? extends Message>>>();
+			this.bwdMessageInterface = new HashMap<String, HashMap<String,MessageInterface>>();
 	}
 	
 	@Override
@@ -44,6 +45,13 @@ public class DBNFragment extends DynamicBayesianNetwork implements IDBNFragmentS
 	public void run_parallel(int maxit, double conv, RemoteCallback cb) throws RemoteException
 	{
 		this.run_parallel(maxit, conv, new RemoteCallbackChain(cb, this));
+	}
+	
+	@Override
+	public double logLikelihood()
+	{
+		//TODO Implement
+		return 0;
 	}
 	
 	private static class RemoteCallbackChain implements ParallelCallback
@@ -84,34 +92,33 @@ public class DBNFragment extends DynamicBayesianNetwork implements IDBNFragmentS
 		this.addDiscreteNode(name, cardinality);
 	}
 	
-	public void syncBwdIntf(HashMap<String,HashMap<String,Message.MessageInterface<? extends Message>>> newBwd) throws BNException
+	public void syncBwdIntf(HashMap<String,HashMap<String,MessageInterface>> newBwd) throws BNException
 	{
-		for(Entry<String, HashMap<String,Message.MessageInterface<? extends Message>>> ent : newBwd.entrySet())
+		for(Entry<String, HashMap<String,MessageInterface>> ent : newBwd.entrySet())
 		{
-			HashMap<String,Message.MessageInterface<? extends Message>> inner = this.bwdMessageInterface.get(ent.getKey());
+			HashMap<String,MessageInterface> inner = this.bwdMessageInterface.get(ent.getKey());
 			if(inner==null)
 				throw new BNException("Failed to sync fragment interfaces...");
-			for(Entry<String,Message.MessageInterface<? extends Message>> ent2 : ent.getValue().entrySet())
+			for(Entry<String,MessageInterface> ent2 : ent.getValue().entrySet())
 			{//TODO consider stripping out exceptions when it's working
-				Message.MessageInterface<? extends Message> innerMost = inner.get(ent2.getKey());
+				MessageInterface innerMost = inner.get(ent2.getKey());
 				if(innerMost==null)
 					throw new BNException("Failed to sync fragment interfaces...");
 				innerMost.pi.adopt(ent2.getValue().pi);
-				innerMost.parent_local_pi.adopt(ent2.getValue().parent_local_pi);
 			}
 		}
 	}
 	
-	public void syncFwdIntf(HashMap<String,HashMap<String,Message.MessageInterface<? extends Message>>> newFwd) throws BNException
+	public void syncFwdIntf(HashMap<String,HashMap<String,MessageInterface>> newFwd) throws BNException
 	{
-		for(Entry<String, HashMap<String,Message.MessageInterface<? extends Message>>> ent : newFwd.entrySet())
+		for(Entry<String, HashMap<String,MessageInterface>> ent : newFwd.entrySet())
 		{
-			HashMap<String,Message.MessageInterface<? extends Message>> inner = this.fwdMessageInterface.get(ent.getKey());
+			HashMap<String,MessageInterface> inner = this.fwdMessageInterface.get(ent.getKey());
 			if(inner==null)
 				throw new BNException("Failed to sync fragment interfaces...");
-			for(Entry<String,Message.MessageInterface<? extends Message>> ent2 : ent.getValue().entrySet())
+			for(Entry<String,MessageInterface> ent2 : ent.getValue().entrySet())
 			{//TODO consider stripping out exceptions when it's working
-				Message.MessageInterface<? extends Message> innerMost = inner.get(ent2.getKey());
+				MessageInterface innerMost = inner.get(ent2.getKey());
 				if(innerMost==null)
 					throw new BNException("Failed to sync fragment interfaces...");
 				innerMost.lambda.adopt(ent2.getValue().lambda);
@@ -119,12 +126,12 @@ public class DBNFragment extends DynamicBayesianNetwork implements IDBNFragmentS
 		}
 	}
 	
-	public HashMap<String,HashMap<String,Message.MessageInterface<? extends Message>>> getFwdInterface()
+	public HashMap<String,HashMap<String,MessageInterface>> getFwdInterface()
 	{
 		return this.fwdMessageInterface;
 	}
 	
-	public HashMap<String,HashMap<String,Message.MessageInterface<? extends Message>>> getBwdInterface()
+	public HashMap<String,HashMap<String,MessageInterface>> getBwdInterface()
 	{
 		return this.bwdMessageInterface;
 	}
@@ -141,7 +148,7 @@ public class DBNFragment extends DynamicBayesianNetwork implements IDBNFragmentS
 		return err;
 	}
 	
-	HashMap<String,HashMap<String,Message.MessageInterface<? extends Message>>> fwdMessageInterface;
-	HashMap<String,HashMap<String,Message.MessageInterface<? extends Message>>> bwdMessageInterface;
+	HashMap<String,HashMap<String,MessageInterface>> fwdMessageInterface;
+	HashMap<String,HashMap<String,MessageInterface>> bwdMessageInterface;
 	FragmentSpot fragSpot;
 }

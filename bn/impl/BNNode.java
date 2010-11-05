@@ -1,7 +1,7 @@
 package bn.impl;
 
 import java.io.PrintStream;
-import java.io.Serializable;
+
 import java.util.HashMap;
 import java.util.Map.Entry;
 
@@ -22,17 +22,16 @@ import bn.messages.Message.MessageInterface;
  *  to a BFS or DFS to detect cycles, etc.
  * @author Nils F Sandell
  */
-abstract class BNNode implements InternalIBayesNode, Serializable
+abstract class BNNode implements InternalIBayesNode
 {
 	protected BNNode(StaticBayesianNetwork net, String name, 
-					InnerNode inner)
+					InnerNode<Void> inner)
 	{
 		this.bnet = net;
 		this.name = name;
 		this.parentSet =  new IterableWrapper<InternalIBayesNode>(parents.keySet());
 		this.childrenSet = new IterableWrapper<InternalIBayesNode>(children.keySet());
 		this.inner = inner;
-		this.contextManager = (StaticContextManager<Distribution, Message, Object>) inner.getContextManager();
 	}
 	
 	boolean hasChild(BNNode child)
@@ -46,7 +45,7 @@ abstract class BNNode implements InternalIBayesNode, Serializable
 			return;
 		try
 		{
-			Message.MessageInterface<?> intrfc = this.inner.newChildInterface(null);
+			MessageInterface intrfc = this.inner.newChildInterface(null);
 			child.inner.addParentInterface(intrfc, null);
 			this.children.put(child,intrfc);
 			child.parents.put(this, intrfc);
@@ -57,7 +56,7 @@ abstract class BNNode implements InternalIBayesNode, Serializable
 	
 	public void resetMessages()
 	{
-		this.contextManager.resetMessages(null);
+		this.inner.resetMessages();
 	}
 
 	public final void removeChild(BNNode child) throws BNException
@@ -73,7 +72,7 @@ abstract class BNNode implements InternalIBayesNode, Serializable
 	
 	public final void removeAllChildren() throws BNException
 	{
-		for(Entry<BNNode, MessageInterface<?>> childEntry : this.children.entrySet())
+		for(Entry<BNNode, MessageInterface> childEntry : this.children.entrySet())
 		{
 			childEntry.getValue().invalidate();
 			childEntry.getKey().parents.remove(this);
@@ -85,7 +84,7 @@ abstract class BNNode implements InternalIBayesNode, Serializable
 	
 	public final void removeAllParents() throws BNException
 	{
-		for(Entry<BNNode, MessageInterface<?>> parentEntry : this.parents.entrySet())
+		for(Entry<BNNode, MessageInterface> parentEntry : this.parents.entrySet())
 		{
 			parentEntry.getValue().invalidate();
 			parentEntry.getKey().children.remove(this);
@@ -135,12 +134,6 @@ abstract class BNNode implements InternalIBayesNode, Serializable
 		return this.inner.updateMessages(null);
 	}
 	
-	public double getLogLikelihood() throws BNException
-	{
-		return this.inner.getLogLikelihood();
-	}
-	
-	
 	public Object getValue() throws BNException
 	{
 		try
@@ -159,31 +152,31 @@ abstract class BNNode implements InternalIBayesNode, Serializable
 	
 	public SufficientStatistic getSufficientStatistic() throws BNException
 	{
-		return this.contextManager.getCPD(null).getSufficientStatisticObj();
+		return this.inner.getDistribution(null).getSufficientStatisticObj();
 	}
 	
 	public void printDistributionInfo(PrintStream ps) throws BNException {
-		this.contextManager.getCPD(null).printDistribution(ps);
+		this.inner.getDistribution(null).printDistribution(ps);
 	}
 
-	public Distribution getDistribution()
+	public Distribution getDistribution() throws BNException
 	{
-		return this.contextManager.getCPD(null);
+		return this.inner.getDistribution(null);
 	}
 	
 	public void setDistribution(Distribution dist) throws BNException
 	{
-		this.contextManager.setCPD(dist.copy());
+		this.inner.setDistribution(null,dist.copy());
 	}
 	
 	public void clearEvidence()
 	{
-		this.contextManager.clearValue();
+		this.inner.clearValue();
 	}
 	
 	public Message getMarginal() throws BNException
 	{
-		return this.contextManager.getMarginal(null);
+		return this.inner.getMarginal(null);
 	}
 	
 	public void updateSufficientStatistic(SufficientStatistic stat) throws BNException
@@ -206,19 +199,19 @@ abstract class BNNode implements InternalIBayesNode, Serializable
 	}
 	
 	@Override
-	public final void print(PrintStream ps) 
+	public final void print(PrintStream ps)
 	{
 		this.printCreation(ps);
 	
 		try{
-			if(this.contextManager.getValue(null)!=null)
-				ps.print(this.getName() + " = " + this.contextManager.getValue(null));
+			if(this.inner.getValue(null)!=null)
+				ps.print(this.getName() + " = " + this.inner.getValue(null));
 		}catch(BNException e) {
 			ps.println("ERROR PRINTING VALUE OF " + this.getName());
 		}
 		
 		ps.print(this.getName() + "___CPD <");
-		this.contextManager.getCPD(null).print(ps);
+		this.inner.getDistribution(null).print(ps);
 		ps.println(this.getName() + " ~ " + this.getName()+"___CPD");
 	}
 	
@@ -273,7 +266,7 @@ abstract class BNNode implements InternalIBayesNode, Serializable
 		@Override
 		public void setDistribution(DiscreteDistribution dist)
 				throws BNException {
-			this.contextManager.setCPD(dist);
+			this.inner.setDistribution(null,dist);
 		}
 		
 		@Override
@@ -302,11 +295,10 @@ abstract class BNNode implements InternalIBayesNode, Serializable
 	protected StaticBayesianNetwork bnet;
 	private String name;
 
-	protected InnerNode<Void,Message,Object> inner;
-	protected StaticContextManager<Distribution,Message,Object> contextManager;
+	protected InnerNode<Void> inner;
 	
 	private IterableWrapper<InternalIBayesNode> childrenSet;
 	private IterableWrapper<InternalIBayesNode> parentSet;
-	protected HashMap<BNNode,Message.MessageInterface<?>> children = new HashMap<BNNode, Message.MessageInterface<?>>();
-	protected HashMap<BNNode,Message.MessageInterface<?>> parents = new  HashMap<BNNode, Message.MessageInterface<?>>();
+	protected HashMap<BNNode,MessageInterface> children = new HashMap<BNNode, MessageInterface>();
+	protected HashMap<BNNode,MessageInterface> parents = new  HashMap<BNNode, MessageInterface>();
 }

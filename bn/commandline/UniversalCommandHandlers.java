@@ -176,7 +176,7 @@ public class UniversalCommandHandlers {
 		private Pattern regex = Pattern.compile("^\\s*distInfo\\((\\w+)\\)\\s*$");
 	}
 
-	static class LLGetter extends MethodWrapperHandler<Object>
+	/*static class LLGetter extends MethodWrapperHandler<Object>
 	{
 		LLGetter(IBayesNet<?> net) throws Exception
 		{
@@ -196,7 +196,7 @@ public class UniversalCommandHandlers {
 		
 		private static Pattern patt = Pattern.compile("^\\s*ll\\(\\s*(\\w+)\\s*\\)\\s*$");
 		private static int[] groups = new int[]{1};
-	}
+	}*/
 	
 	static class NodeRemover extends MethodWrapperHandler<Object>
 	{
@@ -220,7 +220,7 @@ public class UniversalCommandHandlers {
 		private static int[] groups = new int[]{1};
 	}
 	
-	static class NetLLGetter extends MethodWrapperHandler<Object>
+	/*static class NetLLGetter extends MethodWrapperHandler<Object>
 	{
 		NetLLGetter(IBayesNet<?> net) throws Exception
 		{
@@ -240,6 +240,6 @@ public class UniversalCommandHandlers {
 		
 		private static Pattern patt = Pattern.compile("^\\s*ll\\s*$");
 		private static int[] groups = new int[]{};
-	}
+	}*/
 	
 }

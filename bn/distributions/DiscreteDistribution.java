@@ -137,13 +137,11 @@ public abstract class DiscreteDistribution implements Distribution {
 	 * and the observed value (if observed).
 	 * @param local_pi Local pi object to take result
 	 * @param incoming_pis Pi messages from parents.
-	 * @param parent_pis Local pi messages of parents.
 	 * @param value Value of the node
-	 * @return Log likelihood of this node given evidence "above" it in the network, 0 if not observed.
 	 * @throws BNException 
 	 */
-	public abstract double computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, 
-										  Vector<DiscreteMessage> parent_pis, Integer value) throws BNException;
+	public abstract void computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, 
+										  Integer value) throws BNException;
 	
 	/**
 	 * Compute outgoing lambda messages for a node with this as its CPD given the incoming pi messages, and

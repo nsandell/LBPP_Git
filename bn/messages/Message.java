@@ -10,11 +10,10 @@ public abstract class Message implements Serializable {
 	
 	public abstract Message getMarginal(Message other) throws BNException;
 
-	public static class MessageInterface<MessageType extends Message> implements Serializable
+	public static class MessageInterface implements Serializable
 	{
-		public MessageInterface(MessageType lambda, MessageType pi, MessageType parent_local_pi)
+		public MessageInterface(Message lambda, Message pi)
 		{
-			this.parent_local_pi = parent_local_pi;
 			this.lambda = lambda;
 			this.pi = pi;
 		}
@@ -26,7 +25,7 @@ public abstract class Message implements Serializable {
 		}
 		
 		private static final long serialVersionUID = 50L;
-		public MessageType lambda, pi, parent_local_pi;
+		public Message lambda, pi;
 	}
 	
 	public void invalidate()

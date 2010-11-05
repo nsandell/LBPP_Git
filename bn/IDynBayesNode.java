@@ -33,15 +33,6 @@ public interface IDynBayesNode extends IBayesNode
 	 */	
 	Iterable<? extends IDynBayesNode> getIntraParents();
 	
-	/**
-	 * Get the log likelihood of all the observed instances of this node given
-	 * the evidence "above them" in the network.
-	 * @return The log likelihood.
-	 */
-	double getLogLikelihood() throws BNException;
-	
-	double getLogLikelihood(int t) throws BNException;
-	
 	boolean hasInterChild(IDynBayesNode child);
 	boolean hasIntraChild(IDynBayesNode child);
 	boolean hasInterParent(IDynBayesNode child);

@@ -3,8 +3,8 @@ package tests;
 
 import bn.BNException;
 
+
 import bn.IBayesNode;
-import bn.IDiscreteDynBayesNode;
 import bn.IDynBayesNet;
 import bn.IDynBayesNet.ParallelCallback;
 import bn.distributions.DiscreteCPT;
@@ -45,6 +45,7 @@ public class HMMtest {
 			dbn.setEvidence(y.getName(), 0, obs);
 
 			dbn.validate();
+			dbn.optimize(100, 0, 100, 0);
 			
 			if(parallel.compareTo("serial")==0)
 			{
@@ -60,7 +61,7 @@ public class HMMtest {
 					System.out.println("X("+i+"): ["+msg.getValue(0) +"," + msg.getValue(1)+msg.getValue(2) +"," + msg.getValue(3)+"]");
 				}
 				System.out.println("Converged in " + runtime + " seconds... X Probabilities");
-				System.out.println("Observation likelihood : " + y.getLogLikelihood());
+				//System.out.println("Observation likelihood : " + y.getLogLikelihood());
 			}
 			else
 			{
@@ -77,11 +78,8 @@ public class HMMtest {
 	public static class CallbackClass implements ParallelCallback
 	{
 
-		private  IDiscreteDynBayesNode x, y;
-		public CallbackClass(long starttime, IDiscreteDynBayesNode x, IDiscreteDynBayesNode y)
+		public CallbackClass(long starttime)
 		{
-			this.x = x;
-			this.y = y;
 			this.starttime = starttime;
 		}
 
@@ -95,7 +93,6 @@ public class HMMtest {
 					DiscreteMessage marginal = (DiscreteMessage)dbn.getMarginal("x", i);
 					System.out.println("X: ["+marginal.getValue(0) +"," + marginal.getValue(1)+"]");
 				}
-				System.out.println("Observation likelihood : " + y.getLogLikelihood());
 				double runtime = ((double)(end-starttime))/1000;
 				System.out.println("Parallel inference converged in " + runtime + " seconds... ");
 			}

@@ -1,10 +1,9 @@
 package bn.impl;
 
 import java.io.PrintStream;
+
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Vector;
-
 import bn.BNException;
 import bn.IDiscreteDynBayesNode;
 import bn.distributions.DiscreteDistribution;
@@ -14,10 +13,11 @@ import bn.impl.DBNFragment.FragmentSpot;
 import bn.interfaces.InnerNode;
 import bn.messages.DiscreteMessage;
 import bn.messages.Message;
+import bn.messages.Message.MessageInterface;
 
 abstract class DBNFragmentNode extends DBNNode {
 	
-	protected DBNFragmentNode(DBNFragment dbnf, String name, InnerNode inner)
+	protected DBNFragmentNode(DBNFragment dbnf, String name, InnerNode<Integer> inner)
 	{
 		super(dbnf,name,inner);
 		this.frag = dbnf;
@@ -29,21 +29,20 @@ abstract class DBNFragmentNode extends DBNNode {
 		super.addInterChild(node);
 		if(frag.fragSpot!=FragmentSpot.Back)
 		{
-			Message.MessageInterface<? extends Message> fintf = 
+			MessageInterface fintf = 
 				this.innerNode.newChildInterface(this.bayesNet.getT()-1);
 			if(frag.fwdMessageInterface.get(this.getName())==null)
-				frag.fwdMessageInterface.put(this.getName(), new HashMap<String, Message.MessageInterface<? extends Message>>());
+				frag.fwdMessageInterface.put(this.getName(), new HashMap<String, MessageInterface>());
 			frag.fwdMessageInterface.get(this.getName()).put(node.getName(), fintf);
 		}
 		if(frag.fragSpot!=FragmentSpot.Front)
 		{
-			Message.MessageInterface<? extends Message> bintf = 
-				new Message.MessageInterface<Message>(
-						this.getBlankMessage(),this.getBlankMessage(),this.getBlankMessage());
+			MessageInterface bintf = 
+				new MessageInterface(this.getBlankMessage(),this.getBlankMessage());
 			
 			this.innerNode.addParentInterface(bintf, 0);
 			if(frag.bwdMessageInterface.get(this.getName())==null)
-				frag.bwdMessageInterface.put(this.getName(), new HashMap<String, Message.MessageInterface<? extends Message>>());
+				frag.bwdMessageInterface.put(this.getName(), new HashMap<String, MessageInterface>());
 			frag.bwdMessageInterface.get(this.getName()).put(node.getName(),bintf);
 		}
 	}
@@ -100,19 +99,19 @@ abstract class DBNFragmentNode extends DBNNode {
 		
 		@Override
 		public DiscreteDistribution getInitialDistribution() {
-			return (DiscreteDistribution) this.contextManager.getInitial();
+			return (DiscreteDistribution) this.innerNode.getDistribution(0);
 		}
 
 		@Override
 		public void setInitialDistribution(DiscreteDistribution dist)
 				throws BNException {
-			this.contextManager.setInitialDistribution(dist);
+			this.innerNode.setDistribution(0,dist);
 		}
 
 		@Override
 		public void setAdvanceDistribution(DiscreteDistribution dist)
 				throws BNException {
-			this.contextManager.setAdvanceDistribution(dist);
+			this.innerNode.setDistribution(1,dist);
 		}
 
 		@Override
@@ -139,7 +138,7 @@ abstract class DBNFragmentNode extends DBNNode {
 		@Override
 		public DiscreteMessage getMarginal(int t) throws BNException
 		{
-			return (DiscreteMessage)this.contextManager.getMarginal(t);
+			return (DiscreteMessage)this.innerNode.getMarginal(t);
 		}
 		
 		public void sample(int t) throws BNException
@@ -157,7 +156,7 @@ abstract class DBNFragmentNode extends DBNNode {
 				for(int i = 0; i < pvals.length; i++)
 					pvals[i] = ((DiscreteDBNNode)this.parents.get(i).parent).getValue(t - (this.parents.get(i).inter ? 1 : 0));
 			}
-			this.setValue(t, ((DiscreteDistribution)this.contextManager.getCPD(t)).sample(new Distribution.ValueSet<Integer>(pvals)));
+			this.setValue(t, ((DiscreteDistribution)this.innerNode.getDistribution(t)).sample(new Distribution.ValueSet<Integer>(pvals)));
 		}
 		
 		private static final long serialVersionUID = 50L;

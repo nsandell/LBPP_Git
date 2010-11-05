@@ -68,7 +68,7 @@ class StaticBayesianNetwork extends BayesianNetwork<BNNode> implements IStaticBa
 	{
 		BNNode node = this.getNode(name);
 		if(node==null) throw new BNException("Attempted to get evidence for node " + name + ", doesn't exist..");
-		return node.contextManager.getValue(null);
+		return node.getValue();
 	}
 	
 	public IDiscreteBayesNode addDiscreteNode(String name, int cardinality) throws BNException
@@ -86,14 +86,6 @@ class StaticBayesianNetwork extends BayesianNetwork<BNNode> implements IStaticBa
 		node.removeAllChildren();
 		for(BNNode parent : node.getParentsI())
 			parent.removeChild(node);
-	}
-	
-	public double nodeLogLikelihood(String nodename) throws BNException
-	{
-		BNNode node = this.getNode(nodename);
-		if(node==null)
-			throw new BNException("Node " + nodename + " does not exist.");
-		return node.getLogLikelihood();
 	}
 	
 	public void addEvidence(String nodename, Object evidence) throws BNException

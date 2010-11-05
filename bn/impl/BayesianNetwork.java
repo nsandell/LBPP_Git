@@ -1,7 +1,6 @@
 package bn.impl;
 
 import java.io.PrintStream;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,6 +30,12 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		}
 	}
 	
+	public double logLikelihood()
+	{
+		//TODO Implement this
+		return 0;
+	}
+	
 	public void print(PrintStream ps)
 	{
 		for(BaseNodeType nd : this.nodes.values())
@@ -47,16 +52,6 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		BaseNodeType node = this.getNode(name);
 		if(node==null) throw new BNException("Attempted to print distribution info for a nonexistant node named " + name);
 		node.printDistributionInfo(ps);
-	}
-	
-
-	
-	public double logLikelihood() throws BNException
-	{
-		double ll = 0;
-		for(BaseNodeType node : nodes.values())
-			ll += node.getLogLikelihood();
-		return ll;
 	}
 	
 	public void sample() throws BNException

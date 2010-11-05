@@ -61,11 +61,6 @@ public class StaticContextManager<DistributionType extends Distribution, Message
 	}
 
 	@Override
-	public Vector<MessageType> getParentLocalPis(Void context) {
-		return this.parent_pis;
-	}
-	
-	@Override
 	public boolean isObserved(Void context) {
 		return value!=null;
 	}
@@ -78,21 +73,6 @@ public class StaticContextManager<DistributionType extends Distribution, Message
 	@Override
 	public void setValue(Void context, ValueType value) throws BNException {
 		this.value = value;
-	}
-
-	@Override
-	public double getLogLikelihood(Void v) {
-		return this.likelihood;
-	}
-	
-	@Override
-	public double getLogLikelihood() {
-		return this.likelihood;
-	}
-		
-	@Override
-	public void setLogLikelihood(Void v, double ll) {
-		this.likelihood = ll;
 	}
 
 	@Override
@@ -109,14 +89,13 @@ public class StaticContextManager<DistributionType extends Distribution, Message
 	}
 	
 	@Override
-	public void newParent(MessageType inc_pi, MessageType pi, MessageType outgoing_lambda, Void v)
+	public void newParent(MessageType inc_pi, MessageType outgoing_lambda, Void v)
 	{
 		this.incoming_pis.add(inc_pi);
-		this.parent_pis.add(pi);
 		this.outgoing_lambdas.add(outgoing_lambda);
 	}
 	
-	public void resetMessages(Void c)
+	public void resetMessages()
 	{
 		for(MessageType msg : this.outgoing_lambdas)
 			msg.setInitial();
@@ -141,12 +120,12 @@ public class StaticContextManager<DistributionType extends Distribution, Message
 			if(!messIt.next().isValid())
 				messIt.remove();
 		}
-		messIt = this.parent_pis.iterator();
-		while(messIt.hasNext())
-		{
-			if(!messIt.next().isValid())
-				messIt.remove();
-		}
+	}
+	
+	@Override
+	public void setCPD(Void context, DistributionType dist)
+	{
+		this.cpd = dist;
 	}
 	
 	@Override
@@ -182,12 +161,10 @@ public class StaticContextManager<DistributionType extends Distribution, Message
 		this.value = null;
 	}
 	
-	private double likelihood = 0;
 	private DistributionType cpd;
 	private ValueType value = null;
 	private Vector<MessageType> incoming_pis = new Vector<MessageType>();
 	private Vector<MessageType> incoming_lambdas = new Vector<MessageType>();
-	private Vector<MessageType> parent_pis = new Vector<MessageType>();
 	private Vector<MessageType> outgoing_pis = new Vector<MessageType>();
 	private Vector<MessageType> outgoing_lambdas = new Vector<MessageType>();
 	private MessageType local_pi;

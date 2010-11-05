@@ -22,7 +22,6 @@ public class DynamicContextManager<DistributionType extends Distribution, Messag
 		this.incoming_pis = new ArrayList<Vector<MessageType>>(local_pi.size());
 		this.outgoing_lambdas = new ArrayList<Vector<MessageType>>(local_pi.size());
 		this.outgoing_pis = new ArrayList<Vector<MessageType>>(local_pi.size());
-		this.parent_pis = new ArrayList<Vector<MessageType>>(local_pi.size());
 		this.value = new ArrayList<ValueType>(local_pi.size());
 		this.marginals = new ArrayList<MessageType>();
 		for(int i= 0 ; i < T; i++)
@@ -32,10 +31,8 @@ public class DynamicContextManager<DistributionType extends Distribution, Messag
 			this.incoming_pis.add(new Vector<MessageType>(2));
 			this.outgoing_lambdas.add(new Vector<MessageType>(2));
 			this.outgoing_pis.add(new Vector<MessageType>(2));
-			this.parent_pis.add(new Vector<MessageType>(2));
 			this.value.add(null);
 		}
-		this.likelihoods = new double[T];
 	}
 
 	@Override
@@ -72,11 +69,6 @@ public class DynamicContextManager<DistributionType extends Distribution, Messag
 	}
 
 	@Override
-	public Vector<MessageType> getParentLocalPis(Integer t) {
-		return this.parent_pis.get((int)t);
-	}
-	
-	@Override
 	public boolean isObserved(Integer t) {
 		return value.get(t)!=null;
 	}
@@ -91,42 +83,36 @@ public class DynamicContextManager<DistributionType extends Distribution, Messag
 		this.value.set(t, value);
 	}
 	
-	public void resetMessages(Integer t)
+	public void resetMessages()
 	{
-		for(MessageType msg : this.outgoing_lambdas.get(t))
-			msg.setInitial();
-		for(MessageType msg : this.outgoing_pis.get(t))
-			msg.setInitial();
-		this.local_lambda.get(t).setInitial();
-		this.local_pi.get(t).setInitial();
-	}
-	
-	@Override
-	public double getLogLikelihood()
-	{
-		double sum = 0;
-		for(int i = 0; i < this.T; i++)
-			sum += this.likelihoods[i];
-		return sum;
-	}
-	
-	@Override
-	public double getLogLikelihood(Integer context) {
-		return this.likelihoods[context];
+		for(int t = 0; t < this.outgoing_lambdas.size(); t++)
+		{
+			for(MessageType msg : this.outgoing_lambdas.get(t))
+				msg.setInitial();
+			for(MessageType msg : this.outgoing_pis.get(t))
+				msg.setInitial();
+			this.local_lambda.get(t).setInitial();
+			this.local_pi.get(t).setInitial();
+		}
 	}
 	
 	public boolean neverprinted = true;
 	
 	@Override
-	public void setLogLikelihood(Integer context, double ll) throws BNException {
-		this.likelihoods[context] = ll;
-	}
-
-	@Override
 	public Message getMarginal(Integer t) throws BNException {
 		if(this.marginals.size() > t)
 			return marginals.get(t);
 		return null;
+	}
+	
+	
+	@Override
+	public void setCPD(Integer t, DistributionType dist)
+	{
+		if(t==0)
+			this.setInitialDistribution(dist);
+		else
+			this.setAdvanceDistribution(dist);
 	}
 	
 	@Override
@@ -143,10 +129,9 @@ public class DynamicContextManager<DistributionType extends Distribution, Messag
 	}
 	
 	@Override
-	public void newParent(MessageType inc_pi, MessageType pi, MessageType outgoing_lambda, Integer t)
+	public void newParent(MessageType inc_pi, MessageType outgoing_lambda, Integer t)
 	{
 		this.incoming_pis.get(t).add(inc_pi);
-		this.parent_pis.get(t).add(pi);
 		this.outgoing_lambdas.get(t).add(outgoing_lambda);
 	}
 	
@@ -166,12 +151,6 @@ public class DynamicContextManager<DistributionType extends Distribution, Messag
 				messIt.remove();
 		}
 		messIt = this.outgoing_lambdas.get(t).iterator();
-		while(messIt.hasNext())
-		{
-			if(!messIt.next().isValid())
-				messIt.remove();
-		}
-		messIt = this.parent_pis.get(t).iterator();
 		while(messIt.hasNext())
 		{
 			if(!messIt.next().isValid())
@@ -243,20 +222,12 @@ public class DynamicContextManager<DistributionType extends Distribution, Messag
 		return this.advance;
 	}
 	
-	//TODO Need a better mechanism.. this is shit, also this is necessary on static networks but will ignore for now.
-	public void removeParentPi(int t, MessageType msg)  throws BNException
-	{
-		if(!this.parent_pis.get(t).remove(msg)) throw new BNException("Error removign parent local pi..");
-	}
-	
 	private int T;
 	private DistributionType initial = null;
 	private DistributionType advance = null;
-	private double[] likelihoods;
 	private ArrayList<ValueType> value = null;
 	private ArrayList<Vector<MessageType>> incoming_pis;
 	private ArrayList<Vector<MessageType>> incoming_lambdas;
-	private ArrayList<Vector<MessageType>> parent_pis;
 	private ArrayList<Vector<MessageType>> outgoing_pis;
 	private ArrayList<Vector<MessageType>> outgoing_lambdas;
 	private ArrayList<MessageType> local_pi;

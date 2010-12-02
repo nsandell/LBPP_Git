@@ -87,6 +87,13 @@ class StaticBayesianNetwork extends BayesianNetwork<BNNode> implements IStaticBa
 		for(BNNode parent : node.getParentsI())
 			parent.removeChild(node);
 	}
+
+	public double getLogLikelihood() throws BNException
+	{
+		//TODO IMPLEMENT
+		return 0;
+	}
+
 	
 	public void addEvidence(String nodename, Object evidence) throws BNException
 	{

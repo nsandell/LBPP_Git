@@ -522,8 +522,18 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		private HashMap<IndexWrapper,HashMap<Integer,Double>> expected_trans;
 	}
 	
+	@Override
+	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis,
+			DiscreteMessage local_lambda, DiscreteMessage local_pi,Integer value, int numChildren)
+			throws BNException {
+		// TODO Auto-generated method stub, sparse CPT bethe energy to be implemented...
+		return 0;
+	}
+	
 	private int[] dimSizes;
 	private HashMap<IndexWrapper,HashMap<Integer,Double>> entries;
 	
 	private static final long serialVersionUID = 50L;
+
+
 }

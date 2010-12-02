@@ -77,6 +77,14 @@ abstract class DBNFragmentNode extends DBNNode {
 			pr.println(this.getName()+":Discrete("+this.getCardinality()+")");
 		}
 		
+		public double betheFreeEnergy() throws BNException
+		{
+			double energy = 0;
+			for(int i = 0; i < this.getT(); i++)
+				energy += this.innerNode.betheFreeEnergy(i);
+			return energy;
+		}
+		
 		private static final ArrayList<DiscreteMessage> getMessageSet(int cardinality, int T)
 		{
 			ArrayList<DiscreteMessage> ret = new ArrayList<DiscreteMessage>(T);
@@ -139,6 +147,13 @@ abstract class DBNFragmentNode extends DBNNode {
 		public DiscreteMessage getMarginal(int t) throws BNException
 		{
 			return (DiscreteMessage)this.innerNode.getMarginal(t);
+		}
+		
+		@Override
+		public double getLLAdjust() throws BNException
+		{
+			//TODO Implement if this is still around by the time I care.
+			throw new BNException("Not implemented yet");
 		}
 		
 		public void sample(int t) throws BNException

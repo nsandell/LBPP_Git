@@ -35,6 +35,9 @@ public interface IBayesNet<BaseInterface> extends Printable
 	
 	public int numNodes();
 	
+	public double getLogLikelihood() throws BNException;
+	
+	public double getBetheEnergy() throws BNException;
 	
 	/**
 	 * Set the conditional distribution for use by a node.
@@ -123,7 +126,7 @@ public interface IBayesNet<BaseInterface> extends Printable
 	 * @return The log likelihood, 0 if there is no evidence.
 	 * @throws BNException if message passing hasn't been run yet.
 	 */
-	public double logLikelihood() throws BNException;
+	//public double logLikelihood() throws BNException;
 	
 	public void print();
 	

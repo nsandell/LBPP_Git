@@ -161,6 +161,17 @@ public class StaticContextManager<DistributionType extends Distribution, Message
 		this.value = null;
 	}
 	
+	@Override
+	public void setLLNormalization(Void context,double value) {
+		this.llNorm = value;
+	}
+
+	@Override
+	public double getLLNormalization(Void context) {
+		return this.llNorm;
+	}
+	
+	private double llNorm =  0;
 	private DistributionType cpd;
 	private ValueType value = null;
 	private Vector<MessageType> incoming_pis = new Vector<MessageType>();
@@ -170,4 +181,5 @@ public class StaticContextManager<DistributionType extends Distribution, Message
 	private MessageType local_pi;
 	private MessageType local_lambda;
 	private MessageType marginal;
+
 }

@@ -53,6 +53,16 @@ public class DiscreteNode<Context> implements InnerNode<Context>, Serializable
 		}
 	}
 	
+	public double betheFreeEnergy(Context ctxt) throws BNException
+	{
+		DiscreteDistribution cpt = contextManager.getCPD(ctxt);
+		return cpt.computeBethePotential(contextManager.getIncomingPis(ctxt),
+										contextManager.getLocalLambda(ctxt),
+										(DiscreteMessage)contextManager.getMarginal(ctxt),
+										contextManager.getValue(ctxt),
+										contextManager.getOutgoingPis(ctxt).size());
+	}
+	
 	@Override
 	public Distribution getDistribution(Context ctxt)
 	{
@@ -97,7 +107,7 @@ public class DiscreteNode<Context> implements InnerNode<Context>, Serializable
 				local_lambda.setValue(i,tmp);
 			}
 		}
-		local_lambda.normalize();
+		this.contextManager.setLLNormalization(ctxt, Math.log(local_lambda.normalize()));
 
 		for(int i = 0; i < this.cardinality; i++)
 			local_pi.setValue(i, 0);
@@ -277,9 +287,20 @@ public class DiscreteNode<Context> implements InnerNode<Context>, Serializable
 		return parentDimesions;
 	}
 	
+	@Override
+	public double getLLAdjust(Context ctxt) {
+		return this.contextManager.getLLNormalization(ctxt);
+	}
+	
+	@Override
+	public double getMarginalNorm(Context ctxt) throws BNException {
+		return Math.log(this.contextManager.getLocalLambda(ctxt).multiply(this.contextManager.getLocalPi(ctxt)).normalize());
+	}
+	
 	public static final long serialVersionUID = 50L;
 	
 	private int cardinality;
 	private ContextManager<DiscreteDistribution,Context,DiscreteMessage,Integer> contextManager;
+
 
 }

@@ -62,6 +62,16 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		return this.name;
 	}
 	
+	void chooseLLPath()
+	{ //TODO this will work for now but really isn't the best idea.
+		if(this.interChildren.containsKey(this))
+			this.llTreeParent = new ParentPair(this,true);
+		else
+			this.llTreeParent = new ParentPair(this.intraParents.get(0),false);
+	}
+	
+	abstract double getLLAdjust() throws BNException; //TODO Ditto
+	
 	public void addInterChild(DBNNode child) throws BNException
 	{
 		if(this.interChildren.containsKey(child))
@@ -545,6 +555,14 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 			return ret;
 		}
 		
+		public double betheFreeEnergy() throws BNException
+		{
+			double sum = 0;
+			for(int i = 0; i < this.getT(); i++)
+				sum += this.innerNode.betheFreeEnergy(i);
+			return sum;
+		}
+		
 		public void sample() throws BNException
 		{
 			for(int t = 0; t < this.bayesNet.getT(); t++)
@@ -560,6 +578,49 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		@Override
 		public DiscreteDistribution getInitialDistribution() {
 			return (DiscreteDistribution) this.innerNode.getDistribution(0);
+		}
+		
+		@Override
+		double getLLAdjust() throws BNException
+		{
+			double ll = 0;
+			Vector<DBNNode> llInterChildren = new Vector<DBNNode>();
+			Vector<DBNNode> llIntraChildren = new Vector<DBNNode>();
+			for(DBNNode child : this.interChildren.keySet())
+				if(child.llTreeParent.parent==this && child.llTreeParent.inter)
+					llInterChildren.add(child);
+			for(DBNNode child : this.intraChildren.keySet())
+				if(child.llTreeParent.parent==this && !child.llTreeParent.inter)
+					llIntraChildren.add(child);
+			for(int t = 0; t < this.getT(); t++)
+			{ 	
+				DiscreteMessage tmp;
+				boolean hasAny = false;
+				if(this.innerNode.getValue(t)==null)
+					tmp = DiscreteMessage.allOnesMessage(this.cardinality);
+				else
+				{
+					tmp = new DiscreteMessage(this.cardinality);
+					tmp.setValue((Integer)this.innerNode.getValue(t), 1);
+				}
+				if(t<this.getT()-1)
+				{
+					for(DBNNode child : llInterChildren)
+					{
+						hasAny = true;
+						tmp = tmp.multiply((DiscreteMessage)this.interChildren.get(child)[t].lambda);
+					}
+				}
+				for(DBNNode child : llIntraChildren)
+				{
+					hasAny = true;
+					tmp = tmp.multiply((DiscreteMessage)this.intraChildren.get(child)[t].lambda);
+				}
+				if(hasAny)
+					ll += Math.log(tmp.normalize());
+			}
+			ll += this.innerNode.getMarginalNorm(0);
+			return ll;
 		}
 
 		@Override
@@ -618,17 +679,16 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 			}
 			this.setValue(t, ((DiscreteDistribution)this.innerNode.getDistribution(t)).sample(new Distribution.ValueSet<Integer>(pvals)));
 		}
-		
 	}
 	
 	protected InnerNode<Integer> innerNode;
-	private HashMap<DBNNode,MessageInterface[]> interChildren = new HashMap<DBNNode, MessageInterface[]>();
-	private HashMap<DBNNode,MessageInterface[]> intraChildren = new HashMap<DBNNode, MessageInterface[]>();
+	protected HashMap<DBNNode,MessageInterface[]> interChildren = new HashMap<DBNNode, MessageInterface[]>();
+	protected HashMap<DBNNode,MessageInterface[]> intraChildren = new HashMap<DBNNode, MessageInterface[]>();
 	protected ArrayList<DBNNode> interParents = new ArrayList<DBNNode>();
 	protected ArrayList<DBNNode> intraParents = new ArrayList<DBNNode>();
 	protected ArrayList<ParentPair> parents = new ArrayList<ParentPair>();
 	protected DynamicBayesianNetwork bayesNet;
-	protected DBNNode llTreeParent = null;
+	protected ParentPair llTreeParent = null;
 	protected String name;
 	
 	class ParentPair

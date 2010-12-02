@@ -9,6 +9,7 @@ import bn.IDynBayesNet;
 import bn.IDynBayesNet.ParallelCallback;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
+import bn.distributions.ScalarNoisyOr;
 import bn.impl.BayesNetworkFactory;
 import bn.messages.DiscreteMessage;
 
@@ -16,16 +17,20 @@ public class HMMtest {
 	public static void main(String[] args)
 	{
 		int length = Integer.parseInt(args[0]);
+		length = 10;
 		String parallel = args[1];
 		try
 		{
 			System.out.println("Seq length = " + length);
 			
-			double[][] A = {{.85, .05, .05, .05},{.05, .85, .05, .05},{.05, .05, .85, .05},{.05, .05, .05, .85}};
-			double[][] B = {{.9, .1},{.1, .9},{.3, .7},{.7, .3}};
-			double[] pi = {.8,.1, .05, .05};
-			DiscreteCPT ACPT = new DiscreteCPT(new int[]{4}, 4, A);
-			DiscreteCPT BCPT = new DiscreteCPT(new int[]{4}, 2, B);
+			//double[][] A = {{.85, .05, .05, .05},{.05, .85, .05, .05},{.05, .05, .85, .05},{.05, .05, .05, .85}};
+			double[][] A = {{.85, .15},{ .15, .85}};
+			//double[][] B = {{.9, .1},{.1, .9}};
+			double[][] B = {{1,0},{.1,.9},{.1,.9},{.01,.99}};
+			double[] pi = {.8,.2};
+			DiscreteCPT ACPT = new DiscreteCPT(new int[]{2}, 2, A);
+			DiscreteCPT BCPT = new DiscreteCPT(new int[]{2,2}, 2, B);
+			//DiscreteCPT BCPT = new DiscreteCPT(new int[]{2}, 2, B);
 			DiscreteCPTUC piCPT = new DiscreteCPTUC(pi);
 
 			Integer[] obs = new Integer[length];
@@ -36,29 +41,36 @@ public class HMMtest {
 			
 			IDynBayesNet dbn = BayesNetworkFactory.getDynamicNetwork(length);
 			IBayesNode y = dbn.addDiscreteNode("y", 2);
-			IBayesNode x = dbn.addDiscreteNode("x", 4);
+			IBayesNode x = dbn.addDiscreteNode("x", 2);
+			IBayesNode x2 = dbn.addDiscreteNode("x2", 2);
 			dbn.addIntraEdge(x, y);
+			dbn.addIntraEdge(x2, y);
 			dbn.addInterEdge(x, x);
+			dbn.addInterEdge(x2, x2);
 			dbn.setInitialDistribution(x.getName(), piCPT);
+			dbn.setInitialDistribution(x2.getName(), piCPT);
 			dbn.setDistribution(x.getName(), ACPT);
+			dbn.setDistribution(x2.getName(), ACPT);
+			//dbn.setDistribution(y.getName(), new ScalarNoisyOr(.9));
 			dbn.setDistribution(y.getName(), BCPT);
 			dbn.setEvidence(y.getName(), 0, obs);
 
 			dbn.validate();
-			dbn.optimize(100, 0, 100, 0);
 			
 			if(parallel.compareTo("serial")==0)
 			{
 				System.out.println("Running serially");
 				long begin = System.currentTimeMillis();
 				dbn.run(100,0);
+				dbn.run(1,0);
 				long end = System.currentTimeMillis();
 				double runtime = ((double)(end-begin))/1000;
 				for(int i = 0; i < 10; ++i)
 				{
 					DiscreteMessage msg = (DiscreteMessage)dbn.getMarginal("x", i);
 //					IDiscreteBayesNode inst = x.getDiscreteInstance(i);
-					System.out.println("X("+i+"): ["+msg.getValue(0) +"," + msg.getValue(1)+msg.getValue(2) +"," + msg.getValue(3)+"]");
+					//System.out.println("X("+i+"): ["+msg.getValue(0) +"," + msg.getValue(1)+msg.getValue(2) +"," + msg.getValue(3)+"]");
+					System.out.println("X("+i+"): ["+msg.getValue(0) +"," + msg.getValue(1)+"]");
 				}
 				System.out.println("Converged in " + runtime + " seconds... X Probabilities");
 				//System.out.println("Observation likelihood : " + y.getLogLikelihood());
@@ -68,6 +80,8 @@ public class HMMtest {
 				System.out.println("Running parallel..ly");
 				dbn.run_parallel_block(100,0);
 			}
+			System.out.println("BFE : " + dbn.getBetheEnergy());
+			System.out.println("LL: " + dbn.getLogLikelihood());
 		}
 		catch(BNException e) {
 			System.err.println("Error while running HMMtest : " + e.toString());

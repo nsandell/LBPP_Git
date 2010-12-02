@@ -64,9 +64,15 @@ public class CompositeDBN implements IDynBayesNet {
 	}
 	
 	@Override
-	public double logLikelihood()
+	public double getLogLikelihood()
 	{
 		//TODO Implement this.
+		return 0;
+	}
+	
+	public double getBetheEnergy()
+	{
+		//TODO implement
 		return 0;
 	}
 	

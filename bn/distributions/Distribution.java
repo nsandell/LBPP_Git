@@ -148,4 +148,10 @@ public interface Distribution extends Printable, Serializable
 		private ArrayList<? extends ValueObject<ValueType>> valueObjects = null;
 		int context;
 	}
+	
+	public static class BetheTerms
+	{
+		double E = 0;
+		double H = 0;
+	}
 }

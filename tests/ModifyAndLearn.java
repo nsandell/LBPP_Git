@@ -41,7 +41,7 @@ public class ModifyAndLearn {
 		net.optimize(1, 0, 1, 0);
 		
 		
-		double ll = net.logLikelihood();
+		double ll = net.getLogLikelihood();
 		ll+=3;
 		
 		IBayesNode x2 = net.addDiscreteNode("X2", 2);

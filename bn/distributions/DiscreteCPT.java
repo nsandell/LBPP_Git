@@ -101,6 +101,8 @@ public class DiscreteCPT extends DiscreteDistribution
 	 */
 	private void validate() throws BNException
 	{
+		if(this.dimSizes.length==0)
+			throw new BNException("Cannot create CPT with no parents - use probability vector instead!");
 		int[] indices = new int[this.dimSizes.length];
 		for(int i = 0; i < indices.length; i++)
 			indices[i] = 0;
@@ -231,6 +233,7 @@ public class DiscreteCPT extends DiscreteDistribution
 			}
 		}
 		while((indices = DiscreteDistribution.incrementIndices(indices, this.dimSizes))!=null);
+		int a = 3;
 	}
 	
 	@Override
@@ -399,9 +402,62 @@ public class DiscreteCPT extends DiscreteDistribution
 		return copy;
 	}
 	
-	private static final long serialVersionUID = 50L;
+	@Override
+	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis,
+								DiscreteMessage local_lambda, DiscreteMessage marginal, 
+								Integer value, int numChildren) throws BNException {
+
+		double[][] marginal_family = new double[dimprod][this.getCardinality()];
+		int[] indices = initialIndices(this.dimSizes.length);
+		double E = 0, H1 = 0, H2 = 0;
+		int numNeighbors = numChildren;
+		double sum = 0;
+
+		int iMin = 0, iMax = this.getCardinality();
+		if(value!=null)
+		{
+			iMin = value;
+			iMax = value+1;
+		}
+		do
+		{
+			int index = getIndex(indices, this.dimSizes); //TODO check if we can replace all of these with index++'s
+			for(int i = iMin; i < iMax; i++)
+			{
+				double tmp = local_lambda.getValue(i)*this.values[index][i];
+				for(int j = 0; j < incoming_pis.size(); j++)
+					tmp *= incoming_pis.get(j).getValue(indices[j]);
+				marginal_family[index][i] = tmp;
+				sum += tmp;
+			}
+		} while((indices = incrementIndices(indices, this.dimSizes))!=null);
+
+		for(int idx = 0; idx < dimprod; idx++)
+		{	
+			for(int i = iMin; i < iMax; i++)
+			{
+				if(marginal_family[idx][i] > 0)
+				{
+					marginal_family[idx][i] /= sum;
+					if(this.values[idx][i] > 0)
+						E -= marginal_family[idx][i]*Math.log(this.values[idx][i]);
+					H1 += marginal_family[idx][i]*Math.log(marginal_family[idx][i]);
+				}
+			}
+		}
+		if(value==null)
+		{
+			for(int i = 0; i < this.getCardinality(); i++)
+				if(marginal.getValue(i) > 0)
+					H2 += marginal.getValue(i)*Math.log(marginal.getValue(i));
+			H2*=numNeighbors;
+		}
+		return E+H1-H2;
+	}
 	
 	private int dimprod;
 	private int[] dimSizes;
 	private double[][] values;
+
+	private static final long serialVersionUID = 50L;
 }

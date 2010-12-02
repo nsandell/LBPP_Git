@@ -172,7 +172,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		@Override
 		public ScalarNoisyOrSuffStat update(DiscreteMessage lambda, Vector<DiscreteMessage> incomingPis) throws BNException
 		{
-			double[] pn = this.computePN(incomingPis);
+			double[] pn = computePN(incomingPis);
 			double[][] curr = new double[incomingPis.size()+1][2];
 	
 			double total = 0;
@@ -196,7 +196,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 	
 		// Compute the probability of number of parents being active from pi messages in quadratic
 		// rather than exponential time.
-		private double[] computePN(Vector<DiscreteMessage> incomingPis)
+		static double[] computePN(Vector<DiscreteMessage> incomingPis)
 		{
 			//Changing this method to treat any number < 1e-30 as 0 for numerical stability issue
 			int L = incomingPis.size();
@@ -217,7 +217,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			}
 			if(numZero > 0)
 			{
-					double[] tmp = this.computePN(incPis2);
+					double[] tmp = computePN(incPis2);
 					double[] ret = new double[L+1];
 					for(int i = numZero; i < ret.length; i++)
 						ret[i] = tmp[i-numZero];
@@ -310,8 +310,74 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		}
 	}
 	
+	@Override
+	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis,
+			DiscreteMessage local_lambda, DiscreteMessage marginal,Integer value, int numChildren)
+			throws BNException {
+		double E = 0, H1 = 0, H2 = 0;
+		double[] pn = ScalarNoisyOrSuffStat.computePN(incoming_pis);
+		double[][] pf = new double[pn.length][2];
+		double pfsum = 0;
+		if(value!=null)
+		{
+			for(int i = 0; i < pn.length; i++)
+			{
+				if(value==0)
+				{
+					pf[i][0] = pn[i]*(1-this.getProbability1(i));
+					pfsum += pf[i][0];
+				}
+				else if(i > 0)
+				{
+					pf[i][1] = pn[i]*this.getProbability1(i);
+					pfsum += pf[i][1];
+				}
+			}
+		}
+		else
+		{
+			for(int i = 0; i < pn.length; i++)
+			{
+				double p1 = this.getProbability1(i);
+				double p0 = 1-p1;
+				pf[i][0] = pn[i]*p0;
+				pf[i][1] = pn[i]*p1;
+				pfsum += pf[i][0] + pf[i][1];
+			}
+		}
+		for(int i = 0; i < pn.length; i++)
+		{
+			double p1 = this.getProbability1(i);
+			double p0 = 1-p1;
+			double pf1 = pf[i][1]/pfsum;
+			double pf0 = pf[i][0]/pfsum;
+			E -= pf0*Math.log(p0);
+			
+			if(i>0)
+				E -= pf1*Math.log(p1);
+			
+			//TODO Right now this is wrong, as the entropy of the family distribution is greater 
+			// than that of the distribution over the number of active parents.
+			if(pf0 > 0)
+				H1 += pf0*Math.log(pf0);
+			if(pf1 > 0)
+				H1 += pf1*Math.log(pf1);
+		}
+		double ll0 = marginal.getValue(0);
+		double ll1 = marginal.getValue(1);
+		if(ll0 > 0 && ll1 > 0)
+		{
+			H2 = ll0*Math.log(ll0);
+			H2 += ll1*Math.log(ll1);
+			H2*=numChildren;
+		}
+		return E+H1-H2;
+	}
+	
 	private double c;
 	private double q;
 	
 	private static final long serialVersionUID = 50L;
+
+
 }

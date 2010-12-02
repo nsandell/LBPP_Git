@@ -285,6 +285,11 @@ abstract class BNNode implements InternalIBayesNode
 			this.inner.clearValue();
 		}
 		
+		public double betheFreeEnergy() throws BNException
+		{
+			return this.inner.betheFreeEnergy(null);
+		}
+		
 		public void sample() {
 			//TODO make this work - will not with a hashmap because of the ordering.
 		}

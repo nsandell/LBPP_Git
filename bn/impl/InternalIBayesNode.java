@@ -72,6 +72,8 @@ interface InternalIBayesNode extends IBayesNode
 	
 	public Iterable<? extends InternalIBayesNode> getParentsI();
 	
+	public double betheFreeEnergy() throws BNException;
+	
 	/**
 	 * Clear the observation this node holds.
 	 */

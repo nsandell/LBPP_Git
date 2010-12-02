@@ -207,9 +207,32 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		private double[] current;
 	}
 	
+	@Override
+	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda,
+										DiscreteMessage marginal, Integer value, int numChildren) throws BNException {
+		double E = 0, H1 = 0, H2 = 0;
+		if(value!=null)
+			E = -Math.log(this.dist[value]);
+		if(numChildren==0)
+			return E;
+		if(value==null)
+		{
+			for(int i = 0; i < this.getCardinality(); i++)
+			{
+				if(this.dist[i] > 0)
+					E -= local_lambda.getValue(i)*Math.log(dist[i]);
+				if(marginal.getValue(i) > 0)
+					H2 += marginal.getValue(i)*Math.log(marginal.getValue(i));
+			}
+			H2*=(numChildren-1);
+		}
+		return E+H1-H2;
+	}
+	
 	@Override //Should have no parents so this method has no functionality.
 	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer value) throws BNException{}
 	
 	private static final long serialVersionUID = 50L;
 	private final double[] dist;
+
 }

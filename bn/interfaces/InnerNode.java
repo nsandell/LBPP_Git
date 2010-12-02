@@ -18,8 +18,8 @@ public interface InnerNode<Context>
 	Message getMarginal(Context ctxt) throws BNException;
 	double updateMessages(Context ctxt) throws BNException;
 	
-	public void updateSufficientStatistic(Context ctxt, SufficientStatistic stat) throws BNException;
-	public double optimize(Context ctxt, SufficientStatistic stat) throws BNException;
+	void updateSufficientStatistic(Context ctxt, SufficientStatistic stat) throws BNException;
+	double optimize(Context ctxt, SufficientStatistic stat) throws BNException;
 	public SufficientStatistic getSufficientStatistic(Context ctxt) throws BNException;
 	
 	void validate(Context ctxt) throws BNException;
@@ -27,6 +27,9 @@ public interface InnerNode<Context>
 	void setDistribution(Context ctxt, Distribution dist) throws BNException;
 	Distribution getDistribution(Context ctxt);
 	
+	double getLLAdjust(Context ctxt);
+	double getMarginalNorm(Context ctxt) throws BNException;
+	double betheFreeEnergy(Context ctxt) throws BNException;
 	void resetMessages();
 	
 	void setValue(Context ctxt, Object value) throws BNException;

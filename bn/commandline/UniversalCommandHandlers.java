@@ -220,11 +220,11 @@ public class UniversalCommandHandlers {
 		private static int[] groups = new int[]{1};
 	}
 	
-	/*static class NetLLGetter extends MethodWrapperHandler<Object>
+	static class NetLLGetter extends MethodWrapperHandler<Object>
 	{
 		NetLLGetter(IBayesNet<?> net) throws Exception
 		{
-			super(net,IBayesNet.class.getMethod("logLikelihood",new Class[]{}),
+			super(net,IBayesNet.class.getMethod("getLogLikelihood",new Class[]{}),
 					new String[]{}, null);
 		}
 		
@@ -240,6 +240,6 @@ public class UniversalCommandHandlers {
 		
 		private static Pattern patt = Pattern.compile("^\\s*ll\\s*$");
 		private static int[] groups = new int[]{};
-	}*/
+	}
 	
 }

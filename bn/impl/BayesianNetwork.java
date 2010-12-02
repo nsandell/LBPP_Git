@@ -94,6 +94,17 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 			nd.resetMessages();
 	}
 	
+	public abstract double getLogLikelihood() throws BNException;
+	
+	public double getBetheEnergy() throws BNException
+	{
+		double esum = 0;
+		for(BaseNodeType nd : this.nodes.values())
+			esum += nd.betheFreeEnergy();
+		return esum;
+	}
+	
+	
 	public RunResults optimize(int maxLearnIt, double learnErrConvergence, int maxInfIt, double infErrConvergence) throws BNException
 	{
 		long startTime = System.currentTimeMillis();

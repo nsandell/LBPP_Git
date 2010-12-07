@@ -10,41 +10,30 @@ import bn.distributions.ScalarNoisyOr;
 import bn.impl.BayesNetworkFactory;
 import bn.messages.DiscreteMessage;
 
-public class BetheTest {
+public class BetheTest2 {
 
 	public static void main(String[] args) throws BNException
 	{
 		IStaticBayesNet bn = BayesNetworkFactory.getStaticNetwork();
-		bn.addDiscreteNode("C", 2);
 		bn.addDiscreteNode("S", 2);
 		bn.addDiscreteNode("R", 2);
 		bn.addDiscreteNode("W", 2);
 		
-		bn.addEdge("C", "R");
-		bn.addEdge("C", "S");
 		bn.addEdge("S","W");
 		bn.addEdge("R","W");
 		
 		
-		bn.setDistribution("C", new DiscreteCPTUC(new double[]{.5, .5}));
-		bn.setDistribution("S", new DiscreteCPT(new double[][]{{.5, .5},{.9, .1}},2));
-		bn.setDistribution("R", new DiscreteCPT(new double[][]{{.8, .2},{.2, .8}},2));
+		bn.setDistribution("S", new DiscreteCPTUC(new double[]{.6, .4}));
+		bn.setDistribution("R", new DiscreteCPTUC(new double[]{.8, .2}));
 		//bn.setDistribution("W", new DiscreteCPT(new int[]{2,2},2,new double[][]{{1, 0},{.1, .9},{.1, .9},{.01, .99}}));
-		bn.addEvidence("W", 0);
-		//bn.addEvidence("C", 0);
+		bn.addEvidence("W", 1);
+		bn.addEvidence("S", 0);
+		bn.addEvidence("R", 1);
 		bn.setDistribution("W", new ScalarNoisyOr(.9));
-		
-		
-		//Child test
-		bn.addDiscreteNode("Child", 2);
-		bn.addEdge("W", "Child");
-		bn.setDistribution("Child", new ScalarNoisyOr(.9));
-		bn.addEvidence("Child", 0);
 		
 		bn.validate();
 		RunResults rr = bn.run(100, 0);
 		System.out.println(rr.numIts + " : " + rr.error);
-		System.out.println(((DiscreteMessage)bn.getMarginal("C")).getValue(0));
 		System.out.println(((DiscreteMessage)bn.getMarginal("S")).getValue(0));
 		System.out.println(((DiscreteMessage)bn.getMarginal("R")).getValue(0));
 		System.out.println(((DiscreteMessage)bn.getMarginal("W")).getValue(0));

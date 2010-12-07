@@ -313,8 +313,15 @@ public class ScalarNoisyOr extends DiscreteDistribution
 	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis,
 			DiscreteMessage local_lambda, DiscreteMessage marginal,Integer value, int numChildren)
 			throws BNException {
+		
 		double E = 0, H1 = 0, H2 = 0;
 		double[] pn = ScalarNoisyOrSuffStat.computePN(incoming_pis);
+		
+		double pnsum = 0;
+		for(int i = 0; i < pn.length; i++)
+			pnsum += pn[i];
+		for(int i = 0;i < pn.length; i++)
+			pn[i] /= pnsum;
 	
 		double[][] pf = new double[pn.length][2];
 		double pfsum = 0;
@@ -371,36 +378,39 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		
 		double eta = 1;
 		int num0Pi = 0;
+		int num1Pi = 0;
 		
 		for(int i = 0; i < incoming_pis.size(); i++)
+		{
 			if(incoming_pis.get(i).getValue(0)==0)
-				num0Pi++;
+				num0Pi++;			
+			else if(incoming_pis.get(i).getValue(1)==0)
+				num1Pi++;
+		}
 		
-		double[] c = new double[incoming_pis.size()-num0Pi];
+		double[] c = new double[incoming_pis.size()-num0Pi-num1Pi];
 		int idx = 0;
 		for(int i = 0; i < incoming_pis.size(); i++)
 		{
 			double pi0 = incoming_pis.get(i).getValue(0); double pi1 = incoming_pis.get(i).getValue(1);
-			if(pi0==0)
+			if(pi0==0 || pi1==0)
 				continue;
 			
-			if(pi1 > 0) //TODO Is this condition necessary?
-			{
-				eta *= pi0/(pi0+pi1);
-				c[idx] = pi1/pi0;
-			}
+			eta *= pi0/(pi0+pi1);
+			c[idx] = pi1/pi0;
+
 			idx++;
 		}
 		double logEta = Math.log(eta);
-		double[] R = new double[incoming_pis.size()+1-num0Pi];
-		double[] L = new double[incoming_pis.size()+1-num0Pi];
-		double[] factorials = new double[incoming_pis.size()+1-num0Pi];
+		double[] R = new double[incoming_pis.size()+1-num0Pi-num1Pi];
+		double[] L = new double[incoming_pis.size()+1-num0Pi-num1Pi];
+		double[] factorials = new double[incoming_pis.size()+1-num0Pi-num1Pi];
 		R[0] = 1;
 		factorials[0] = 1;
-		for(int i = 1; i < incoming_pis.size()+1-num0Pi; i++)
+		for(int i = 1; i < incoming_pis.size()+1-num0Pi-num1Pi; i++)
 		{
 			factorials[i] = factorials[i-1]*i;
-			for(int k = 0; k < incoming_pis.size()-num0Pi; k++)
+			for(int k = 0; k < incoming_pis.size()-num0Pi-num1Pi; k++)
 			{
 				double tmp = 0;
 				for(int j = 0; j < i; j++)
@@ -409,7 +419,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 				L[i] += c[k]*Math.log(c[k])*tmp;
 			}
 		}
-		for(int i = num0Pi; i < pn.length; i++)
+		for(int i = num0Pi; i < pn.length-num1Pi; i++)
 		{
 			double pi = pige[i]/pigesum;
 			if(pi > 0)

@@ -4,7 +4,6 @@ import java.io.PrintStream;
 import java.util.Vector;
 
 import util.MathUtil;
-
 import bn.BNException;
 import bn.messages.DiscreteMessage;
 
@@ -316,8 +315,12 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			throws BNException {
 		double E = 0, H1 = 0, H2 = 0;
 		double[] pn = ScalarNoisyOrSuffStat.computePN(incoming_pis);
+	
 		double[][] pf = new double[pn.length][2];
 		double pfsum = 0;
+		double[] pige = new double[pn.length];
+		double pigesum = 0;
+		
 		if(value!=null)
 		{
 			for(int i = 0; i < pn.length; i++)
@@ -326,11 +329,15 @@ public class ScalarNoisyOr extends DiscreteDistribution
 				{
 					pf[i][0] = pn[i]*(1-this.getProbability1(i));
 					pfsum += pf[i][0];
+					pige[i] = pf[i][0]*local_lambda.getValue(0);
+					pigesum += pige[i];
 				}
 				else if(i > 0)
 				{
 					pf[i][1] = pn[i]*this.getProbability1(i);
 					pfsum += pf[i][1];
+					pige[i] = pf[i][1]*local_lambda.getValue(1);
+					pigesum += pige[i];
 				}
 			}
 		}
@@ -343,6 +350,8 @@ public class ScalarNoisyOr extends DiscreteDistribution
 				pf[i][0] = pn[i]*p0;
 				pf[i][1] = pn[i]*p1;
 				pfsum += pf[i][0] + pf[i][1];
+				pige[i] = pf[i][0]*local_lambda.getValue(0) + pf[i][1]*local_lambda.getValue(1);
+				pigesum += pige[i];
 			}
 		}
 		for(int i = 0; i < pn.length; i++)
@@ -356,13 +365,58 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			if(i>0)
 				E -= pf1*Math.log(p1);
 			
-			//TODO Right now this is wrong, as the entropy of the family distribution is greater 
-			// than that of the distribution over the number of active parents.
-			if(pf0 > 0)
-				H1 += pf0*Math.log(pf0);
-			if(pf1 > 0)
-				H1 += pf1*Math.log(pf1);
+			//if(p1 > 0 && p1 < 1)  This only comes into play if uncertainty in Y, TODO fix this when the other parts are figured out.
+			//	H1 += pige[i]/pigesum*(p1*Math.log(p1)+p0*Math.log(p0));
 		}
+		
+		double eta = 1;
+		int num0Pi = 0;
+		double[] c = new double[incoming_pis.size()];
+		for(int i = 0; i < incoming_pis.size(); i++)
+		{
+			double pi0 = incoming_pis.get(i).getValue(0); double pi1 = incoming_pis.get(i).getValue(1);
+			if(pi0 > 0 && pi1 > 0)
+			{
+				eta *= pi0/(pi0+pi1);
+				c[i] = pi1/pi0;
+			}
+			else if(pi0==0)
+			{
+				num0Pi++;
+			}
+		}
+		double logEta = Math.log(eta);
+		double[] R = new double[incoming_pis.size()+1];
+		double[] L = new double[incoming_pis.size()+1];
+		double[] factorials = new double[incoming_pis.size()+1];
+		R[0] = 1;
+		factorials[0] = 1;
+		for(int i = 1; i < incoming_pis.size()+1; i++)
+		{
+			factorials[i] = factorials[i-1]*i;
+			for(int k = 0; k < incoming_pis.size(); k++)
+			{
+				double tmp = 0;
+				for(int j = 0; j < i; j++)
+					tmp = R[j]-j*c[k]*tmp;
+				R[i] += c[k]*tmp;
+				L[i] += c[k]*Math.log(c[k])*tmp;
+			}
+		}
+		for(int i = 0; i < pn.length; i++)
+		{
+			double pi = pige[i]/pigesum;
+			if(pi > 0)
+			{
+				H1 += pi*Math.log(pi);
+				if(i>0 && i<pn.length-1)
+				{
+					double lstar = eta/pn[i]*((logEta-Math.log(pn[i]))*R[i]/factorials[i]+L[i]/factorials[i-1]);
+					H1 += pi*lstar;
+				}
+			}
+		}
+		
 		double ll0 = marginal.getValue(0);
 		double ll1 = marginal.getValue(1);
 		if(ll0 > 0 && ll1 > 0)

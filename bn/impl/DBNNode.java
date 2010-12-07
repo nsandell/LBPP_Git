@@ -66,8 +66,12 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 	{ //TODO this will work for now but really isn't the best idea.
 		if(this.interChildren.containsKey(this))
 			this.llTreeParent = new ParentPair(this,true);
-		else
+		else if(this.intraParents.size() > 0)
 			this.llTreeParent = new ParentPair(this.intraParents.get(0),false);
+		else
+		{
+			this.llTreeParent = null;//TODO Is UM?
+		}
 	}
 	
 	abstract double getLLAdjust() throws BNException; //TODO Ditto

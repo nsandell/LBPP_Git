@@ -233,7 +233,6 @@ public class DiscreteCPT extends DiscreteDistribution
 			}
 		}
 		while((indices = DiscreteDistribution.incrementIndices(indices, this.dimSizes))!=null);
-		int a = 3;
 	}
 	
 	@Override

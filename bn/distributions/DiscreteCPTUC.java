@@ -220,7 +220,7 @@ public class DiscreteCPTUC extends DiscreteDistribution
 			for(int i = 0; i < this.getCardinality(); i++)
 			{
 				if(this.dist[i] > 0)
-					E -= local_lambda.getValue(i)*Math.log(dist[i]);
+					E -= marginal.getValue(i)*Math.log(dist[i]);
 				if(marginal.getValue(i) > 0)
 					H2 += marginal.getValue(i)*Math.log(marginal.getValue(i));
 			}

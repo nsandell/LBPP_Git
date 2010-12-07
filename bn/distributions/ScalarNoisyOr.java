@@ -371,30 +371,36 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		
 		double eta = 1;
 		int num0Pi = 0;
-		double[] c = new double[incoming_pis.size()];
+		
+		for(int i = 0; i < incoming_pis.size(); i++)
+			if(incoming_pis.get(i).getValue(0)==0)
+				num0Pi++;
+		
+		double[] c = new double[incoming_pis.size()-num0Pi];
+		int idx = 0;
 		for(int i = 0; i < incoming_pis.size(); i++)
 		{
 			double pi0 = incoming_pis.get(i).getValue(0); double pi1 = incoming_pis.get(i).getValue(1);
-			if(pi0 > 0 && pi1 > 0)
+			if(pi0==0)
+				continue;
+			
+			if(pi1 > 0) //TODO Is this condition necessary?
 			{
 				eta *= pi0/(pi0+pi1);
-				c[i] = pi1/pi0;
+				c[idx] = pi1/pi0;
 			}
-			else if(pi0==0)
-			{
-				num0Pi++;
-			}
+			idx++;
 		}
 		double logEta = Math.log(eta);
-		double[] R = new double[incoming_pis.size()+1];
-		double[] L = new double[incoming_pis.size()+1];
-		double[] factorials = new double[incoming_pis.size()+1];
+		double[] R = new double[incoming_pis.size()+1-num0Pi];
+		double[] L = new double[incoming_pis.size()+1-num0Pi];
+		double[] factorials = new double[incoming_pis.size()+1-num0Pi];
 		R[0] = 1;
 		factorials[0] = 1;
-		for(int i = 1; i < incoming_pis.size()+1; i++)
+		for(int i = 1; i < incoming_pis.size()+1-num0Pi; i++)
 		{
 			factorials[i] = factorials[i-1]*i;
-			for(int k = 0; k < incoming_pis.size(); k++)
+			for(int k = 0; k < incoming_pis.size()-num0Pi; k++)
 			{
 				double tmp = 0;
 				for(int j = 0; j < i; j++)
@@ -403,15 +409,15 @@ public class ScalarNoisyOr extends DiscreteDistribution
 				L[i] += c[k]*Math.log(c[k])*tmp;
 			}
 		}
-		for(int i = 0; i < pn.length; i++)
+		for(int i = num0Pi; i < pn.length; i++)
 		{
 			double pi = pige[i]/pigesum;
 			if(pi > 0)
 			{
 				H1 += pi*Math.log(pi);
-				if(i>0 && i<pn.length-1)
+				if(i-num0Pi > 0 && i < pn.length-1)
 				{
-					double lstar = eta/pn[i]*((logEta-Math.log(pn[i]))*R[i]/factorials[i]+L[i]/factorials[i-1]);
+					double lstar = eta/pn[i]*((logEta-Math.log(pn[i]))*R[i-num0Pi]/factorials[i-num0Pi]+L[i-num0Pi]/factorials[i-num0Pi-1]);
 					H1 += pi*lstar;
 				}
 			}

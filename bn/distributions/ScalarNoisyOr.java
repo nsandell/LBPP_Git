@@ -372,8 +372,8 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			if(i>0)
 				E -= pf1*Math.log(p1);
 			
-			//if(p1 > 0 && p1 < 1)  This only comes into play if uncertainty in Y, TODO fix this when the other parts are figured out.
-			//	H1 += pige[i]/pigesum*(p1*Math.log(p1)+p0*Math.log(p0));
+			if(p1 > 0 && p1 < 1 && value==null)
+				H1 += pige[i]/pigesum*(p1*Math.log(p1)+p0*Math.log(p0));
 		}
 		
 		double eta = 1;

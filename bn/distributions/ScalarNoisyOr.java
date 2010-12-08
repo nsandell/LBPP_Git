@@ -313,10 +313,10 @@ public class ScalarNoisyOr extends DiscreteDistribution
 	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis,
 			DiscreteMessage local_lambda, DiscreteMessage marginal,Integer value, int numChildren)
 			throws BNException {
-		
+	
 		double E = 0, H1 = 0, H2 = 0;
+
 		double[] pn = ScalarNoisyOrSuffStat.computePN(incoming_pis);
-		
 		double pnsum = 0;
 		for(int i = 0; i < pn.length; i++)
 			pnsum += pn[i];
@@ -327,53 +327,31 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		double pfsum = 0;
 		double[] pige = new double[pn.length];
 		double pigesum = 0;
-		
-		if(value!=null)
+		for(int i = 0; i < pn.length; i++)
 		{
-			for(int i = 0; i < pn.length; i++)
-			{
-				if(value==0)
-				{
-					pf[i][0] = pn[i]*(1-this.getProbability1(i));
-					pfsum += pf[i][0];
-					pige[i] = pf[i][0]*local_lambda.getValue(0);
-					pigesum += pige[i];
-				}
-				else if(i > 0)
-				{
-					pf[i][1] = pn[i]*this.getProbability1(i);
-					pfsum += pf[i][1];
-					pige[i] = pf[i][1]*local_lambda.getValue(1);
-					pigesum += pige[i];
-				}
-			}
+			double ptmp = this.getProbability1(i);
+			pf[i][0] = pn[i]*(1-ptmp)*local_lambda.getValue(0);
+			pf[i][1] = pn[i]*(ptmp)*local_lambda.getValue(1);
+			pige[i] = pf[i][0] + pf[i][1];
+			pfsum += pige[i];
+			pigesum += pige[i];
 		}
-		else
-		{
-			for(int i = 0; i < pn.length; i++)
-			{
-				double p1 = this.getProbability1(i);
-				double p0 = 1-p1;
-				pf[i][0] = pn[i]*p0;
-				pf[i][1] = pn[i]*p1;
-				pfsum += pf[i][0] + pf[i][1];
-				pige[i] = pf[i][0]*local_lambda.getValue(0) + pf[i][1]*local_lambda.getValue(1);
-				pigesum += pige[i];
-			}
-		}
+	
 		for(int i = 0; i < pn.length; i++)
 		{
 			double p1 = this.getProbability1(i);
 			double p0 = 1-p1;
 			double pf1 = pf[i][1]/pfsum;
 			double pf0 = pf[i][0]/pfsum;
+
 			E -= pf0*Math.log(p0);
-			
 			if(i>0)
 				E -= pf1*Math.log(p1);
-			
-			if(p1 > 0 && p1 < 1 && value==null)
-				H1 += pige[i]/pigesum*(p1*Math.log(p1)+p0*Math.log(p0));
+
+			if(pf0 > 0)
+				H1 += pf0*Math.log(pf0);
+			if(pf1 > 0)
+				H1 += pf1*Math.log(pf1);
 		}
 		
 		double eta = 1;
@@ -424,7 +402,6 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			double pi = pige[i]/pigesum;
 			if(pi > 0)
 			{
-				H1 += pi*Math.log(pi);
 				if(i-num0Pi > 0 && i < pn.length-1)
 				{
 					double lstar = eta/pn[i]*((logEta-Math.log(pn[i]))*R[i-num0Pi]/factorials[i-num0Pi]+L[i-num0Pi]/factorials[i-num0Pi-1]);
@@ -441,6 +418,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			H2 += ll1*Math.log(ll1);
 			H2*=numChildren;
 		}
+		
 		return E+H1-H2;
 	}
 	

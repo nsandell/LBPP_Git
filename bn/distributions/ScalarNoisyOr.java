@@ -316,6 +316,10 @@ public class ScalarNoisyOr extends DiscreteDistribution
 	
 		double E = 0, H1 = 0, H2 = 0;
 
+		/**
+		 * Compute the probability of the number of parents active given the evidence
+		 * "above" and including the parents.
+		 */
 		double[] pn = ScalarNoisyOrSuffStat.computePN(incoming_pis);
 		double pnsum = 0;
 		for(int i = 0; i < pn.length; i++)
@@ -323,20 +327,26 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		for(int i = 0;i < pn.length; i++)
 			pn[i] /= pnsum;
 	
+		/**
+		 * Compute the marginal over this node and the number of active parents
+		 * given the evidence below and above.
+		 */
 		double[][] pf = new double[pn.length][2];
 		double pfsum = 0;
-		double[] pige = new double[pn.length];
-		double pigesum = 0;
 		for(int i = 0; i < pn.length; i++)
 		{
 			double ptmp = this.getProbability1(i);
 			pf[i][0] = pn[i]*(1-ptmp)*local_lambda.getValue(0);
 			pf[i][1] = pn[i]*(ptmp)*local_lambda.getValue(1);
-			pige[i] = pf[i][0] + pf[i][1];
-			pfsum += pige[i];
-			pigesum += pige[i];
+			pfsum += pf[i][0] + pf[i][1];
 		}
-	
+		
+		/**
+		 * Compute both the energy term 
+		 * E = \sum_{parents,thisnode} marginal(parents,thisnode | evidence) log[p(thisnode|parents)]
+		 * and the portion of the H1 entropy term that corresponds to the join entropy over this node
+		 * and the number of active parents.
+		 */
 		for(int i = 0; i < pn.length; i++)
 		{
 			double p1 = this.getProbability1(i);
@@ -353,11 +363,12 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			if(pf1 > 0)
 				H1 += pf1*Math.log(pf1);
 		}
-		
-		double eta = 1;
-		int num0Pi = 0;
-		int num1Pi = 0;
-		
+	
+		/**
+		 * Find the number of parents who are certainly 0 or certainly 1
+		 */
+		int num0Pi = 0; //Number of parents who are certainly 1
+		int num1Pi = 0; //Number of parents who are certainly 0
 		for(int i = 0; i < incoming_pis.size(); i++)
 		{
 			if(incoming_pis.get(i).getValue(0)==0)
@@ -365,8 +376,15 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			else if(incoming_pis.get(i).getValue(1)==0)
 				num1Pi++;
 		}
+		int numPiUnk = incoming_pis.size()-num0Pi-num1Pi; //Number of uncertain parents
 		
-		double[] c = new double[incoming_pis.size()-num0Pi-num1Pi];
+		/**
+		 * Compute the eta and c constants, used to calculate the entropy of the parents conditioned
+		 * on evidence and the number of active parents.  This ignores both parents certainly 0 and
+		 * parents certainly 1, as these don't contribute to entropy.
+		 */
+		double eta = 1;
+		double[] c = new double[numPiUnk];
 		int idx = 0;
 		for(int i = 0; i < incoming_pis.size(); i++)
 		{
@@ -380,6 +398,13 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			idx++;
 		}
 		double logEta = Math.log(eta);
+		
+		/**
+		 * Compute R and L constant sets
+		 * R[i] = the sum of the products of all subsets of set c of size i (times i factorial)
+		 * L[i] = the sum of the products of all subsets of set c (times a log of one element) of size i (times i-1 factorial)
+		 * factorials[i] = i!
+		 */
 		double[] R = new double[incoming_pis.size()+1-num0Pi-num1Pi];
 		double[] L = new double[incoming_pis.size()+1-num0Pi-num1Pi];
 		double[] factorials = new double[incoming_pis.size()+1-num0Pi-num1Pi];
@@ -397,9 +422,15 @@ public class ScalarNoisyOr extends DiscreteDistribution
 				L[i] += c[k]*Math.log(c[k])*tmp;
 			}
 		}
+		
+		/**
+		 * Compute the portion of H1 that corresponds to the conditional entropy of the parents
+		 * given the number of parents active.  Note we only iterate over the possible number of
+		 * parents active given any known parent values.
+		 */
 		for(int i = num0Pi; i < pn.length-num1Pi; i++)
 		{
-			double pi = pige[i]/pigesum;
+			double pi = (pf[i][0]+pf[i][1])/pfsum;
 			if(pi > 0)
 			{
 				if(i-num0Pi > 0 && i < pn.length-1)
@@ -410,6 +441,10 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			}
 		}
 		
+		/**
+		 * Compute H2, the negative marginal entropy of this node times factor q
+		 * where q is the number of children (because this node must have parents).
+		 */
 		double ll0 = marginal.getValue(0);
 		double ll1 = marginal.getValue(1);
 		if(ll0 > 0 && ll1 > 0)

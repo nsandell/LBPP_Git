@@ -46,14 +46,7 @@ public class DBNFragment extends DynamicBayesianNetwork implements IDBNFragmentS
 	{
 		this.run_parallel(maxit, conv, new RemoteCallbackChain(cb, this));
 	}
-	
-	@Override
-	public double logLikelihood()
-	{
-		//TODO Implement
-		return 0;
-	}
-	
+
 	private static class RemoteCallbackChain implements ParallelCallback
 	{
 		

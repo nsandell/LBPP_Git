@@ -90,22 +90,6 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynBay
 		return this.T;
 	}
 	
-	public double getLogLikelihood() throws BNException
-	{
-		double ll = 0;
-		for(DBNNode nd : this.dnodes.values())
-			nd.chooseLLPath();
-		for(DBNNode nd : this.dnodes.values())
-		{
-			if(nd.numParents()==0)
-			{
-				double tmp = nd.getLLAdjust();
-				ll += tmp;
-			}
-		}
-		return ll;
-	}
-	
 	public RunResults optimize_parallel(int maxLearnIt, double learnErrConvergence, int maxInfIt, double infErrConvergence) throws BNException
 	{
 		long startTime = System.currentTimeMillis();

@@ -30,12 +30,6 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		}
 	}
 	
-	public double logLikelihood()
-	{
-		//TODO Implement this
-		return 0;
-	}
-	
 	public void print(PrintStream ps)
 	{
 		for(BaseNodeType nd : this.nodes.values())
@@ -94,13 +88,11 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 			nd.resetMessages();
 	}
 	
-	public abstract double getLogLikelihood() throws BNException;
-	
-	public double getBetheEnergy() throws BNException
+	public double getLogLikelihood() throws BNException
 	{
 		double esum = 0;
 		for(BaseNodeType nd : this.nodes.values())
-			esum += nd.betheFreeEnergy();
+			esum -= nd.betheFreeEnergy();
 		return esum;
 	}
 	

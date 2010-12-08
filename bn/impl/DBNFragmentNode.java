@@ -149,13 +149,6 @@ abstract class DBNFragmentNode extends DBNNode {
 			return (DiscreteMessage)this.innerNode.getMarginal(t);
 		}
 		
-		@Override
-		public double getLLAdjust() throws BNException
-		{
-			//TODO Implement if this is still around by the time I care.
-			throw new BNException("Not implemented yet");
-		}
-		
 		public void sample(int t) throws BNException
 		{
 			Integer[] pvals;

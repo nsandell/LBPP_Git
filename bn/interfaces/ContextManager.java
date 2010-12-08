@@ -29,9 +29,6 @@ public interface ContextManager<DistributionType extends Distribution, ContextTy
 	Message getMarginal(ContextType context) throws BNException;
 	void setMarginal(ContextType context, MessageType message);
 	
-	void setLLNormalization(ContextType context, double value);
-	double getLLNormalization(ContextType context);
-	
 	void resetMessages();
 	
 	boolean isObserved(ContextType context);

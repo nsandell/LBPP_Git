@@ -17,17 +17,23 @@ public class BetheTest2 {
 		IStaticBayesNet bn = BayesNetworkFactory.getStaticNetwork();
 		bn.addDiscreteNode("S", 2);
 		bn.addDiscreteNode("R", 2);
+		bn.addDiscreteNode("R2", 2);
+		bn.addDiscreteNode("R3", 2);
 		bn.addDiscreteNode("W", 2);
 		
 		bn.addEdge("S","W");
 		bn.addEdge("R","W");
+		bn.addEdge("R2","W");
+		bn.addEdge("R3","W");
 		
 		
 		bn.setDistribution("S", new DiscreteCPTUC(new double[]{.6, .4}));
 		bn.setDistribution("R", new DiscreteCPTUC(new double[]{.8, .2}));
+		bn.setDistribution("R2", new DiscreteCPTUC(new double[]{.9, .1}));
+		bn.setDistribution("R3", new DiscreteCPTUC(new double[]{.7, .3}));
 		//bn.setDistribution("W", new DiscreteCPT(new int[]{2,2},2,new double[][]{{1, 0},{.1, .9},{.1, .9},{.01, .99}}));
-		bn.addEvidence("W", 1);
-		bn.addEvidence("S", 0);
+		bn.addEvidence("W", 0);
+		bn.addEvidence("S", 1);
 		bn.addEvidence("R", 1);
 		bn.setDistribution("W", new ScalarNoisyOr(.9));
 		
@@ -37,7 +43,7 @@ public class BetheTest2 {
 		System.out.println(((DiscreteMessage)bn.getMarginal("S")).getValue(0));
 		System.out.println(((DiscreteMessage)bn.getMarginal("R")).getValue(0));
 		System.out.println(((DiscreteMessage)bn.getMarginal("W")).getValue(0));
-		System.out.println("BE : "+bn.getBetheEnergy());
+		System.out.println("BE : " + bn.getLogLikelihood());
 		
 		/*IDynBayesNet dbn = BayesNetworkFactory.getDynamicNetwork(2);
 		dbn.addDiscreteNode("X", 2);

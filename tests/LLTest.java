@@ -63,8 +63,7 @@ public class LLTest {
 				System.out.println("X("+i+"): ["+msg.getValue(0) +"," + msg.getValue(1)+"]");
 			}
 			System.out.println("Converged in " + runtime + " seconds... X Probabilities");
-			System.out.println("BFE : " + dbn.getBetheEnergy());
-			System.out.println("LL: " + dbn.getLogLikelihood());
+			System.out.println("BFE : " + dbn.getLogLikelihood());
 		}
 		catch(BNException e) {
 			System.err.println("Error while running HMMtest : " + e.toString());

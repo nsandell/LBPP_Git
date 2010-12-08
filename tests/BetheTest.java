@@ -31,7 +31,7 @@ public class BetheTest {
 		bn.setDistribution("R", new DiscreteCPT(new double[][]{{.8, .2},{.2, .8}},2));
 		//bn.setDistribution("W", new DiscreteCPT(new int[]{2,2},2,new double[][]{{1, 0},{.1, .9},{.1, .9},{.01, .99}}));
 		bn.addEvidence("W", 0);
-		//bn.addEvidence("C", 0);
+		bn.addEvidence("C", 0);
 		bn.setDistribution("W", new ScalarNoisyOr(.9));
 		
 		
@@ -39,7 +39,7 @@ public class BetheTest {
 		bn.addDiscreteNode("Child", 2);
 		bn.addEdge("W", "Child");
 		bn.setDistribution("Child", new ScalarNoisyOr(.9));
-		bn.addEvidence("Child", 0);
+		//bn.addEvidence("Child", 0);
 		
 		bn.validate();
 		RunResults rr = bn.run(100, 0);
@@ -48,7 +48,7 @@ public class BetheTest {
 		System.out.println(((DiscreteMessage)bn.getMarginal("S")).getValue(0));
 		System.out.println(((DiscreteMessage)bn.getMarginal("R")).getValue(0));
 		System.out.println(((DiscreteMessage)bn.getMarginal("W")).getValue(0));
-		System.out.println("BE : "+bn.getBetheEnergy());
+		System.out.println("BE : " + bn.getLogLikelihood());
 		
 		/*IDynBayesNet dbn = BayesNetworkFactory.getDynamicNetwork(2);
 		dbn.addDiscreteNode("X", 2);

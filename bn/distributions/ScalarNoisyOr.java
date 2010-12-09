@@ -197,13 +197,13 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		// rather than exponential time.
 		static double[] computePN(Vector<DiscreteMessage> incomingPis)
 		{
-			//Changing this method to treat any number < 1e-30 as 0 for numerical stability issue
+			//Changing this method to treat any number < 1e-8 as 0 for numerical stability issue
 			int L = incomingPis.size();
 			Vector<DiscreteMessage> incPis2 = new Vector<DiscreteMessage>();
 			int numZero = 0;
 			for(int i = 0; i < L; i++)
 			{
-				if(incomingPis.get(i).getValue(0) < 1e-30)
+				if(incomingPis.get(i).getValue(0) < 1e-8)
 					numZero++;
 				else
 					incPis2.add(incomingPis.get(i));
@@ -211,7 +211,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			if(numZero==L)
 			{
 				double[] ret = new double[L+1];
-				ret[L] = 1-1e-30;
+				ret[L] = 1-1e-8;
 				return ret;
 			}
 			if(numZero > 0)
@@ -365,15 +365,16 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		}
 	
 		/**
-		 * Find the number of parents who are certainly 0 or certainly 1
+		 * Find the number of parents who are certainly 0 or certainly 1.  From here on out
+		 * we treat less than < 1e-8 as 0 and > (1-1e-8) as 1 for stability
 		 */
 		int num0Pi = 0; //Number of parents who are certainly 1
 		int num1Pi = 0; //Number of parents who are certainly 0
 		for(int i = 0; i < incoming_pis.size(); i++)
 		{
-			if(incoming_pis.get(i).getValue(0)==0)
+			if(incoming_pis.get(i).getValue(0) < 1e-8)
 				num0Pi++;			
-			else if(incoming_pis.get(i).getValue(1)==0)
+			else if(1-incoming_pis.get(i).getValue(1) < 1e-8)
 				num1Pi++;
 		}
 		int numPiUnk = incoming_pis.size()-num0Pi-num1Pi; //Number of uncertain parents
@@ -389,7 +390,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		for(int i = 0; i < incoming_pis.size(); i++)
 		{
 			double pi0 = incoming_pis.get(i).getValue(0); double pi1 = incoming_pis.get(i).getValue(1);
-			if(pi0==0 || pi1==0)
+			if(pi0 < 1e-8 || 1-pi1 < 1e-8)
 				continue;
 			
 			eta *= pi0/(pi0+pi1);

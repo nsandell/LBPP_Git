@@ -149,6 +149,8 @@ public interface Distribution extends Printable, Serializable
 		int context;
 	}
 	
+	public abstract String getDefinition();
+	
 	public static class BetheTerms
 	{
 		double E = 0;

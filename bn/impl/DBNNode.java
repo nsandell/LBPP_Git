@@ -478,28 +478,22 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		int startSpot = -1;
 		for(int t = 0; t < this.getT(); t++)
 		{
-			try
+			Object value = this.innerNode.getValue(t);
+			if(startSpot==-1 && value!=null)
+				startSpot = t;
+			else if(startSpot!=-1 && value==null)
 			{
-				Object value = this.innerNode.getValue(t);
-				if(startSpot==-1 && value!=null)
-					startSpot = t;
-				else if(startSpot!=-1 && value==null)
-				{
-					ps.print(this.getName()+"("+startSpot+") =");
-					for(int i = 0; i < values.size(); i++)
-						ps.print(" "  + values.get(i));
-					ps.println();
-					startSpot =-1;
-					values.clear();
-				}
-				
-				if(value!=null)
-				{
-					values.add(value);
-				}
-			} catch(BNException e) {
-				ps.println("ERROR " + e.getMessage());
-				return;
+				ps.print(this.getName()+"("+startSpot+") =");
+				for(int i = 0; i < values.size(); i++)
+					ps.print(" "  + values.get(i));
+				ps.println();
+				startSpot =-1;
+				values.clear();
+			}
+
+			if(value!=null)
+			{
+				values.add(value);
 			}
 		}
 		
@@ -625,6 +619,50 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 					pvals[i] = ((DiscreteDBNNode)this.parents.get(i).parent).getValue(t - (this.parents.get(i).inter ? 1 : 0));
 			}
 			this.setValue(t, ((DiscreteDistribution)this.innerNode.getDistribution(t)).sample(new Distribution.ValueSet<Integer>(pvals)));
+		}
+		
+		public String getNodeDefinition()
+		{
+			String ret = this.getName()+":Discrete("+this.getCardinality()+")\n";
+			boolean inSequence = false;
+			for(int i = 0; i < this.getT(); i++)
+			{
+				if(this.innerNode.getValue(i)!=null)
+				{
+					if(inSequence)
+						ret += " " + this.innerNode.getValue(i);
+					else
+					{
+						ret += this.getName() +"("+i+") = " + this.innerNode.getValue(i);
+						inSequence = true;
+					}
+				}
+				else if(inSequence)
+				{
+					inSequence = false;
+					ret += "\n";
+				}
+			}
+			if(inSequence)
+				ret+="\n";
+			if(this.innerNode.getDistribution(0)!=this.innerNode.getDistribution(1))
+			{
+				ret += this.getName()+"__CPT__INITIAL < " +this.innerNode.getDistribution(0).getDefinition()
+					+  this.getName()+"~~"+this.getName()+"__CPT__INITIAL\n";
+			}
+			ret += this.getName()+"__CPT < " + this.innerNode.getDistribution(1).getDefinition();
+			ret += this.getName() + "~" + this.getName()+"__CPT\n\n";
+			return ret;
+		}
+
+		public String getEdgeDefinition()
+		{
+			String ret = "";
+			for(DBNNode child : this.intraChildren.keySet())
+				ret += this.getName()+"->"+child.getName()+"\n";
+			for(DBNNode child : this.interChildren.keySet())
+				ret += this.getName()+"=>"+child.getName()+"\n";
+			return ret;
 		}
 	}
 	

@@ -40,6 +40,8 @@ class StaticBayesianNetwork extends BayesianNetwork<BNNode> implements IStaticBa
 		}
 	}
 	
+	protected String getDefinitionFileHeader(){return "";}
+	
 	public void setDistribution(String nodeName, Distribution dist) throws BNException
 	{
 		BNNode node = this.getNode(nodeName);

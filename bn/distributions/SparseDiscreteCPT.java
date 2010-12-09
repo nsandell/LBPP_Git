@@ -530,10 +530,29 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 		return 0;
 	}
 	
+	@Override
+	public String getDefinition() {
+		String def = "SparseCPT("+this.getCardinality();
+		for(int i= 0; i < this.dimSizes.length; i++)
+			def += ","+this.dimSizes[i];
+		def += ")\n";
+		
+		for(java.util.Map.Entry<IndexWrapper, HashMap<Integer, Double>> entry : this.entries.entrySet())
+		{
+			int[] ind = entry.getKey().indices;
+			String conds = "";
+			for(int i = 0; i < entry.getKey().indices.length; i++)
+				conds += ind[i]+" ";
+			for(java.util.Map.Entry<Integer, Double> inner : entry.getValue().entrySet())
+				def += inner.getKey() + " " + inner.getValue() +"\n";
+		}
+		def+="****\n";
+		
+		return def;
+	}
+	
 	private int[] dimSizes;
 	private HashMap<IndexWrapper,HashMap<Integer,Double>> entries;
 	
 	private static final long serialVersionUID = 50L;
-
-
 }

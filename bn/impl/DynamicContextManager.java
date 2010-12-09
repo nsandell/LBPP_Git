@@ -74,7 +74,7 @@ public class DynamicContextManager<DistributionType extends Distribution, Messag
 	}
 
 	@Override
-	public ValueType getValue(Integer t) throws BNException {
+	public ValueType getValue(Integer t) {
 		return value.size() > t ? value.get(t) : null;
 	}
 

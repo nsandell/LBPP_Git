@@ -96,6 +96,18 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		return esum;
 	}
 	
+	public String getDefinition()
+	{
+		String str = this.getDefinitionFileHeader();
+		
+		for(BaseNodeType type : this.nodes.values())
+			str+=type.getNodeDefinition();
+		for(BaseNodeType type : this.nodes.values())
+			str+=type.getEdgeDefinition();
+		return str;
+	}
+	
+	protected abstract String getDefinitionFileHeader();
 	
 	public RunResults optimize(int maxLearnIt, double learnErrConvergence, int maxInfIt, double infErrConvergence) throws BNException
 	{

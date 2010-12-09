@@ -454,6 +454,37 @@ public class DiscreteCPT extends DiscreteDistribution
 		return E+H1-H2;
 	}
 	
+	@Override
+	public String getDefinition() {
+		try
+		{
+			String ret = "CPT("+this.getCardinality();
+			for(int i = 0; i < this.dimSizes.length; i++)
+				ret += "," + this.dimSizes[i];
+			ret += ")\n";
+
+			int[] indices = initialIndices(this.dimSizes.length);
+			do
+			{
+				String conds = "";
+				for(int i = 0; i < indices.length; i++)
+					conds += indices[i] + " ";
+				int idx = getIndex(indices, this.dimSizes);
+
+				for(int i = 0; i < this.getCardinality(); i++)
+					ret += conds + i + " " + values[idx][i] + "\n";
+
+			} while((indices=incrementIndices(indices, this.dimSizes))!=null);
+			ret += "*****\n";
+			return ret;
+			
+		} catch(BNException e)
+		{
+			System.err.println("Error writing file: Problem with CPT output");
+			return "";
+		}
+	}
+	
 	private int dimprod;
 	private int[] dimSizes;
 	private double[][] values;

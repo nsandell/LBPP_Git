@@ -232,6 +232,15 @@ public class DiscreteCPTUC extends DiscreteDistribution
 	@Override //Should have no parents so this method has no functionality.
 	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer value) throws BNException{}
 	
+	@Override
+	public String getDefinition() {
+		String ret = "PV("+this.getCardinality()+")\n"+dist[0]+" ";
+		for(int i = 1; i < dist.length; i++)
+			ret += dist[i]+" ";
+		ret += "\n";
+		return ret;
+	}
+	
 	private static final long serialVersionUID = 50L;
 	private final double[] dist;
 

@@ -149,7 +149,7 @@ public class DiscreteNode<Context> implements InnerNode<Context>, Serializable
 		this.contextManager.clearValue(ctxt);
 	}
 	
-	public Integer getValue(Context ctxt) throws BNException
+	public Integer getValue(Context ctxt)
 	{
 		return this.contextManager.getValue(ctxt);
 	}

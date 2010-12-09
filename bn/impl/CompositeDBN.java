@@ -63,6 +63,8 @@ public class CompositeDBN implements IDynBayesNet {
 		}
 	}
 	
+	public String getDefinition(){return null;}//TODO ???
+	
 	@Override
 	public double getLogLikelihood()
 	{

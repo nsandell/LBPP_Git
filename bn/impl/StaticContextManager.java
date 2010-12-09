@@ -66,7 +66,7 @@ public class StaticContextManager<DistributionType extends Distribution, Message
 	}
 
 	@Override
-	public ValueType getValue(Void context) throws BNException {
+	public ValueType getValue(Void context) {
 		return value;
 	}
 

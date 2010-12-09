@@ -220,6 +220,28 @@ public class UniversalCommandHandlers {
 		private static int[] groups = new int[]{1};
 	}
 	
+	static class DefinitionPrinter extends MethodWrapperHandler<Object>
+	{
+		DefinitionPrinter(IBayesNet<?> net) throws Exception
+		{
+			super(net,IBayesNet.class.getMethod("getDefinition", new Class[]{}),
+					new String[]{},null);
+		}
+		
+		@Override 
+		protected void handleReturn(PrintStream pr)
+		{
+			pr.println((String)this.retObj);
+		}
+		
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+		
+		private static Pattern patt = Pattern.compile("^\\s*print\\s*$");
+		private static int[] groups = new int[]{};
+	}
+	
 	static class NetLLGetter extends MethodWrapperHandler<Object>
 	{
 		NetLLGetter(IBayesNet<?> net) throws Exception

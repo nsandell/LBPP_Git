@@ -37,6 +37,8 @@ public interface IBayesNet<BaseInterface> extends Printable
 	
 	public double getLogLikelihood() throws BNException;
 	
+	public String getDefinition();
+	
 	/**
 	 * Set the conditional distribution for use by a node.
 	 * @param nodeName The name of a node to use.

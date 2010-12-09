@@ -34,5 +34,5 @@ public interface InnerNode<Context>
 	void setValue(Context ctxt, Object value) throws BNException;
 	void clearValue();
 	void clearValue(Context ctxt) throws BNException;
-	Object getValue(Context ctxt) throws BNException;
+	Object getValue(Context ctxt);
 }

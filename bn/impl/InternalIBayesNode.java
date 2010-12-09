@@ -74,6 +74,9 @@ interface InternalIBayesNode extends IBayesNode
 	
 	public double betheFreeEnergy() throws BNException;
 	
+	public String getNodeDefinition();
+	public String getEdgeDefinition();
+	
 	/**
 	 * Clear the observation this node holds.
 	 */

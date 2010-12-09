@@ -457,10 +457,14 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		return E+H1-H2;
 	}
 	
+	@Override
+	public String getDefinition() {
+		return "NoisyOr()\n"+this.c+"\n";
+	}
+	
 	private double c;
 	private double q;
 	
 	private static final long serialVersionUID = 50L;
-
 
 }

@@ -33,7 +33,7 @@ public interface ContextManager<DistributionType extends Distribution, ContextTy
 	
 	boolean isObserved(ContextType context);
 	
-	ValueType getValue(ContextType context) throws BNException;
+	ValueType getValue(ContextType context);
 	void setValue(ContextType context, ValueType value) throws BNException;
 	void clearValue(ContextType context) throws BNException;
 	void clearValue();

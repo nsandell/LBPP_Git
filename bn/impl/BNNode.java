@@ -136,13 +136,7 @@ abstract class BNNode implements InternalIBayesNode
 	
 	public Object getValue() throws BNException
 	{
-		try
-		{
-			return this.inner.getValue(null);
-		} catch(BNException e) {
-			System.err.println("Unexpected exception thrown while getting a value from static bayesian node.");
-			return null;
-		}
+		return this.inner.getValue(null);
 	}
 	
 	public void setValue(Object value) throws BNException
@@ -197,19 +191,15 @@ abstract class BNNode implements InternalIBayesNode
 	public void sample() throws BNException
 	{
 	}
-	
+
 	@Override
 	public final void print(PrintStream ps)
 	{
 		this.printCreation(ps);
-	
-		try{
-			if(this.inner.getValue(null)!=null)
-				ps.print(this.getName() + " = " + this.inner.getValue(null));
-		}catch(BNException e) {
-			ps.println("ERROR PRINTING VALUE OF " + this.getName());
-		}
-		
+
+		if(this.inner.getValue(null)!=null)
+			ps.print(this.getName() + " = " + this.inner.getValue(null));
+
 		ps.print(this.getName() + "___CPD <");
 		this.inner.getDistribution(null).print(ps);
 		ps.println(this.getName() + " ~ " + this.getName()+"___CPD");
@@ -289,11 +279,31 @@ abstract class BNNode implements InternalIBayesNode
 		{
 			return this.inner.betheFreeEnergy(null);
 		}
-		
+
 		public void sample() {
 			//TODO make this work - will not with a hashmap because of the ordering.
 		}
+
+		public String getNodeDefinition()
+		{
+			String ret =  this.getName() + ":Discrete(" + this.getCardinality() + ")\n";
+			ret += this.getName() + "__CPT < " + this.inner.getDistribution(null).getDefinition();
+			ret += this.getName() + "~" + this.getName() + "__CPT\n";
+			if(this.inner.getValue(null)!=null)
+				ret += this.getName() + "=" + this.inner.getValue(null).toString() + "\n";
+			ret+="\n";
+			return ret;
+		}
+
+		public String getEdgeDefinition()
+		{
+			String ret = "";
+			for(BNNode child : this.children.keySet())
+				ret += this.getName()+"->"+child.getName()+"\n";
+			return ret;
+		}
 	}
+	
 	
 	private static final long serialVersionUID = 50L;
 	

@@ -41,6 +41,9 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynBay
 				pr.println(node.getName() + "->" + child.getName());
 		}
 	}
+	
+	
+	protected String getDefinitionFileHeader(){return ""+T+"\n\n";}
 
 	public void addInterEdge(String fromname, String toname) throws BNException
 	{

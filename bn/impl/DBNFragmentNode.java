@@ -149,6 +149,9 @@ abstract class DBNFragmentNode extends DBNNode {
 			return (DiscreteMessage)this.innerNode.getMarginal(t);
 		}
 		
+		public String getNodeDefinition(){return null;}//TODO Implement these I guess?
+		public String getEdgeDefinition(){return null;}
+		
 		public void sample(int t) throws BNException
 		{
 			Integer[] pvals;

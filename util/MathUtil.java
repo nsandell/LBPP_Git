@@ -82,6 +82,15 @@ public class MathUtil
 			innersum += Math.exp(vals[i]-max);
 		return max+Math.log(innersum);	
 	}
+	
+	public static double logsum(double[] vals, int maxi)
+	{
+		double maxv = vals[maxi];
+		double innersum = 0;
+		for(int i = 0; i < vals.length; i++)
+			innersum += Math.exp(vals[i]-maxv);
+		return maxv+Math.log(innersum);
+	}
 	/*
 	public static Matrix normalVector(int len)
 	{

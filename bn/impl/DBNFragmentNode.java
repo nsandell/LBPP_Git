@@ -171,6 +171,11 @@ abstract class DBNFragmentNode extends DBNNode {
 		}
 		
 		private static final long serialVersionUID = 50L;
+
+		@Override
+		double getLLAdjust() throws BNException {
+			throw new BNException("LLAdjustment not implemented for fragment nodes yet!");
+		}
 	}
 
 	protected abstract Message getBlankMessage();

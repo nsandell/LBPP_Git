@@ -309,6 +309,48 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		}
 	}
 	
+	private static final void computeLR(double[] c, double[] R, double[] L)
+	{
+		int l = c.length;
+		if(l==0)
+			return;
+		double[] clc = new double[l];
+		double[] tmpR = new double[l];
+		double[] tmpL = new double[l];
+		
+		for(int i = 0; i < l; i++)
+			clc[i] = c[i]*Math.log(c[i]);
+		
+		R[0] = c[0];
+		L[0] = clc[0];
+		for(int i = 1; i < l; i++)
+		{
+			R[0] += c[i];
+			L[0] += clc[i];
+			R[i] =0; L[i] = 0;
+		}
+		for(int i = 1; i < l; i++)
+		{
+			for(int j = 0; j < i; j++)
+			{
+				tmpR[j] = R[j];
+				tmpL[j] = L[j];
+			}
+			for(int j = 0; j < l-1; j++)
+			{
+				tmpR[0] -= c[j];
+				tmpL[0] -= clc[j];
+				for(int k = 1; k < i; k++)
+				{
+					tmpR[k] -= c[j]*tmpR[k-1];
+					tmpL[k] -= clc[j]*tmpR[k-1]+c[j]*tmpL[k-1];
+				}
+				L[i] += clc[j]*tmpR[i-1]+c[j]*tmpL[i-1];
+				R[i] += c[j]*tmpR[i-1];
+			}
+		}
+	}
+	
 	@Override
 	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis,
 			DiscreteMessage local_lambda, DiscreteMessage marginal,Integer value, int numChildren)
@@ -354,8 +396,9 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			double pf1 = pf[i][1]/pfsum;
 			double pf0 = pf[i][0]/pfsum;
 
-			E -= pf0*Math.log(p0);
-			if(i>0)
+			if(p0 > 0)
+				E -= pf0*Math.log(p0);
+			if(p1 > 0)
 				E -= pf1*Math.log(p1);
 
 			if(pf0 > 0)
@@ -368,13 +411,14 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		 * Find the number of parents who are certainly 0 or certainly 1.  From here on out
 		 * we treat less than < 1e-8 as 0 and > (1-1e-8) as 1 for stability
 		 */
+		double tolerance = 1e-16;
 		int num0Pi = 0; //Number of parents who are certainly 1
 		int num1Pi = 0; //Number of parents who are certainly 0
 		for(int i = 0; i < incoming_pis.size(); i++)
 		{
-			if(incoming_pis.get(i).getValue(0) < 1e-8)
+			if(incoming_pis.get(i).getValue(0) < tolerance)
 				num0Pi++;			
-			else if(1-incoming_pis.get(i).getValue(1) < 1e-8)
+			else if(incoming_pis.get(i).getValue(1) < tolerance)
 				num1Pi++;
 		}
 		int numPiUnk = incoming_pis.size()-num0Pi-num1Pi; //Number of uncertain parents
@@ -390,12 +434,11 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		for(int i = 0; i < incoming_pis.size(); i++)
 		{
 			double pi0 = incoming_pis.get(i).getValue(0); double pi1 = incoming_pis.get(i).getValue(1);
-			if(pi0 < 1e-8 || 1-pi1 < 1e-8)
+			if(pi0 < tolerance || pi1 < tolerance)
 				continue;
 			
 			eta *= pi0/(pi0+pi1);
 			c[idx] = pi1/pi0;
-
 			idx++;
 		}
 		double logEta = Math.log(eta);
@@ -406,24 +449,12 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		 * L[i] = the sum of the products of all subsets of set c (times a log of one element) of size i (times i-1 factorial)
 		 * factorials[i] = i!
 		 */
-		double[] R = new double[incoming_pis.size()+1-num0Pi-num1Pi];
-		double[] L = new double[incoming_pis.size()+1-num0Pi-num1Pi];
-		double[] factorials = new double[incoming_pis.size()+1-num0Pi-num1Pi];
-		R[0] = 1;
-		factorials[0] = 1;
-		for(int i = 1; i < incoming_pis.size()+1-num0Pi-num1Pi; i++)
-		{
-			factorials[i] = factorials[i-1]*i;
-			for(int k = 0; k < incoming_pis.size()-num0Pi-num1Pi; k++)
-			{
-				double tmp = 0;
-				for(int j = 0; j < i; j++)
-					tmp = R[j]-j*c[k]*tmp;
-				R[i] += c[k]*tmp;
-				L[i] += c[k]*Math.log(c[k])*tmp;
-			}
-		}
-		
+		//TODO This appears to numerical stability issues that can be fixed as addressed.  May need to consider using some 
+		// log calculations if indeed that is even possible *sigh*
+		double[] R = new double[numPiUnk+1];
+		double[] L = new double[numPiUnk+1];
+		computeLR(c, R, L);
+	
 		/**
 		 * Compute the portion of H1 that corresponds to the conditional entropy of the parents
 		 * given the number of parents active.  Note we only iterate over the possible number of
@@ -436,7 +467,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			{
 				if(i-num0Pi > 0 && i < pn.length-1)
 				{
-					double lstar = eta/pn[i]*((logEta-Math.log(pn[i]))*R[i-num0Pi]/factorials[i-num0Pi]+L[i-num0Pi]/factorials[i-num0Pi-1]);
+					double lstar = eta/pn[i]*((logEta-Math.log(pn[i]))*R[i-num0Pi-1]+L[i-num0Pi-1]);
 					H1 += pi*lstar;
 				}
 			}

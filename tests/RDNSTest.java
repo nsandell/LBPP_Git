@@ -3,7 +3,6 @@ package tests;
 import java.io.File;
 import java.net.InetAddress;
 
-
 public class RDNSTest {
 	public static void main(String[] args) throws Exception
 	{

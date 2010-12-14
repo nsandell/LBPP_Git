@@ -67,6 +67,8 @@ public interface IBayesNet<BaseInterface> extends Printable
 	 */
 	public void sample() throws BNException;
 	
+	public void sample(String name) throws BNException;
+	
 	/**
 	 * Clear all the observations set in this network.  Destroys the values the nodes hold.
 	 */

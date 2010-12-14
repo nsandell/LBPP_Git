@@ -27,6 +27,7 @@ public interface InnerNode<Context>
 	void setDistribution(Context ctxt, Distribution dist) throws BNException;
 	Distribution getDistribution(Context ctxt);
 	
+	double getLLAdjust(Context ctxt);
 	double getMarginalNorm(Context ctxt) throws BNException;
 	double betheFreeEnergy(Context ctxt) throws BNException;
 	void resetMessages();

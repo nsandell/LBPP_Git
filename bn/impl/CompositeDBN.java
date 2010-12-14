@@ -78,6 +78,12 @@ public class CompositeDBN implements IDynBayesNet {
 		return 0;
 	}
 	
+	@Override
+	public double getHMMLLAppx()
+	{
+		return 0; //TODO Implement
+	}
+	
 	private DBNFragment localFragment;
 
 	@Override
@@ -153,6 +159,17 @@ public class CompositeDBN implements IDynBayesNet {
 		try {
 			for(int i = 0; i < fragments.length; i++)
 				fragments[i].sample();
+		} catch(RemoteException e) {
+			throw new BNException("RMI Error while sampling : " + e.getMessage());
+		}
+	}
+	
+	@Override
+	public void sample(String node) throws BNException
+	{
+		try {
+			for(int i = 0; i < fragments.length; i++)
+				fragments[i].sample(node);
 		} catch(RemoteException e) {
 			throw new BNException("RMI Error while sampling : " + e.getMessage());
 		}

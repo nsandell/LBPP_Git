@@ -10,41 +10,36 @@ import bn.distributions.ScalarNoisyOr;
 import bn.impl.BayesNetworkFactory;
 import bn.messages.DiscreteMessage;
 
-public class BetheTest2 {
+public class BetheTestNumericalStability {
 
 	public static void main(String[] args) throws BNException
 	{
-		IStaticBayesNet bn = BayesNetworkFactory.getStaticNetwork();
-		bn.addDiscreteNode("S", 2);
-		bn.addDiscreteNode("R", 2);
-		bn.addDiscreteNode("R2", 2);
-		bn.addDiscreteNode("R3", 2);
-		bn.addDiscreteNode("W", 2);
-		
-		bn.addEdge("S","W");
-		bn.addEdge("R","W");
-		bn.addEdge("R2","W");
-		bn.addEdge("R3","W");
-		
-		
-		bn.setDistribution("S", new DiscreteCPTUC(new double[]{.6, .4}));
-		bn.setDistribution("R", new DiscreteCPTUC(new double[]{.8, .2}));
-		bn.setDistribution("R2", new DiscreteCPTUC(new double[]{.9, .1}));
-		bn.setDistribution("R3", new DiscreteCPTUC(new double[]{.7, .3}));
-		//bn.setDistribution("W", new DiscreteCPT(new int[]{2,2},2,new double[][]{{1, 0},{.1, .9},{.1, .9},{.01, .99}}));
-		bn.addEvidence("W", 0);
-		bn.addEvidence("S", 0);
-		bn.addEvidence("R", 0);
-		bn.setDistribution("W", new ScalarNoisyOr(.9));
-		
-		bn.validate();
-		RunResults rr = bn.run(100, 0);
-		System.out.println(rr.numIts + " : " + rr.error);
-		System.out.println(((DiscreteMessage)bn.getMarginal("S")).getValue(0));
-		System.out.println(((DiscreteMessage)bn.getMarginal("R")).getValue(0));
-		System.out.println(((DiscreteMessage)bn.getMarginal("W")).getValue(0));
-		System.out.println("BE : " + bn.getLogLikelihood());
-		
+		for(int N = 3 ; N < 40; N++)
+		{
+			IStaticBayesNet bn = BayesNetworkFactory.getStaticNetwork();
+			bn.addDiscreteNode("Child", 2);
+
+			for(int i = 0; i < N; i++)
+			{
+				bn.addDiscreteNode("Parent"+i, 2);
+				bn.addEdge("Parent"+i, "Child");
+				bn.setDistribution("Parent"+i, new DiscreteCPTUC(new double[]{1-1e-4,1e-4}));
+			}
+			bn.setDistribution("Parent0", new DiscreteCPTUC(new double[]{1e-4,1-1e-4}));
+
+			bn.addEvidence("Child", 0);
+			bn.setDistribution("Child", new ScalarNoisyOr(.9));
+
+			bn.validate();
+			RunResults rr = bn.run(100, 0);
+			System.out.println("N : " + N);
+			System.out.println(rr.numIts + " : " + rr.error);
+			System.out.println("BE : " + bn.getLogLikelihood());
+			bn.addEvidence("Child", 1);
+			rr = bn.run(100, 0);
+			System.out.println(rr.numIts + " : " + rr.error);
+			System.out.println("BE : " + bn.getLogLikelihood());
+		}
 		/*IDynBayesNet dbn = BayesNetworkFactory.getDynamicNetwork(2);
 		dbn.addDiscreteNode("X", 2);
 		dbn.addDiscreteNode("Y", 2);

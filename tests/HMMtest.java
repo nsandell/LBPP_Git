@@ -81,6 +81,7 @@ public class HMMtest {
 				dbn.run_parallel_block(100,0);
 			}
 			System.out.println("BFE : " + dbn.getLogLikelihood());
+			System.out.println("LL APPX: " + dbn.getHMMLLAppx());
 		}
 		catch(BNException e) {
 			System.err.println("Error while running HMMtest : " + e.toString());

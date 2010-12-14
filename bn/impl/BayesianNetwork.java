@@ -59,6 +59,11 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		frontierSample(new HashSet<InternalIBayesNode>(), frontier);
 	}
 	
+	public void sample(String name) throws BNException
+	{
+		this.nodes.get(name).sample();
+	}
+	
 	private void frontierSample(HashSet<InternalIBayesNode> marks, ArrayList<InternalIBayesNode> frontier) throws BNException
 	{
 		ArrayList<InternalIBayesNode> newFrontier = new ArrayList<InternalIBayesNode>();

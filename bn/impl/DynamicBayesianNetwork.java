@@ -42,6 +42,22 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynBay
 		}
 	}
 	
+	public double getHMMLLAppx() throws BNException
+	{
+		double ll = 0;
+		for(DBNNode nd : this.dnodes.values())
+			nd.chooseLLPath();
+		for(DBNNode nd : this.dnodes.values())
+		{
+			if(nd.numParents()==0)
+			{
+				double tmp = nd.getLLAdjust();
+				ll += tmp;
+			}
+		}
+		return ll;
+	}
+	
 	
 	protected String getDefinitionFileHeader(){return ""+T+"\n\n";}
 

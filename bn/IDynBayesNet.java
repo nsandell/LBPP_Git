@@ -28,6 +28,8 @@ public interface IDynBayesNet extends IBayesNet<IBayesNode>
 	 */
 	void addIntraEdge(String from, String to) throws BNException;
 	
+	public double getHMMLLAppx() throws BNException;
+	
 	/**
 	 * Add a dependency from a node in time slices t+1 to another node
 	 * in time slices t.

@@ -18,6 +18,7 @@ public class DynamicContextManager<DistributionType extends Distribution, Messag
 		this.T = local_lambda.size();
 		this.local_lambda = local_lambda;
 		this.local_pi = local_pi;
+		this.llNorm = new double[this.T];
 		this.incoming_lambdas = new ArrayList<Vector<MessageType>>(local_pi.size());
 		this.incoming_pis = new ArrayList<Vector<MessageType>>(local_pi.size());
 		this.outgoing_lambdas = new ArrayList<Vector<MessageType>>(local_pi.size());
@@ -192,6 +193,16 @@ public class DynamicContextManager<DistributionType extends Distribution, Messag
 			this.value.set(t, null);
 	}
 	
+	@Override
+	public void setLLNormalization(Integer context, double value) {
+		this.llNorm[context] = value;
+	}
+
+	@Override
+	public double getLLNormalization(Integer context) {
+		return this.llNorm[context];
+	}
+	
 	public void setInitialDistribution(DistributionType init)
 	{
 		this.initial = init;
@@ -223,6 +234,7 @@ public class DynamicContextManager<DistributionType extends Distribution, Messag
 	}
 	
 	private int T;
+	private double[] llNorm;
 	private DistributionType initial = null;
 	private DistributionType advance = null;
 	private ArrayList<ValueType> value = null;

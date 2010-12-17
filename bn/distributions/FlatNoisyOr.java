@@ -4,7 +4,6 @@ import java.io.PrintStream;
 import java.util.Vector;
 
 import bn.BNException;
-import bn.distributions.ScalarNoisyOr.ScalarNoisyOrSuffStat;
 import bn.messages.DiscreteMessage;
 
 public class FlatNoisyOr extends DiscreteDistribution {
@@ -156,120 +155,53 @@ public class FlatNoisyOr extends DiscreteDistribution {
 			Integer value, int numChildren) throws BNException {
 		double E = 0, H1 = 0, H2 = 0;
 
-		/**
-		 * Compute the probability of the number of parents active given the evidence
-		 * "above" and including the parents.
-		 */
-		double[] pn = ScalarNoisyOrSuffStat.computePN(incoming_pis);
-		double pnsum = 0;
-		for(int i = 0; i < pn.length; i++)
-			pnsum += pn[i];
-		for(int i = 0;i < pn.length; i++)
-			pn[i] /= pnsum;
+
+		double pi0 = 1;
+		double HX = 0;
+		for(int i = 0; i < incoming_pis.size(); i++)
+		{
+			double tmp1 = incoming_pis.get(i).getValue(0);
+			double tmp2 = incoming_pis.get(i).getValue(1);
+			tmp1 /= (tmp1+tmp2);
+			tmp2 /= (tmp1+tmp2);
+			
+			pi0 *= tmp2;
+			
+			if(tmp1 > 0)
+				HX -= tmp1*Math.log(tmp1);
+			if(tmp2 > 0)
+				HX -= tmp2*Math.log(tmp2);
+		}
+		double pi1 = 1 - pi0;
 	
 		/**
 		 * Compute the marginal over this node and the number of active parents
 		 * given the evidence below and above.
 		 */
-		double[][] pf = new double[pn.length][2];
-		double pfsum = 0;
-		for(int i = 0; i < pn.length; i++)
-		{
-			double ptmp = i > 0 ? c : 1-c;//this.getProbability1(i);
-			pf[i][0] = pn[i]*(1-ptmp)*local_lambda.getValue(0);
-			pf[i][1] = pn[i]*(ptmp)*local_lambda.getValue(1);
-			pfsum += pf[i][0] + pf[i][1];
-		}
+		double pi0y0gE = pi0*local_lambda.getValue(0);
+		double pi1y0gE = pi1*local_lambda.getValue(0)*(1-c);
+		double pi1y1gE = pi1*local_lambda.getValue(1)*c;
+		pi0y0gE = pi0y0gE/(pi0y0gE+pi1y0gE+pi1y1gE);
 		
+		if(pi0y0gE > 0)
+			H1 += pi0y0gE*Math.log(pi0y0gE);
+		if(pi1y0gE > 0)
+			H1 += pi1y0gE*Math.log(pi1y0gE);
+		if(pi1y1gE > 0)
+			H1 += pi1y1gE*Math.log(pi1y1gE);
 		/**
 		 * Compute both the energy term 
 		 * E = \sum_{parents,thisnode} marginal(parents,thisnode | evidence) log[p(thisnode|parents)]
 		 * and the portion of the H1 entropy term that corresponds to the join entropy over this node
 		 * and the number of active parents.
-		 */
-		for(int i = 0; i < pn.length; i++)
-		{
-			double p1 = i > 0  ? c : 1-c;//this.getProbability1(i);
-			double p0 = 1-p1;
-			double pf1 = pf[i][1]/pfsum;
-			double pf0 = pf[i][0]/pfsum;
-
-			if(p0 > 0)
-				E -= pf0*Math.log(p0);
-			if(p1 > 0)
-				E -= pf1*Math.log(p1);
-
-			if(pf0 > 0)
-				H1 += pf0*Math.log(pf0);
-			if(pf1 > 0)
-				H1 += pf1*Math.log(pf1);
-		}
+		 */	
+		E = -(pi1y0gE*Math.log(1-this.c)+pi1y1gE*Math.log(this.c));
 	
-		/**
-		 * Find the number of parents who are certainly 0 or certainly 1.  From here on out
-		 * we treat less than < 1e-8 as 0 and > (1-1e-8) as 1 for stability
-		 */
-		double tolerance = 1e-8;
-		int num0Pi = 0; //Number of parents who are certainly 1
-		int num1Pi = 0; //Number of parents who are certainly 0
-		for(int i = 0; i < incoming_pis.size(); i++)
-		{
-			if(incoming_pis.get(i).getValue(0) < tolerance)
-				num0Pi++;			
-			else if(incoming_pis.get(i).getValue(1) < tolerance)
-				num1Pi++;
-		}
-		int numPiUnk = incoming_pis.size()-num0Pi-num1Pi; //Number of uncertain parents
-		
-		/**
-		 * Compute the eta and c constants, used to calculate the entropy of the parents conditioned
-		 * on evidence and the number of active parents.  This ignores both parents certainly 0 and
-		 * parents certainly 1, as these don't contribute to entropy.
-		 */
-		double eta = 1;
-		double[] c = new double[numPiUnk];
-		int idx = 0;
-		for(int i = 0; i < incoming_pis.size(); i++)
-		{
-			double pi0 = incoming_pis.get(i).getValue(0); double pi1 = incoming_pis.get(i).getValue(1);
-			if(pi0 < tolerance || pi1 < tolerance)
-				continue;
-			
-			eta *= pi0/(pi0+pi1);
-			c[idx] = pi1/pi0;
-			idx++;
-		}
-		double logEta = Math.log(eta);
-		
-		/**
-		 * Compute R and L constant sets
-		 * R[i] = the sum of the products of all subsets of set c of size i (times i factorial)
-		 * L[i] = the sum of the products of all subsets of set c (times a log of one element) of size i (times i-1 factorial)
-		 * factorials[i] = i!
-		 */
-		//TODO This appears to numerical stability issues that can be fixed as addressed.  May need to consider using some 
-		// log calculations if indeed that is even possible *sigh*
-		double[] R = new double[numPiUnk+1];
-		double[] L = new double[numPiUnk+1];
-		computeLR(c, R, L);
-	
-		/**
-		 * Compute the portion of H1 that corresponds to the conditional entropy of the parents
-		 * given the number of parents active.  Note we only iterate over the possible number of
-		 * parents active given any known parent values.
-		 */
-		for(int i = num0Pi; i < pn.length-num1Pi; i++)
-		{
-			double pi = (pf[i][0]+pf[i][1])/pfsum;
-			if(pi > 0)
-			{
-				if(i-num0Pi > 0 && i < pn.length-1)
-				{
-					double lstar = eta/pn[i]*((logEta-Math.log(pn[i]))*R[i-num0Pi-1]+L[i-num0Pi-1]);
-					H1 += pi*lstar;
-				}
-			}
-		}
+		double HI = 0;
+		if(pi0 > 0 && pi0 < 1)
+			HI = -(pi0*Math.log(pi0)+pi1*Math.log(pi1));
+		if(pi0!=1)
+			H1 += pi1y1gE/(1-pi0)*(HX-HI);
 		
 		/**
 		 * Compute H2, the negative marginal entropy of this node times factor q
@@ -287,55 +219,5 @@ public class FlatNoisyOr extends DiscreteDistribution {
 		return E+H1-H2;
 	}
 	
-	private static final void computeLR(double[] c, double[] R, double[] L)
-	{
-		int l = c.length;
-		if(l==0)
-			return;
-		double[] clc = new double[l];
-		double[] tmpR = new double[l];
-		double[] tmpL = new double[l];
-		
-		for(int i = 0; i < l; i++)
-			clc[i] = c[i]*Math.log(c[i]);
-		
-		R[0] = c[0];
-		L[0] = clc[0];
-		for(int i = 1; i < l; i++)
-		{
-			R[0] += c[i];
-			L[0] += clc[i];
-			R[i] =0; L[i] = 0;
-		}
-		for(int i = 1; i < l; i++)
-		{
-			for(int j = 0; j < i; j++)
-			{
-				tmpR[j] = R[j];
-				tmpL[j] = L[j];
-			}
-			//for(int j = 0; j < l-1; j++)
-			for(int j = l-1; j > 0; j--)
-			{
-				tmpR[0] -= c[j];
-				//if(tmpR[0] <= 0){tmpR[0] = 0;break;}
-				tmpL[0] -= clc[j];
-				for(int k = 1; k < i; k++)
-				{
-					tmpR[k] -= c[j]*tmpR[k-1];
-					tmpL[k] -= clc[j]*tmpR[k-1]+c[j]*tmpL[k-1];
-				}
-				//double add_in = c[j]*tmpR[i-1];
-				//if(add_in/R[i] < 1e-10)
-				//	break;
-				//System.out.println(c[j]*tmpR[i-1]);
-				if(tmpR[i-1] <= 0)
-					break;
-				L[i] += clc[j]*tmpR[i-1]+c[j]*tmpL[i-1];
-				R[i] += c[j]*tmpR[i-1];
-			}
-		}
-	}
-
 	double c;  //  If any parent active... P(this is active) = c
 }

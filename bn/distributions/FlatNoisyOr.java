@@ -165,7 +165,7 @@ public class FlatNoisyOr extends DiscreteDistribution {
 			tmp1 /= (tmp1+tmp2);
 			tmp2 /= (tmp1+tmp2);
 			
-			pi0 *= tmp2;
+			pi0 *= tmp1;
 			
 			if(tmp1 > 0)
 				HX -= tmp1*Math.log(tmp1);
@@ -181,7 +181,10 @@ public class FlatNoisyOr extends DiscreteDistribution {
 		double pi0y0gE = pi0*local_lambda.getValue(0);
 		double pi1y0gE = pi1*local_lambda.getValue(0)*(1-c);
 		double pi1y1gE = pi1*local_lambda.getValue(1)*c;
-		pi0y0gE = pi0y0gE/(pi0y0gE+pi1y0gE+pi1y1gE);
+		double norm = (pi0y0gE+pi1y0gE+pi1y1gE);
+		pi0y0gE = pi0y0gE/norm;
+		pi1y0gE = pi1y0gE/norm;
+		pi1y1gE = pi1y1gE/norm;
 		
 		if(pi0y0gE > 0)
 			H1 += pi0y0gE*Math.log(pi0y0gE);

@@ -30,6 +30,19 @@ public class DynamicCommandHandlers
 		private static int[] groups = new int[]{1,2};
 		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*=>\\s*(\\w+)\\s*$");
 	}
+	
+	static class InterEdgeRemover extends Parser.MethodWrapperHandler<Object>
+	{
+		InterEdgeRemover(IDynBayesNet bn) throws Exception
+		{
+			super(bn,IDynBayesNet.class.getMethod("removeInterEdge", new Class<?>[]{String.class,String.class}),new String[]{"from node","to node"},null);
+		}
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+		private static int[] groups = new int[]{1,2};
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*!=>\\s*(\\w+)\\s*$");
+	}
 
 	static class IntraEdgeHandler extends Parser.MethodWrapperHandler<Object>
 	{
@@ -42,6 +55,19 @@ public class DynamicCommandHandlers
 		public String getPrompt() {return null;}
 		private static int[] groups = new int[]{1,2};
 		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*->\\s*(\\w+)\\s*$");
+	}
+	
+	static class IntraEdgeRemover extends Parser.MethodWrapperHandler<Object>
+	{
+		IntraEdgeRemover(IDynBayesNet bn) throws Exception
+		{
+			super(bn,IDynBayesNet.class.getMethod("removeIntraEdge", new Class<?>[]{String.class,String.class}),new String[]{"from node","to node"},null);
+		}
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+		private static int[] groups = new int[]{1,2};
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*!->\\s*(\\w+)\\s*$");
 	}
 
 	static class DiscreteNodeAdder extends Parser.MethodWrapperHandler<Object>

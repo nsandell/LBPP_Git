@@ -41,6 +41,22 @@ class StaticCommandHandlers {
 		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*->\\s*(\\w+)\\s*$");
 	}
 	
+	static class StaticEdgeRemover extends MethodWrapperHandler<Object>
+	{
+		StaticEdgeRemover(IStaticBayesNet net) throws Exception
+		{
+			super(net,IStaticBayesNet.class.getMethod("removeEdge",new Class[]{String.class,String.class}),argnames,null);
+		}
+
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+
+		private static int[] groups = new int[]{1,2};
+		private static String[] argnames = new String[]{"from node","to node"};
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*!->\\s*(\\w+)\\s*$");
+	}
+	
 	static class MarginalHandler implements ParserFunction
 	{
 		public MarginalHandler(IStaticBayesNet net)

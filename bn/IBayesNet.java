@@ -5,7 +5,6 @@ import java.util.HashMap;
 
 import bn.distributions.Distribution;
 import bn.distributions.Distribution.SufficientStatistic;
-import bn.interfaces.Printable;
 /**
  * Highest level bayesian network interface - functions that are in common both with 
  * static and dynamic bayesian networks.  Probably shouldn't be carried around by
@@ -15,8 +14,7 @@ import bn.interfaces.Printable;
  * @param <BaseInterface> This determines what interface a general node in this network
  * 						  will use.
  */
-public interface IBayesNet<BaseInterface> extends Printable
-{
+public interface IBayesNet<BaseInterface> {
 	/**
 	 * Remove a node corresonding to provided name from the network.  
 	 * @param name Name of the node to be removed
@@ -131,6 +129,7 @@ public interface IBayesNet<BaseInterface> extends Printable
 	//public double logLikelihood() throws BNException;
 	
 	public void print();
+	public void print(PrintStream ps);
 	
 	public void printDistributionInfo(String name, PrintStream ps) throws BNException;
 	

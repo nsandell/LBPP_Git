@@ -1,15 +1,13 @@
 package bn;
 
 import bn.distributions.Distribution;
-import bn.interfaces.Printable;
 
 /**
  * Basic Bayesian node interface.  Methods held by static and dynamic nodes
  * @author Nils F. Sandell
  * 
  */
-public interface IBayesNode extends Printable
-{
+public interface IBayesNode {
 	
 	/**
 	 * Get the name of this node.

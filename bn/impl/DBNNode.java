@@ -483,45 +483,6 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		}
 	}
 	
-	@Override
-	public void print(PrintStream ps)
-	{
-		this.printCreation(ps);
-		
-		Vector<Object> values = new Vector<Object>(); 
-		int startSpot = -1;
-		for(int t = 0; t < this.getT(); t++)
-		{
-			Object value = this.innerNode.getValue(t);
-			if(startSpot==-1 && value!=null)
-				startSpot = t;
-			else if(startSpot!=-1 && value==null)
-			{
-				ps.print(this.getName()+"("+startSpot+") =");
-				for(int i = 0; i < values.size(); i++)
-					ps.print(" "  + values.get(i));
-				ps.println();
-				startSpot =-1;
-				values.clear();
-			}
-
-			if(value!=null)
-			{
-				values.add(value);
-			}
-		}
-		
-		if(this.innerNode.getDistribution(0)!=this.innerNode.getDistribution(1));
-		{
-			ps.print(this.getName()+"___CPD__INIT < ");
-			this.innerNode.getDistribution(0).print(ps);
-			ps.println(this.getName() + " ~~ " + this.getName() + "___CPD__INIT");
-		}
-		ps.print(this.getName()+"___CPD__ADVA < ");
-		this.innerNode.getDistribution(1).print(ps);
-		ps.println(this.getName() + " ~ " + this.getName() + "___CPD__ADVA");
-	}
-	
 	protected abstract void printCreation(PrintStream ps);
 
 	public double updateMessages() throws BNException

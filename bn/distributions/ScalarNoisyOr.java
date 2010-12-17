@@ -54,14 +54,6 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		return (MathUtil.rand.nextDouble() < getProbability1(num1)) ? 1 : 0;
 	}
 	
-	@Override
-	public void print(PrintStream ps)
-	{
-		ps.println("NoisyOr()");
-		ps.println(this.c);
-		ps.println();
-	}
-	
 	/**
 	 * Get the probability this node is active given the number of active parents.
 	 * @param numActiveParents the number of active parents.
@@ -336,15 +328,23 @@ public class ScalarNoisyOr extends DiscreteDistribution
 				tmpR[j] = R[j];
 				tmpL[j] = L[j];
 			}
-			for(int j = 0; j < l-1; j++)
+			//for(int j = 0; j < l-1; j++)
+			for(int j = l-1; j > 0; j--)
 			{
 				tmpR[0] -= c[j];
+				//if(tmpR[0] <= 0){tmpR[0] = 0;break;}
 				tmpL[0] -= clc[j];
 				for(int k = 1; k < i; k++)
 				{
 					tmpR[k] -= c[j]*tmpR[k-1];
 					tmpL[k] -= clc[j]*tmpR[k-1]+c[j]*tmpL[k-1];
 				}
+				//double add_in = c[j]*tmpR[i-1];
+				//if(add_in/R[i] < 1e-10)
+				//	break;
+				//System.out.println(c[j]*tmpR[i-1]);
+				if(tmpR[i-1] <= 0)
+					break;
 				L[i] += clc[j]*tmpR[i-1]+c[j]*tmpL[i-1];
 				R[i] += c[j]*tmpR[i-1];
 			}
@@ -411,7 +411,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 		 * Find the number of parents who are certainly 0 or certainly 1.  From here on out
 		 * we treat less than < 1e-8 as 0 and > (1-1e-8) as 1 for stability
 		 */
-		double tolerance = 1e-16;
+		double tolerance = 1e-8;
 		int num0Pi = 0; //Number of parents who are certainly 1
 		int num1Pi = 0; //Number of parents who are certainly 0
 		for(int i = 0; i < incoming_pis.size(); i++)

@@ -38,6 +38,8 @@ public interface IDynBayesNode extends IBayesNode
 	boolean hasInterParent(IDynBayesNode child);
 	boolean hasIntraParent(IDynBayesNode child);
 	
+	public double betheFreeEnergy() throws BNException;
+	
 	/**
 	 * Get the initial distribution for this node.
 	 * @return Initial distribution, null if initial is the same as the rest of the distributions.

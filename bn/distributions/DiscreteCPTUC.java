@@ -67,16 +67,6 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		return new DiscreteCPTUC(newdist);
 	}
 	
-	@Override
-	public void print(PrintStream ps)
-	{
-		ps.println("PV("+this.getCardinality()+")");
-		ps.print(dist[0]);
-		for(int i = 1; i < this.dist.length; i++)
-			ps.print(" " + dist[i]);
-		ps.println();
-	}
-
 	/**
 	 * Get a uniform distribution probability vector.
 	 * @param The cardinality of the vector

@@ -1,31 +1,35 @@
 package tests;
 
 import bn.BNException;
-import bn.IDynBayesNet;
 import bn.IStaticBayesNet;
 import bn.IBayesNet.RunResults;
-import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.distributions.ScalarNoisyOr;
 import bn.impl.BayesNetworkFactory;
-import bn.messages.DiscreteMessage;
 
 public class BetheTestNumericalStability {
 
 	public static void main(String[] args) throws BNException
 	{
-		for(int N = 3 ; N < 40; N++)
+		for(int N = 6; N < 40; N++)
 		{
 			IStaticBayesNet bn = BayesNetworkFactory.getStaticNetwork();
 			bn.addDiscreteNode("Child", 2);
+			
+			double eps = 1e-7;
 
 			for(int i = 0; i < N; i++)
 			{
 				bn.addDiscreteNode("Parent"+i, 2);
 				bn.addEdge("Parent"+i, "Child");
-				bn.setDistribution("Parent"+i, new DiscreteCPTUC(new double[]{1-1e-4,1e-4}));
+				bn.setDistribution("Parent"+i, new DiscreteCPTUC(new double[]{1-eps,eps}));
 			}
-			bn.setDistribution("Parent0", new DiscreteCPTUC(new double[]{1e-4,1-1e-4}));
+			bn.setDistribution("Parent0", new DiscreteCPTUC(new double[]{eps,1-eps}));
+			bn.setDistribution("Parent1", new DiscreteCPTUC(new double[]{eps,1-eps}));
+			bn.setDistribution("Parent2", new DiscreteCPTUC(new double[]{eps,1-eps}));
+			bn.setDistribution("Parent3", new DiscreteCPTUC(new double[]{eps,1-eps}));
+			bn.setDistribution("Parent4", new DiscreteCPTUC(new double[]{eps,1-eps}));
+			bn.setDistribution("Parent5", new DiscreteCPTUC(new double[]{eps,1-eps}));
 
 			bn.addEvidence("Child", 0);
 			bn.setDistribution("Child", new ScalarNoisyOr(.9));

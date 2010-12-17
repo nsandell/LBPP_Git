@@ -1,7 +1,6 @@
 package bn.impl;
 
 
-import java.io.PrintStream;
 import java.util.HashMap;
 
 import bn.BNException;
@@ -23,23 +22,6 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynBay
 		this.dnodes.put(name, nd);
 		this.addNodeI(nd);
 		return nd;
-	}
-	
-	@Override
-	public void print(PrintStream pr)
-	{
-		pr.println(this.T); pr.println();
-
-		super.print(pr);
-		
-		for(DBNNode node : this.dnodes.values())
-		{
-			for(DBNNode child : node.getInterChildren())
-				pr.println(node.getName() + "=>" + child.getName());
-			
-			for(DBNNode child : node.getIntraChildren())
-				pr.println(node.getName() + "->" + child.getName());
-		}
 	}
 	
 	public double getHMMLLAppx() throws BNException

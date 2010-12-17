@@ -192,21 +192,7 @@ abstract class BNNode implements InternalIBayesNode
 	{
 	}
 
-	@Override
-	public final void print(PrintStream ps)
-	{
-		this.printCreation(ps);
-
-		if(this.inner.getValue(null)!=null)
-			ps.print(this.getName() + " = " + this.inner.getValue(null));
-
-		ps.print(this.getName() + "___CPD <");
-		this.inner.getDistribution(null).print(ps);
-		ps.println(this.getName() + " ~ " + this.getName()+"___CPD");
-	}
-	
 	protected abstract void printCreation(PrintStream ps);
-	
 	
 	public void validate() throws BNException
 	{

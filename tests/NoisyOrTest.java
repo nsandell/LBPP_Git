@@ -9,6 +9,7 @@ import bn.IDiscreteBayesNode;
 import bn.IStaticBayesNet;
 import bn.IBayesNet.RunResults;
 import bn.distributions.DiscreteCPTUC;
+import bn.distributions.FlatNoisyOr;
 import bn.distributions.ScalarNoisyOr;
 import bn.distributions.Distribution.SufficientStatistic;
 import bn.impl.BayesNetworkFactory;
@@ -17,7 +18,7 @@ public class NoisyOrTest
 {
 	public static void main(String[] args) throws BNException
 	{
-		test3();
+		test4();
 	}
 	
 	public static void test1() throws BNException
@@ -126,8 +127,8 @@ public class NoisyOrTest
 		snet.addEdge("X", "Y2");
 		
 		snet.setDistribution("X",new DiscreteCPTUC(new double[]{.7,.3}));
-		snet.setDistribution("Y",new ScalarNoisyOr(.8));
-		snet.setDistribution("Y2",new ScalarNoisyOr(.9));
+		snet.setDistribution("Y",new FlatNoisyOr(.8));
+		snet.setDistribution("Y2",new FlatNoisyOr(.9));
 		
 		y.setValue(0);
 		y2.setValue(1);
@@ -163,5 +164,29 @@ public class NoisyOrTest
 		System.out.println(rr.numIts + " iterations.");	
 		System.out.println("P(X1==1)=" + x.getMarginal().getValue(1));
 		System.out.println("P(X2==1)=" + x2.getMarginal().getValue(1));
+	}
+	
+	public static void test4() throws BNException
+	{
+		IStaticBayesNet snet = BayesNetworkFactory.getStaticNetwork();
+		IDiscreteBayesNode x1 = snet.addDiscreteNode("X1", 2);
+		IDiscreteBayesNode x2 = snet.addDiscreteNode("X2", 2);
+		IDiscreteBayesNode x3 = snet.addDiscreteNode("X3", 2);
+		snet.addDiscreteNode("Y", 2);
+		snet.addEdge("X1", "Y");
+		snet.addEdge("X2", "Y");
+		snet.addEdge("X3", "Y");
+		snet.setDistribution("X1", new DiscreteCPTUC(new double[]{.1,.9}));
+		snet.setDistribution("X2", new DiscreteCPTUC(new double[]{.5,.5}));
+		snet.setDistribution("X3", new DiscreteCPTUC(new double[]{.5,.5}));
+		snet.setDistribution("Y", new FlatNoisyOr(.9));
+		snet.validate();
+		snet.addEvidence("Y", 1);
+		snet.addEvidence("X1", 1);
+		snet.addEvidence("X3", 1);
+		snet.run(100, 0);
+		System.out.println("P(X1==1)="+x1.getMarginal().getValue(1));
+		System.out.println("P(X2==1)="+x2.getMarginal().getValue(1));
+		System.out.println("BE:"+snet.getLogLikelihood());
 	}
 }

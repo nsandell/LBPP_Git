@@ -1,7 +1,6 @@
 package tests;
 
 import bn.BNException;
-import bn.IDynBayesNet;
 import bn.IStaticBayesNet;
 import bn.IBayesNet.RunResults;
 import bn.distributions.DiscreteCPT;

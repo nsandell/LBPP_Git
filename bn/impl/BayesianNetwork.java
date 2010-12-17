@@ -32,8 +32,7 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 	
 	public void print(PrintStream ps)
 	{
-		for(BaseNodeType nd : this.nodes.values())
-			nd.print(ps);
+		ps.print(this.getDefinition());
 	}
 	
 	public void print()

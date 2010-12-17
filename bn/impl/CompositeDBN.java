@@ -63,6 +63,15 @@ public class CompositeDBN implements IDynBayesNet {
 		}
 	}
 	
+	
+	public void print(){
+		//TODO Implement
+	}
+	
+	public void print(PrintStream ps){
+		//TODO Implement
+	}
+	
 	public String getDefinition(){return null;}//TODO ???
 	
 	@Override
@@ -86,16 +95,6 @@ public class CompositeDBN implements IDynBayesNet {
 	
 	private DBNFragment localFragment;
 
-	@Override
-	public void print(PrintStream pr)
-	{
-		this.localFragment.print(pr);
-	}
-	
-	public void print()
-	{
-		this.print(System.out);
-	}
 	
 	@Override
 	public void removeNode(String name) throws BNException {

@@ -1,13 +1,10 @@
 package bn.distributions;
 
 import java.io.PrintStream;
-import java.io.Serializable;
-
 import java.util.ArrayList;
 import java.util.Vector;
 
 import bn.BNException;
-import bn.interfaces.Printable;
 import bn.messages.DiscreteMessage;
 
 /**
@@ -16,7 +13,7 @@ import bn.messages.DiscreteMessage;
  * argument type that will be cast down.
  * @author Nils F. Sandell
  */
-public interface Distribution extends Printable, Serializable
+public interface Distribution
 {
 	/**
 	 * Get an empty sufficient statistic object that this distribution can 

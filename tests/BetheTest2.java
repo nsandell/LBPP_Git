@@ -1,10 +1,8 @@
 package tests;
 
 import bn.BNException;
-import bn.IDynBayesNet;
 import bn.IStaticBayesNet;
 import bn.IBayesNet.RunResults;
-import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.distributions.ScalarNoisyOr;
 import bn.impl.BayesNetworkFactory;

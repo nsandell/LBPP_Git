@@ -1,7 +1,5 @@
 package bn.impl;
 
-import java.io.PrintStream;
-
 import bn.BNException;
 import bn.IDiscreteBayesNode;
 import bn.IStaticBayesNet;
@@ -26,18 +24,6 @@ class StaticBayesianNetwork extends BayesianNetwork<BNNode> implements IStaticBa
 		if(!(from instanceof BNNode) || !(to instanceof BNNode))
 			throw new BNException("Attempted to connect nodes of unknown type...");
 		this.addEdgeI((BNNode)from,(BNNode)to);
-	}
-	
-	@Override
-	public void print(PrintStream pr)
-	{
-		super.print(pr);
-		
-		for(BNNode node : this.nodes.values())
-		{
-			for(BNNode child : node.getChildrenI())
-				pr.println(node.getName() + "->" + child.getName());
-		}
 	}
 	
 	protected String getDefinitionFileHeader(){return "";}

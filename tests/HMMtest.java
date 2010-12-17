@@ -9,7 +9,6 @@ import bn.IDynBayesNet;
 import bn.IDynBayesNet.ParallelCallback;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
-import bn.distributions.ScalarNoisyOr;
 import bn.impl.BayesNetworkFactory;
 import bn.messages.DiscreteMessage;
 

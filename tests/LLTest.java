@@ -4,19 +4,23 @@ package tests;
 import bn.BNException;
 
 
-import bn.IBayesNode;
 import bn.IDynBayesNet;
-import bn.IBayesNet.RunResults;
-import bn.IDynBayesNet.ParallelCallback;
-import bn.distributions.DiscreteCPT;
-import bn.distributions.DiscreteCPTUC;
-import bn.distributions.ScalarNoisyOr;
-import bn.impl.BayesNetworkFactory;
-import bn.messages.DiscreteMessage;
+import bn.IDynBayesNode;
 
 public class LLTest {
 	public static void main(String[] args)
 	{
+		try
+		{
+			IDynBayesNet idbn = bn.commandline.DynamicCommandLine.loadNetwork("/Users/nsandell/bpln_dump121510-11-11-44");
+			idbn.run(100, 0);
+			IDynBayesNode nd = (IDynBayesNode)idbn.getNode("Y102");
+			System.out.println(nd.betheFreeEnergy());
+		} catch(BNException e)
+		{
+			System.err.println("ERROR " + e.toString());
+		}
+		/*
 		int length = 2500;
 		try
 		{
@@ -101,7 +105,7 @@ public class LLTest {
 		{
 			System.out.println("Error: " + error);
 		}
-		long starttime;
+		long starttime;*/
 	}
 
 }

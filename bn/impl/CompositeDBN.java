@@ -87,14 +87,7 @@ public class CompositeDBN implements IDynBayesNet {
 		return 0;
 	}
 	
-	@Override
-	public double getHMMLLAppx()
-	{
-		return 0; //TODO Implement
-	}
-	
 	private DBNFragment localFragment;
-
 	
 	@Override
 	public void removeNode(String name) throws BNException {

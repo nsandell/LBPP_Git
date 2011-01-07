@@ -163,6 +163,11 @@ public class DiscreteMessage extends Message
 		return this.message_values[index];
 	}
 	
+	public void adjustCardinality(int newCard)
+	{
+		this.message_values = new double[newCard];
+	}
+	
 	public void adopt(Message msg) throws BNException
 	{
 		if(!(msg instanceof DiscreteMessage))

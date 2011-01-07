@@ -20,6 +20,11 @@ public abstract class DiscreteDistribution implements Distribution {
 		this.cardinality = cardinality;
 	}
 	
+	protected DiscreteDistribution()
+	{
+		this.cardinality = -1;  //TODO Should we just get rid of cardinality at this level?
+	}
+	
 	/**
 	 * Get the cardinality of this distribution
 	 * @return The cardinality.

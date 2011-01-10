@@ -94,6 +94,7 @@ public class DynamicContextManager<DistributionType extends Distribution, Messag
 				msg.setInitial();
 			this.local_lambda.get(t).setInitial();
 			this.local_pi.get(t).setInitial();
+			this.marginals.get(t).setInitial();
 		}
 	}
 	

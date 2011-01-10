@@ -103,6 +103,7 @@ public class StaticContextManager<DistributionType extends Distribution, Message
 			msg.setInitial();
 		this.local_lambda.setInitial();
 		this.local_pi.setInitial();
+		this.marginal.setInitial();
 	}
 	
 	@Override

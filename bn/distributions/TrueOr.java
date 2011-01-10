@@ -147,9 +147,9 @@ public class TrueOr extends DiscreteDistribution {
 				H1 += tmp2*Math.log(tmp2);
 		}
 		
-		if(pAll0==1 && value==1)
+		if(pAll0==1 && value!=null && value==1)
 			return Double.NaN;
-		else if(pAll0==0 && value==0)
+		else if(pAll0==0 && value!=null && value==0)
 			return Double.NaN;
 		
 		/**

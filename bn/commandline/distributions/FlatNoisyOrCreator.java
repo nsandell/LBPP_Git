@@ -44,6 +44,13 @@ class FlatNoisyOrCreator implements ICPDCreator
 		return new FlatNoisyOrCreator(distMap,name);
 	}
 	
+	public String name(){return "FlatOr";}
+	public String description(){return "This command creates a \"flat noisy or\" distribution.  A flat noisy or distribution" +
+			" works with binary nodes with at least one parent, all parents must be binary.  If all parents are false (0), this" +
+			" variable is surely false.  If any parents are true (1), this node is true with probability c.\n\nEx:\n\tA<FlatOr()\n.9" +
+			"\n\nThis creates a flat noisy or distribution with parameter c=.9 and names it A.";}
+	
+	
 	private String name;
 	public final int[] getGroups() {return groups;}
 	public final Pattern getRegEx() {return patt;}

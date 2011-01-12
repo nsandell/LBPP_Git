@@ -58,6 +58,11 @@ class DiscreteCPTUCCreator implements ICPDCreator
 		}
 	}
 	
+	public String name(){return "PV";}
+	public String description(){return "Creates a distribution that is a probability vector.  A node with this distribution" +
+			" cannot have any parents, and is selected as a multinomial from the parameters.\n\nEx:\n\tA<PV(3)\n.3 .5 .2\n\n" +
+			"This creates a probability distribution that selects 0 with probability .3, etc. and names it A";}
+	
 	private String name;
 	private int cardinality;
 	public final int[] getGroups() {return groups;}

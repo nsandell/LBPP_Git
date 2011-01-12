@@ -9,6 +9,8 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 /**
@@ -74,6 +76,68 @@ public class Parser {
 		 * 		function.  Exception text should be command-line error appropriate.
 		 */
 		public ParserFunction parseLine(String[] args, PrintStream output) throws ParserException; // Return a line handler if expect more, else null
+		
+		public String name();
+		public String description();
+	}
+	
+	private static class HelpFunction implements ParserFunction
+	{
+		public HelpFunction()
+		{
+			this.addParser(this);
+		}
+		
+		private static Pattern patt = Pattern.compile("^\\s*help\\s*(\\w*)\\s*$");
+		@Override
+		public Pattern getRegEx() {return patt;}
+		private static int[] groups = {1};
+		@Override
+		public int[] getGroups() {return groups;}
+		@Override
+		public String getPrompt() {return null;}
+		@Override
+		public void finish() throws ParserException {}
+		
+		public void addParser(ParserFunction func)
+		{
+			if(!functions.containsKey(func.name()))
+				functions.put(func.name(),new ArrayList<String>());
+			functions.get(func.name()).add(func.description());
+		}
+
+		@Override
+		public ParserFunction parseLine(String[] args, PrintStream output)
+		throws ParserException {
+			if(args[0].length()==0)
+			{
+				output.println("Valid commands are:");
+				for(String key : this.functions.keySet())
+					output.println("\t"+key);
+				output.println();
+			}
+			else
+			{
+				ArrayList<String> funcDescs = this.functions.get(args[0]);
+				if(funcDescs.size()>1)
+					output.println("Multiple entries found : ");
+				for(String desc : funcDescs)
+					output.println(desc + (funcDescs.size()>0 ? "\n" :""));
+			}
+			return null;
+		}
+
+		@Override
+		public String name() {
+			return "help";
+		}
+
+		@Override
+		public String description() {
+			return "Get help on the commands offered at this prompt.";
+		}
+
+		private SortedMap<String, ArrayList<String>> functions = new TreeMap<String,ArrayList<String>>();
 	}
 	
 	/**
@@ -195,6 +259,8 @@ public class Parser {
 	public Parser(BufferedReader input, PrintStream output, PrintStream error_output, boolean breakOnException, boolean printLineNoOnError)
 	{
 		this.input = input; this.output = output; this.breakOnException = breakOnException; this.printLineNoOnError = printLineNoOnError; this.error_output = error_output;
+		this.helper = new HelpFunction();
+		this.handlers.add(helper);
 	}
 
 	/**
@@ -203,6 +269,7 @@ public class Parser {
 	 */
 	public void addHandler(ParserFunction handler)
 	{
+		this.helper.addParser(handler);
 		this.handlers.add(handler);
 	}
 
@@ -458,5 +525,6 @@ public class Parser {
 	private String prompt = null;
 	private String promptBackup;
 	private String commentStr = null;
+	private HelpFunction helper;
 	private boolean breakOnException, printLineNoOnError;
 }

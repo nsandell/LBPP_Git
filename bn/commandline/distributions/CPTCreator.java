@@ -73,6 +73,14 @@ class CPTCreator implements ICPDCreator
 		}
 	}
 	
+	public String name(){return "CPT";}
+	public String description(){return "Create a conditional probability table.  Takes a list of in-line arguments.  The first argument is the cardinality" + 
+		" of the variable that this CPT determines the distribution of.  Each successive argument defines the cardinality of the CPTs dependencies.  User must then" +
+		"supply parameters in a sparse format, e.g. dep1value dep2value dep3value ... variableValue probability.  An asterix will finalize the table.\n\n" +
+		"For example:\nA<CPT(3,2,2)\n0 0 0 .8\n0 0 1 .2\n0 1 0 .2\n0 1 1 .8\n1 0 1 .5\n1 0 2 .5\n1 1 0 .3\n 1 1 1 .4\n 1 1 2 .3\n*\n  This " +
+		"creates a CPT for a variable of size 3 that depends on two parents, each of size 2.  \"1 0 2 .5\" means that when the first parent is 1, and the" +
+		" second parent is 0, the variable will be value 2 with probability .5.  Parameters provided must be consistent and complete.";}
+	
 	private ArrayList<Entry> entries;
 	private String name;
 	private int cardinality;

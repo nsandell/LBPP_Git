@@ -29,6 +29,10 @@ public class DynamicCommandHandlers
 		public String getPrompt() {return null;}
 		private static int[] groups = new int[]{1,2};
 		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*=>\\s*(\\w+)\\s*$");
+		
+		public String name(){return "=>";}
+		public String description(){return "This command creates an 'inter-slice' edge between two nodes. For example, 'X=>Y' makes " +
+				" node X at times t influences node Y at times t+1\n";}
 	}
 	
 	static class InterEdgeRemover extends Parser.MethodWrapperHandler<Object>
@@ -42,6 +46,9 @@ public class DynamicCommandHandlers
 		public String getPrompt() {return null;}
 		private static int[] groups = new int[]{1,2};
 		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*!=>\\s*(\\w+)\\s*$");
+		
+		public String name(){return "!=>";}
+		public String description(){return "This command removes an existing interslice edge between nodes, e.g. 'X!=>Y'.";};
 	}
 
 	static class IntraEdgeHandler extends Parser.MethodWrapperHandler<Object>
@@ -55,6 +62,10 @@ public class DynamicCommandHandlers
 		public String getPrompt() {return null;}
 		private static int[] groups = new int[]{1,2};
 		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*->\\s*(\\w+)\\s*$");
+		
+		public String name(){return "->";}
+		public String description(){return "This command creates an intraslice edge between nodes, e.g. 'X->Y' means node X " +
+				"at times t influences node Y at times t.";}
 	}
 	
 	static class IntraEdgeRemover extends Parser.MethodWrapperHandler<Object>
@@ -68,6 +79,9 @@ public class DynamicCommandHandlers
 		public String getPrompt() {return null;}
 		private static int[] groups = new int[]{1,2};
 		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*!->\\s*(\\w+)\\s*$");
+		
+		public String name(){return "!->";}
+		public String description(){return "This command removes an existing 'intraslice edge between nodes, e.g. 'X!->Y'.";};
 	}
 
 	static class DiscreteNodeAdder extends Parser.MethodWrapperHandler<Object>
@@ -81,6 +95,10 @@ public class DynamicCommandHandlers
 		public String getPrompt() {return null;}
 		private static int[] groups = new int[]{1,2};
 		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*:\\s*Discrete\\((\\d+)\\)\\s*$");
+		
+		public String name(){return "Discrete";}
+		public String description(){return "Creates a discrete node with specified cardinality, e.g. X:Discrete(3) creates" +
+				" a discrete node with cardinality 3, named X";}
 	}
 
 	static class InitialDistSetter  extends Parser.MethodWrapperHandler<Distribution>
@@ -94,6 +112,11 @@ public class DynamicCommandHandlers
 		public String getPrompt() {return null;}
 		private static int[] groups = new int[]{1,2};
 		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*~~\\s*(\\w+)\\s*$");
+		
+		public String name(){return "~~";}
+		public String description(){return "Assign a distribution to be the 'initial' distribution for a variable.  This is" +
+				" necessary when a node has inter-slice parents that do not exist at time 0.  For example X~~pi assigns " +
+				"distribution pi to dictate the value of X at time 0.";}
 	}
 
 	static class ParallelRunner extends Parser.MethodWrapperHandler<Object>
@@ -115,6 +138,10 @@ public class DynamicCommandHandlers
 		public String getPrompt() {return null;}
 		private static int[] groups = new int[]{1,2};
 		private static Pattern patt = Pattern.compile("^\\s*runp\\(\\s*(\\d+)\\s*,\\s*([\\.e\\-0-9]+)\\s*\\)\\s*$");
+		
+		public String name(){return "runp";}
+		public String description(){return "The same as run, but will split the network time-wise into a number of regions" +
+				" (one for each available CPU core) and perform belief propagation.";}
 	}
 
 	static class ParallelOptimizer extends MethodWrapperHandler<Object>
@@ -139,6 +166,11 @@ public class DynamicCommandHandlers
 
 		private static Pattern patt = Pattern.compile("^\\s*learnp\\(\\s*(.*)\\s*,\\s*(.*)\\s*,\\s*(.*)\\s*,\\s*(.*)\\s*\\)\\s*$");
 		private static int[] groups = new int[]{1,2,3,4};
+		
+		public String name(){return "learnp";}
+		public String description(){return "Same as 'learn command, but will slice the network time-wise into as many segments" +
+				" as there are available cores on the machine.  Belief propagation will then be performed in parallel for each" +
+				" iteration of learning.";}
 	}
 
 
@@ -157,6 +189,11 @@ public class DynamicCommandHandlers
 
 		private static Pattern patt = Pattern.compile("^\\s*query\\(\\s*(\\w+)\\s*(,\\s*(\\d+)\\s*,\\s*(\\d+))?\\s*\\)\\s*$");
 		private static int[] groups = new int[]{1,3,4};
+		
+		public String name(){return "query";}
+		public String description(){return "Request the marginal distribution of a node, for all time or a subset of times. " +
+				"As examples, query(X) requests the marginals for node X for all time.  query(X,4,10) requests the marginals " +
+				"for node X from time steps 4 to 10.";}
 
 		public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException {
 			String nodeName = args[0];
@@ -170,12 +207,6 @@ public class DynamicCommandHandlers
 				if(te >= net.getT() || t0 < 0)
 					throw new ParserException("Requested range outside of [0,"+net.getT()+"]");
 			}
-			/*IBayesNode node = net.getNode(nodeName);
-			if(node==null)
-				throw new ParserException("Unknown node.");
-			if(!(node instanceof IDiscreteDynBayesNode))
-				throw new ParserException("Node specified is non-discrete, cannot print marginal.");
-			IDiscreteDynBayesNode dnode = (IDiscreteDynBayesNode)node;*/
 
 			try
 			{
@@ -225,6 +256,10 @@ public class DynamicCommandHandlers
 			catch(BNException e){throw new ParserException(e.getMessage());}
 			return null;
 		}
+		
+		public String name(){return "=";}
+		public String description(){return "Evidence setting operator. Set the value of a variable for " +
+				"a subset of times.  For example X(4) = 1 2 3 4 5 sets X at time 4 to 1, X at time 5 to 2, etc.";}
 
 		public void finish(){}
 		public int[] getGroups() {return groups;}
@@ -232,7 +267,6 @@ public class DynamicCommandHandlers
 		public String getPrompt() {return null;}
 
 		private static int[] groups = new int[]{1,3,4};
-		//private static Pattern patt = Pattern.compile("^\\s*(\\w+)(\\((\\d+)\\))?\\s*=\\s*\\[?\\s*((\\d+\\s*)+)\\]?\\s*$");
 		private static Pattern patt = Pattern.compile("^\\s*(\\w+)(\\((\\d+)\\))?\\s*=(.*)");
 
 		IDynBayesNet bn;

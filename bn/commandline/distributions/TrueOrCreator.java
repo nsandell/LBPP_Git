@@ -28,6 +28,11 @@ class TrueOrCreator implements ICPDCreator
 		return null;
 	}
 	
+	public String name(){return "Or";}
+	public String description(){return "Creates a true or distribution - that is all parents of this variable are binary and " +
+			"so is this variable.  When any parent is true (1) then this variable is true as well.  This variable must have " +
+			"at least one parent.\n\nEx:\n\tA < Or()\n creates an or distribution and names it A.";}
+	
 	public final int[] getGroups() {return null;}
 	public final Pattern getRegEx() {return null;}
 	public final String getPrompt() {return null;}

@@ -18,6 +18,11 @@ class StaticCommandHandlers {
 		{
 			super(bn,IStaticBayesNet.class.getMethod("addDiscreteNode", new Class<?>[]{String.class,int.class}),new String[]{"node name","node cardinality"},null);
 		}
+		
+		public String name(){return "Discrete";}
+		public String description(){return "Creates a discrete node with specified cardinality, e.g. X:Discrete(3) creates" +
+				" a discrete node with cardinality 3, named X";}
+		
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
 		public String getPrompt() {return null;}
@@ -32,6 +37,9 @@ class StaticCommandHandlers {
 			super(net,IStaticBayesNet.class.getMethod("addEdge",new Class[]{String.class,String.class}),argnames,null);
 		}
 
+		public String name(){return "->";}
+		public String description(){return "Edge addition operator.  This operator adds an edge between two variables, e.g. 'X->Y'";}
+		
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
 		public String getPrompt() {return null;}
@@ -47,6 +55,9 @@ class StaticCommandHandlers {
 		{
 			super(net,IStaticBayesNet.class.getMethod("removeEdge",new Class[]{String.class,String.class}),argnames,null);
 		}
+		
+		public String name(){return "!->";}
+		public String description(){return "Edge removal operator.  This operator removes an existing edge between two variables, e.g. 'X!->Y'";}
 
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
@@ -63,6 +74,9 @@ class StaticCommandHandlers {
 		{
 			this.net = net;
 		}
+		
+		public String name(){return "query";}
+		public String description(){return "Request the marginal distribution of a node, e.g. query(X)";}
 
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
@@ -94,6 +108,9 @@ class StaticCommandHandlers {
 			super(bn,IStaticBayesNet.class.getMethod("addEvidence", new Class<?>[]{String.class, Object.class}),
 					new Class<?>[]{String.class, Integer.class},new String[]{"node name","observation"},null);
 		}
+		
+		public String name(){return "=";}
+		public String description(){return "Evidence operator.  Set the value of a node, e.g. 'X=1'";}
 		
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}

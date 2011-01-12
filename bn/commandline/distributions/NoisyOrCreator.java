@@ -44,6 +44,13 @@ class NoisyOrCreator implements ICPDCreator
 		return new NoisyOrCreator(distMap,name);
 	}
 	
+	public String name(){return "NoisyOr";}
+	public String description(){return "Create a \"noisy or\" node.  This variable has all binary parents, and is more like to " +
+			"be found to be on (1) the more of it's parents are on.  Specifically p(var = on| parents) = 1 - c^(# Parents on).  " +
+			"This distribution needs one parameter 0 <= c <= 1, c = 1-q.  The larger the value of c the less noisy this distribution" +
+			" is.  This variable must have at least one parent.\nEx:\n\tA<NoisyOr()\n.9\n\nThis creates a noisy or distribution with" +
+			" parameter c = .9 and names it A.";}
+	
 	private String name;
 	public final int[] getGroups() {return groups;}
 	public final Pattern getRegEx() {return patt;}

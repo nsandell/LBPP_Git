@@ -22,6 +22,12 @@ public class UniversalCommandHandlers {
 													 new Class<?>[]{String.class,Distribution.class}),
 				     new String[]{"node name","distribution name"},distMap);
 		}
+		
+		public String name(){return "~";}
+		public String description(){return "Set the distribution for a node.  For example, X~A sets node X" +
+				"is distributed as distribution A.  If this is a dynamic network, and there exists" +
+				" an initial distribution, this distribution governs all time t>0.";}
+		
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
 		public String getPrompt() {return null;}
@@ -35,6 +41,9 @@ public class UniversalCommandHandlers {
 		{
 			super(net,IBayesNet.class.getMethod("resetMessages", new Class<?>[]{}),new String[]{},null);
 		}
+		
+		public String name(){return "reset";}
+		public String description(){return "Reset all the messages from the network back to initial values.";}
 		
 		public int[] getGroups(){return groups;}
 		public Pattern getRegEx(){return patt;}
@@ -51,6 +60,10 @@ public class UniversalCommandHandlers {
 			super(net,IBayesNet.class.getMethod("clearAllEvidence", new Class<?>[]{}),new String[]{},null);
 		}
 		
+		//TODO Figure out why sometimes running converges early when evidence changes.
+		public String name(){return "clearAllEvidence";}
+		public String description(){return "Clear all evidence from the network.";}
+		
 		public int[] getGroups(){return groups;}
 		public Pattern getRegEx(){return patt;}
 		public String getPrompt(){return null;}
@@ -66,6 +79,10 @@ public class UniversalCommandHandlers {
 			super(net,IBayesNet.class.getMethod("clearEvidence", new Class<?>[]{String.class}),new String[]{"Node name"},null);
 		}
 		
+		public String name(){return "clearEvidence";}
+		public String description(){return "Clear evidence from a node in the network.  For example," +
+				"clearEvidence(X) removes the observation from node X.";}
+		
 		public int[] getGroups(){return groups;}
 		public Pattern getRegEx(){return patt;}
 		public String getPrompt(){return null;}
@@ -80,6 +97,11 @@ public class UniversalCommandHandlers {
 		{
 			this.net = net;
 		}
+		
+		public String name(){return "save";}
+		public String description(){return "Print a list of commands for generating this network." +
+				"  These commands may be redirected to a file, e.g. 'save >> /home/johndoe/bayesNet'.";}
+		
 		private IBayesNet<?> net;
 		@Override
 		public Pattern getRegEx() {return regex;}
@@ -107,6 +129,9 @@ public class UniversalCommandHandlers {
 			super(net,IBayesNet.class.getMethod("sample", new Class<?>[]{}),new String[]{},null);
 		}
 		
+		public String name(){return "sample";}
+		public String description(){return "Perform Gibbs sampling on the network.  NOT IMPLEMENTED YET";}
+		
 		public int[] getGroups(){return groups;}
 		public Pattern getRegEx(){return patt;}
 		public String getPrompt(){return null;}
@@ -121,6 +146,11 @@ public class UniversalCommandHandlers {
 		{
 			super(net,IBayesNet.class.getMethod("validate", new Class<?>[]{}),new String[]{},null);
 		}
+		
+		public String name(){return "validate";}
+		public String description(){return "Validate the structure of the network.  This will ensure all" +
+				" nodes have distributions, and that those distributions match the cardinality of the node" +
+				" and its parents.  Also ensures acyclicity of the network.";}
 		
 		public int[] getGroups(){return groups;}
 		public Pattern getRegEx(){return patt;}
@@ -139,6 +169,13 @@ public class UniversalCommandHandlers {
 					new String[]{"Number of iterations","Convergence tolerance"},
 					null);
 		}
+	
+		public String name(){return "run";}
+		public String description(){return "Run belief propagation over the network that has been created.  Two parameters are to be used, " +
+				"the first dictates the maximum number of iterations of belief propagation are run.  The second is a convergence condition" +
+				" for early termination.  This condition is met when the change in all values of every marginal distribution is under the " +
+				"specified value.  For example, run(100,1e-8) will run the network until marginal value changes are under 1e-8 or 100 iterations," +
+				" whichever comes first.";}
 		
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
@@ -164,6 +201,9 @@ public class UniversalCommandHandlers {
 					new String[]{},
 					null);
 		}
+		
+		public String name(){return "run";}
+		public String description(){return "With no parameters provided, run belief propagation with default parameters of (100,0).";}
 		
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
@@ -194,6 +234,12 @@ public class UniversalCommandHandlers {
 			RunResults res = (RunResults)this.retObj;
 			pr.println("Optimized in " + res.numIts + " iterations of EM, with an error of " + res.error + " and in " + res.timeElapsed + " seconds.");
 		}
+		
+		public String name(){return "learn";}
+		public String description(){return "Peform parameter optimization via expectation-maximzation.  Takes 4 parameters, i.e. learn(10,1e-3,50,1e-6)." +
+				"  This command will perform expectation maximization by iteratively using belief propagation with paramters (50,1e-6), and after each" +
+				" iteration of belief propagation maximize the parameter set.  This will be done a maximum of 10 times, and will terminate early if every " +
+				"parameter changes by less than 1e-3.";}
 
 
 		public int[] getGroups() {return groups;}
@@ -210,6 +256,10 @@ public class UniversalCommandHandlers {
 		{
 			this.net = net;
 		}
+		
+		public String name(){return "distInfo";}
+		public String description(){return "This command gets the distribution information for a node.";}
+		
 		private IBayesNet<?> net;
 		@Override
 		public Pattern getRegEx() {return regex;}
@@ -245,6 +295,9 @@ public class UniversalCommandHandlers {
 			pr.println((Double)this.retObj);
 		}
 		
+		public String name(){return "remove";}
+		public String description(){return "Remove a node from the netowrk, e.g. remove(X).";}
+		
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
 		public String getPrompt() {return null;}
@@ -253,6 +306,7 @@ public class UniversalCommandHandlers {
 		private static int[] groups = new int[]{1};
 	}
 	
+	/*
 	static class DefinitionPrinter extends MethodWrapperHandler<Object>
 	{
 		DefinitionPrinter(IBayesNet<?> net) throws Exception
@@ -273,7 +327,7 @@ public class UniversalCommandHandlers {
 		
 		private static Pattern patt = Pattern.compile("^\\s*print\\s*$");
 		private static int[] groups = new int[]{};
-	}
+	}*/
 	
 	static class NetLLGetter extends MethodWrapperHandler<Object>
 	{
@@ -288,6 +342,10 @@ public class UniversalCommandHandlers {
 		{
 			pr.println((Double)this.retObj);
 		}
+		
+		public String name(){return "ll";}
+		public String description(){return "Get the approximate log likelihood of the evidence given the network.  The approximation" +
+				" is the 'Bethe free energy' approximation.";}
 		
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}

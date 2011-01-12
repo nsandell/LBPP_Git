@@ -42,7 +42,7 @@ public class StaticNetCommandLine
 			parser.addHandler(new UniversalCommandHandlers.EvidenceClearer(bn));
 			parser.addHandler(new UniversalCommandHandlers.NodeEvidenceClearer(bn));
 			parser.addHandler(new UniversalCommandHandlers.NetLLGetter(bn));
-			parser.addHandler(new UniversalCommandHandlers.DefinitionPrinter(bn));
+			//parser.addHandler(new UniversalCommandHandlers.DefinitionPrinter(bn));
 			parser.addHandler(new UniversalCommandHandlers.Optimizer(bn));
 			parser.addHandler(new UniversalCommandHandlers.NodeDistPrinter(bn));
 			parser.addHandler(new UniversalCommandHandlers.BNSampler(bn));

@@ -51,6 +51,10 @@ public class CPDCreator implements ParserFunction
 		ICPDCreator newCreator(String name, String argstr, HashMap<String,Distribution> distMap) throws ParserException;
 	}
 	
+	public String name(){return "<";}
+	public String description(){return "Distribution assignment operator.  Assigns a distribution to a variable name.  " +
+			"Further input will be requested as necessary.\n\nEx:\n\tA<PV(3) creates a probability vector of length 3.";}
+	
 	private HashMap<String,ICPDCreator> creators = new HashMap<String, ICPDCreator>();
 	private HashMap<String,Distribution> distmap;
 	private static int[] groups = new int[]{1,2,3};

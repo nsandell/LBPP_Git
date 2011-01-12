@@ -20,6 +20,7 @@ public class CPDCreator implements ParserFunction
 		cr.addCPDCreator("SparseCPT", SparseCPTCreator.getFactory());
 		cr.addCPDCreator("NoisyOr", NoisyOrCreator.getFactory());
 		cr.addCPDCreator("FlatNoisyOr", FlatNoisyOrCreator.getFactory());
+		cr.addCPDCreator("Or", TrueOrCreator.getFactory());
 		return cr;
 	}
 	

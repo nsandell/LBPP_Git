@@ -84,6 +84,8 @@ public class FlatNoisyOr extends DiscreteDistribution {
 	@Override
 	public void validateConditionDimensions(int[] dimensions)
 			throws BNException {
+		if(dimensions.length==0)
+			throw new BNException("Flat Noisy-Or node has no parents!");
 		for(int i = 0; i < dimensions.length; i++)
 			if(dimensions[i]!=2)
 				throw new BNException("Failed to validate conditions for flat noisy or, there is a parent not of cardinality 2!");
@@ -136,7 +138,7 @@ public class FlatNoisyOr extends DiscreteDistribution {
 				lambdas_out.get(i).setValue(0, ll0*(pAll0NotMe+(1-c)*(1-pAll0NotMe)) + ll1*c*(1-pAll0NotMe));
 				lambdas_out.get(i).setValue(1,lo1);
 			}
-			if(pAll0==0 || numZeros==1 && pieces[i] > 0)
+			else if(pAll0==0 || numZeros==1 && pieces[i] > 0)
 			{
 				lambdas_out.get(i).setValue(0, .5);
 				lambdas_out.get(i).setValue(1, .5);
@@ -156,7 +158,7 @@ public class FlatNoisyOr extends DiscreteDistribution {
 		double E = 0, H1 = 0, H2 = 0;
 
 
-		double pi0 = 1;
+		double p0 = 1;
 		double HX = 0;
 		for(int i = 0; i < incoming_pis.size(); i++)
 		{
@@ -165,58 +167,82 @@ public class FlatNoisyOr extends DiscreteDistribution {
 			tmp1 /= (tmp1+tmp2);
 			tmp2 /= (tmp1+tmp2);
 			
-			pi0 *= tmp1;
+			p0 *= tmp1;
 			
 			if(tmp1 > 0)
 				HX -= tmp1*Math.log(tmp1);
 			if(tmp2 > 0)
 				HX -= tmp2*Math.log(tmp2);
 		}
-		double pi1 = 1 - pi0;
+		double pN0 = 1 - p0;
+		double q = 1-c;
+		
 	
 		/**
 		 * Compute the marginal over this node and the number of active parents
 		 * given the evidence below and above.
 		 */
-		double pi0y0gE = pi0*local_lambda.getValue(0);
-		double pi1y0gE = pi1*local_lambda.getValue(0)*(1-c);
-		double pi1y1gE = pi1*local_lambda.getValue(1)*c;
+		double pi0y0gE = p0*local_lambda.getValue(0);
+		double pi1y0gE = pN0*local_lambda.getValue(0)*q;
+		double pi1y1gE = pN0*local_lambda.getValue(1)*c;
 		double norm = (pi0y0gE+pi1y0gE+pi1y1gE);
 		pi0y0gE = pi0y0gE/norm;
 		pi1y0gE = pi1y0gE/norm;
 		pi1y1gE = pi1y1gE/norm;
+		E = -(pi1y0gE*Math.log(q)+pi1y1gE*Math.log(this.c));
 		
+		double C = (p0+pN0*q)*local_lambda.getValue(0) + pN0*this.c*local_lambda.getValue(1);
+		double ll0 = local_lambda.getValue(0);
+		double ll1 = local_lambda.getValue(1);
+		
+		if(p0==1 && ll0==0)
+			return Double.NaN;
+		
+		double HXM = -HX;
+		if(p0 > 0)
+			HXM -= p0*Math.log(p0);
+		if(p0*ll0 > 0)
+			H1 += p0*ll0*Math.log(p0*ll0/C);
+		if(q*ll0 > 0)
+			H1 += q*ll0*(HXM+(1-p0)*Math.log(q*ll0/C));
+		if(this.c*ll1 > 0)
+			H1 += this.c*ll1*(HXM+(1-p0)*Math.log(this.c*ll1/C));
+		
+		H1 /= C;
+		
+		/*
 		if(pi0y0gE > 0)
-			H1 += pi0y0gE*Math.log(pi0y0gE);
+			H1 -= pi0y0gE*Math.log(pi0y0gE);
 		if(pi1y0gE > 0)
-			H1 += pi1y0gE*Math.log(pi1y0gE);
+			H1 -= pi1y0gE*Math.log(pi1y0gE);
 		if(pi1y1gE > 0)
-			H1 += pi1y1gE*Math.log(pi1y1gE);
+			H1 -= pi1y1gE*Math.log(pi1y1gE);
 		/**
 		 * Compute both the energy term 
 		 * E = \sum_{parents,thisnode} marginal(parents,thisnode | evidence) log[p(thisnode|parents)]
 		 * and the portion of the H1 entropy term that corresponds to the join entropy over this node
 		 * and the number of active parents.
 		 */	
-		E = -(pi1y0gE*Math.log(1-this.c)+pi1y1gE*Math.log(this.c));
-	
+		
+		//TODO Something is wrong!!
+	/*
 		double HI = 0;
 		if(pi0 > 0 && pi0 < 1)
 			HI = -(pi0*Math.log(pi0)+pi1*Math.log(pi1));
 		if(pi0!=1)
-			H1 += pi1y1gE/(1-pi0)*(HX-HI);
+			H1 -= pi1y1gE/(1-pi0)*(HX-HI);
 		
 		/**
 		 * Compute H2, the negative marginal entropy of this node times factor q
 		 * where q is the number of children (because this node must have parents).
 		 */
-		double ll0 = marginal.getValue(0);
-		double ll1 = marginal.getValue(1);
-		if(ll0 > 0 && ll1 > 0)
+		double m0 = marginal.getValue(0);
+		double m1 = marginal.getValue(1);
+		if(m0 > 0 && m1 > 0)
 		{
-			H2 = ll0*Math.log(ll0);
-			H2 += ll1*Math.log(ll1);
-			H2*=numChildren;
+			H2 = m0*Math.log(m0);
+			H2 += m1*Math.log(m1);
+			H2 *= numChildren;
 		}
 		
 		return E+H1-H2;

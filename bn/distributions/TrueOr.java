@@ -128,9 +128,13 @@ public class TrueOr extends DiscreteDistribution {
 			DiscreteMessage local_lambda, DiscreteMessage marginal,
 			Integer value, int numChildren) throws BNException {
 		double H1 = 0, H2 = 0;
+		
 		// E is always 0 here
+		// H1 = -H(X,I | Ex, Ei) = -H(X | I, Ex, Ei) - H(I|Ex,Ei)
+		// = pXNotAll0*(-H(X|Ex)+H(X!=All0|Ex))-H(I|Ex,Ei)
 		
 		double pAll0 = 1;
+		double HX = 0;
 		
 		for(int i = 0; i < incoming_pis.size(); i++)
 		{
@@ -142,30 +146,37 @@ public class TrueOr extends DiscreteDistribution {
 			pAll0 *= tmp1;
 			
 			if(tmp1 > 0)
-				H1 += tmp1*Math.log(tmp1);
+				HX -= tmp1*Math.log(tmp1);
 			if(tmp2 > 0)
-				H1 += tmp2*Math.log(tmp2);
+				HX -= tmp2*Math.log(tmp2);
 		}
 		
-		if(pAll0==1 && value!=null && value==1)
+		double C = pAll0*local_lambda.getValue(0) + (1-pAll0)*local_lambda.getValue(1);
+		double ll0 = local_lambda.getValue(0);
+		double ll1 = local_lambda.getValue(1);
+		if(ll0==1 && pAll0==0)
 			return Double.NaN;
-		else if(pAll0==0 && value!=null && value==0)
+		else if(ll1==1 && pAll0==1)
 			return Double.NaN;
+
+		H1 = -HX; //TODO Re-do this so this whole part is contingent on ll0 > 0
+		if(pAll0 > 0)
+			H1 -= pAll0*Math.log(pAll0);
+		if(ll1 > 0)
+			H1 += (1-pAll0)*(Math.log(ll1/C));
+		H1 *= ll1/C;
+		if(pAll0*ll0 > 0)
+			H1 += pAll0*ll0/C*Math.log(pAll0*ll0/C);
 		
-		/**
-		 * Compute H2, the negative marginal entropy of this node times factor q
-		 * where q is the number of children (because this node must have parents).
-		 */
-		double ll0 = marginal.getValue(0);
-		double ll1 = marginal.getValue(1);
-		if(ll0 > 0 && ll1 > 0)
+		double m1 = marginal.getValue(1);
+		double m0 = marginal.getValue(0);
+		if(m1 > 0 && m0 > 0)
 		{
-			H2 = ll0*Math.log(ll0);
-			H2 += ll1*Math.log(ll1);
-			H2*=numChildren;
+			H2 = m0*Math.log(m0);
+			H2 += m1*Math.log(m1);
+			H2 *= numChildren;
 		}
-		
+	
 		return H1-H2;
 	}
-
 }

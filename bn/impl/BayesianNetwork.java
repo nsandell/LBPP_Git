@@ -219,6 +219,11 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		return new RunResults(i, ((double)(end_time-start_time))/1000.0, err);
 	}
 	
+	public RunResults run() throws BNException
+	{
+		return this.run(100,0);
+	}
+	
 	public void clearEvidence(String nodeName) throws BNException
 	{
 		BaseNodeType node = this.getNode(nodeName);

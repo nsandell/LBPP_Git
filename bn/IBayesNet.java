@@ -140,9 +140,18 @@ public interface IBayesNet<BaseInterface> {
 	 * 			consecutive iterations less than this to be converged.  The change metric
 	 * 			may vary by node but for discrete nodes it is the L-Infinity norm.
 	 * @return Results of the run
-	 * @throws BNException Shouldn't be thrown unless the network is invalid.
+	 * @throws BNException Shouldn't be thrown unless the network is invalid.(you should call validate first!)
 	 */
 	public RunResults run(int maxit, double convergence) throws BNException;
+	
+	
+	/**
+	 * Run belief propagation on the network, using default parameters.
+	 * @return Results of the run - how many iterations were used and what
+	 * 		the final error turned out to be.
+	 * @throws BNException Shouldn't be thrown unless the network is invalid (you should call validate first!)
+	 */
+	public RunResults run() throws BNException;
 	
 	/**
 	 * Clear evidence for a specific node.

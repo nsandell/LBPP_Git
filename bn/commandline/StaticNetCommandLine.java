@@ -36,9 +36,9 @@ public class StaticNetCommandLine
 			parser.addHandler(new UniversalCommandHandlers.CPDAssigner(bn, distMap));
 			parser.addHandler(new StaticCommandHandlers.MarginalHandler(bn));
 			parser.addHandler(new UniversalCommandHandlers.BNRunner(bn));
+			parser.addHandler(new UniversalCommandHandlers.BNRunnerDefault(bn));
 			parser.addHandler(new UniversalCommandHandlers.BNValidate(bn));
 			parser.addHandler(new StaticCommandHandlers.ObservationHandler(bn));
-			//parser.addHandler(new UniversalCommandHandlers.LLGetter(bn));
 			parser.addHandler(new UniversalCommandHandlers.EvidenceClearer(bn));
 			parser.addHandler(new UniversalCommandHandlers.NodeEvidenceClearer(bn));
 			parser.addHandler(new UniversalCommandHandlers.NetLLGetter(bn));

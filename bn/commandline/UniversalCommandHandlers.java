@@ -155,6 +155,31 @@ public class UniversalCommandHandlers {
 		private static int[] groups = new int[]{1,3};
 	}
 	
+	static class BNRunnerDefault extends MethodWrapperHandler<Object>
+	{
+		BNRunnerDefault(IBayesNet<?> net) throws Exception
+		{
+			super(net,IBayesNet.class.getMethod("run",
+					new Class[]{}),
+					new String[]{},
+					null);
+		}
+		
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+		
+		@Override
+		protected void handleReturn(PrintStream ps)
+		{
+			RunResults res = (RunResults)this.retObj;
+			ps.println("Converged after " + res.numIts + " iterations with an error of " + res.error + " in " + res.timeElapsed + " seconds, using default parameters (100,0)");
+		}
+		
+		private static Pattern patt = Pattern.compile("^\\s*run\\s*$");
+		private static int[] groups = new int[]{};
+	}
+	
 	static class Optimizer extends MethodWrapperHandler<Object>
 	{
 		public Optimizer(IBayesNet<?> net) throws Exception {
@@ -206,28 +231,6 @@ public class UniversalCommandHandlers {
 		private Pattern regex = Pattern.compile("^\\s*distInfo\\((\\w+)\\)\\s*$");
 	}
 
-	/*static class LLGetter extends MethodWrapperHandler<Object>
-	{
-		LLGetter(IBayesNet<?> net) throws Exception
-		{
-			super(net,IBayesNet.class.getMethod("nodeLogLikelihood",new Class[]{String.class}),
-					new String[]{"node name"}, null);
-		}
-		
-		@Override
-		protected void handleReturn(PrintStream pr)
-		{
-			pr.println((Double)this.retObj);
-		}
-		
-		public int[] getGroups() {return groups;}
-		public Pattern getRegEx() {return patt;}
-		public String getPrompt() {return null;}
-		
-		private static Pattern patt = Pattern.compile("^\\s*ll\\(\\s*(\\w+)\\s*\\)\\s*$");
-		private static int[] groups = new int[]{1};
-	}*/
-	
 	static class NodeRemover extends MethodWrapperHandler<Object>
 	{
 		NodeRemover(IBayesNet<?> net) throws Exception

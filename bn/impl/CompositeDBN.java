@@ -251,6 +251,11 @@ public class CompositeDBN implements IDynBayesNet {
 		return new RunResults(its,(ts-System.currentTimeMillis())/1000.0, err);
 		//return this.run_parallel_block(maxit, convergence);
 	}
+	
+	public RunResults run() throws BNException
+	{
+		return this.run(100,0);
+	}
 
 	@Override
 	public void clearEvidence(String node) throws BNException {

@@ -44,6 +44,36 @@ public class UniversalCommandHandlers {
 		private static int[] groups = new int[]{};
 	}
 	
+	static class EvidenceClearer extends MethodWrapperHandler<Object>
+	{
+		public EvidenceClearer(IBayesNet<?> net) throws Exception
+		{
+			super(net,IBayesNet.class.getMethod("clearAllEvidence", new Class<?>[]{}),new String[]{},null);
+		}
+		
+		public int[] getGroups(){return groups;}
+		public Pattern getRegEx(){return patt;}
+		public String getPrompt(){return null;}
+		
+		private static Pattern patt = Pattern.compile("^\\s*clearAllEvidence\\s*$");
+		private static int[] groups = new int[]{};
+	}
+	
+	static class NodeEvidenceClearer extends MethodWrapperHandler<Object>
+	{
+		public NodeEvidenceClearer(IBayesNet<?> net) throws Exception
+		{
+			super(net,IBayesNet.class.getMethod("clearEvidence", new Class<?>[]{String.class}),new String[]{"Node name"},null);
+		}
+		
+		public int[] getGroups(){return groups;}
+		public Pattern getRegEx(){return patt;}
+		public String getPrompt(){return null;}
+		
+		private static Pattern patt = Pattern.compile("^\\s*clearEvidence(.*)\\s*$");
+		private static int[] groups = new int[]{1};
+	}
+	
 	static class BNSaver implements ParserFunction
 	{
 		public BNSaver(IBayesNet<?> net)

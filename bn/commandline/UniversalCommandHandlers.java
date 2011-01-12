@@ -70,7 +70,7 @@ public class UniversalCommandHandlers {
 		public Pattern getRegEx(){return patt;}
 		public String getPrompt(){return null;}
 		
-		private static Pattern patt = Pattern.compile("^\\s*clearEvidence(.*)\\s*$");
+		private static Pattern patt = Pattern.compile("^\\s*clearEvidence\\((.*)\\)\\s*$");
 		private static int[] groups = new int[]{1};
 	}
 	

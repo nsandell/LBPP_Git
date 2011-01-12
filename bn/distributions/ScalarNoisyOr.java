@@ -79,7 +79,7 @@ public class ScalarNoisyOr extends DiscreteDistribution
 	{
 		double localProduct = 1;
 		for(int i = 0; i < incoming_pis.size(); i++)
-			localProduct *= (1-incoming_pis.get(i).getValue(1)*this.c);
+			localProduct *= (1-incoming_pis.get(i).getValue(1)/(incoming_pis.get(i).getValue(0)+incoming_pis.get(i).getValue(1))*this.c);
 		local_pi.setValue(0, localProduct);
 		local_pi.setValue(1, 1-localProduct);
 	}

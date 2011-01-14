@@ -60,6 +60,56 @@ public class MathUtil
 		
 	}
 	
+	public static LOFResults lofSort2(boolean[][] input)
+	{
+		ArrayList<LOFRow> entries = new ArrayList<LOFRow>();
+		for(int i = 0; i < input.length; i++)
+			entries.add(new LOFRow(input[i],i));
+		Collections.sort(entries,LOFCOLComparer2.singleton);
+		int[] indices = new int[entries.size()];
+		for(int i = 0; i < input.length; i++)
+		{
+			input[i] = entries.get(i).rowdata;
+			indices[i] = entries.get(i).rowindex;
+		}
+		LOFResults res = new LOFResults(); res.matrix = input; res.reordering = indices;
+		return res;
+	}
+	
+	private static class LOFRow
+	{
+		public LOFRow(boolean[] row, int index){this.rowdata = row;this.rowindex = index;}
+		boolean[] rowdata;
+		int rowindex;
+	}
+	
+	public static class LOFResults
+	{
+		public boolean[][] matrix;
+		public int[] reordering;
+	}
+	
+	private static class LOFCOLComparer2 implements Comparator<LOFRow>
+	{
+		public static LOFCOLComparer2 singleton = new LOFCOLComparer2();
+		
+		@Override
+		public int compare(LOFRow r1, LOFRow r2) throws ClassCastException
+		{
+			boolean[] o1 = r1.rowdata; boolean[] o2 = r2.rowdata;
+			if(o1.length!=o2.length) throw new ClassCastException();
+			for(int i = o1.length-1; i >= 0; i--)
+			{
+				if(o1[i] && !o2[i])
+					return -1;
+				if(o2[i] && !o1[i])
+					return 1;
+			}
+			return 0;
+		}
+		
+	}
+	
 	public static class MathUtilException extends Exception
 	{
 		private static final long serialVersionUID = 1L;

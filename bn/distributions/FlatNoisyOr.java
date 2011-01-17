@@ -210,28 +210,6 @@ public class FlatNoisyOr extends DiscreteDistribution {
 		
 		H1 /= C;
 		
-		/*
-		if(pi0y0gE > 0)
-			H1 -= pi0y0gE*Math.log(pi0y0gE);
-		if(pi1y0gE > 0)
-			H1 -= pi1y0gE*Math.log(pi1y0gE);
-		if(pi1y1gE > 0)
-			H1 -= pi1y1gE*Math.log(pi1y1gE);
-		/**
-		 * Compute both the energy term 
-		 * E = \sum_{parents,thisnode} marginal(parents,thisnode | evidence) log[p(thisnode|parents)]
-		 * and the portion of the H1 entropy term that corresponds to the join entropy over this node
-		 * and the number of active parents.
-		 */	
-		
-		//TODO Something is wrong!!
-	/*
-		double HI = 0;
-		if(pi0 > 0 && pi0 < 1)
-			HI = -(pi0*Math.log(pi0)+pi1*Math.log(pi1));
-		if(pi0!=1)
-			H1 -= pi1y1gE/(1-pi0)*(HX-HI);
-		
 		/**
 		 * Compute H2, the negative marginal entropy of this node times factor q
 		 * where q is the number of children (because this node must have parents).

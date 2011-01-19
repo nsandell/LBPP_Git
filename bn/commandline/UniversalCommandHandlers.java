@@ -122,24 +122,6 @@ public class UniversalCommandHandlers {
 		private Pattern regex = Pattern.compile("^\\s*save\\s*$");
 	}
 	
-	static class BNSampler extends MethodWrapperHandler<Object>
-	{
-		public BNSampler(IBayesNet<?> net) throws Exception
-		{
-			super(net,IBayesNet.class.getMethod("sample", new Class<?>[]{}),new String[]{},null);
-		}
-		
-		public String name(){return "sample";}
-		public String description(){return "Perform Gibbs sampling on the network.  NOT IMPLEMENTED YET";}
-		
-		public int[] getGroups(){return groups;}
-		public Pattern getRegEx(){return patt;}
-		public String getPrompt(){return null;}
-		
-		private static Pattern patt = Pattern.compile("^\\s*samplenet\\s*$");
-		private static int[] groups = new int[]{};
-	}
-	
 	static class BNValidate extends MethodWrapperHandler<Object>
 	{
 		BNValidate(IBayesNet<?> net) throws Exception

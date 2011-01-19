@@ -191,6 +191,14 @@ public class DiscreteCPTUC extends DiscreteDistribution
 			return this;
 		}
 		
+		@Override
+		public DiscreteSufficientStatistic update(Integer value,
+				Vector<DiscreteMessage> parent_pis) throws BNException {
+			this.expected_data[value]++;
+			return this;
+		}
+		
+		
 		private DiscreteCPTUC cpt;
 		private double[] expected_data;
 		private double expected_sum;

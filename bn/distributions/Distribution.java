@@ -80,6 +80,7 @@ public interface Distribution
 		 * @throws BNException If the messages are invalid.
 		 */
 		public DiscreteSufficientStatistic update(DiscreteMessage lambda, Vector<DiscreteMessage> incomingPis) throws BNException;
+		public DiscreteSufficientStatistic update(Integer value, Vector<DiscreteMessage> incomingPis) throws BNException;
 	}
 	
 	/**

@@ -328,6 +328,28 @@ public class DiscreteCPT extends DiscreteDistribution
 			return this;
 		}
 		
+		
+		@Override
+		public DiscreteSufficientStatistic update(Integer value,
+				Vector<DiscreteMessage> incomingPis) throws BNException
+		{
+			int[] indices = initialIndices(this.cpt.dimSizes.length);
+			double sum = 0;
+			do
+			{
+				int absIndex = getIndex(indices, this.cpt.dimSizes);
+				double current_prod = 1;
+				for(int i = 0; i < indices.length; i++)
+					current_prod *= incomingPis.get(i).getValue(indices[i]);
+				this.current[absIndex][value] = current_prod*this.cpt.values[absIndex][value];
+				sum += this.current[absIndex][value];
+			}
+			while((indices = incrementIndices(indices, this.cpt.dimSizes))!=null);
+			for(int i = 0; i < this.cpt.dimprod; i++)
+				this.exp_tr[i][value] += this.current[i][value]/sum;
+			return this;
+		}
+		
 		double[][] exp_tr;
 		double[][] current;
 		private DiscreteCPT cpt;

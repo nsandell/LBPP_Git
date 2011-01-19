@@ -184,6 +184,33 @@ public class ScalarNoisyOr extends DiscreteDistribution
 			this.n++;
 			return this;
 		}
+		
+		@Override
+		public ScalarNoisyOrSuffStat update(Integer value, Vector<DiscreteMessage> incomingPis) throws BNException
+		{
+			double[] pn = computePN(incomingPis);
+			double[][] curr = new double[incomingPis.size()+1][2];
+	
+			double total = 0;
+			for(int i = 0; i < incomingPis.size()+1; i++)
+			{
+				double fac = Math.pow(this.cpt.q, i);
+				if(value==0)
+					curr[i][0] = pn[i]*fac;
+				else
+					curr[i][1] = pn[i]*(1-fac);
+				total += (curr[i][0]+curr[i][1]);
+				if(this.pns.size() <= i)
+					this.pns.add(new PXGN());
+			}
+			for(int i = 0; i < incomingPis.size()+1; i++)
+			{
+				this.pns.get(i).px0 += curr[i][0]/total;
+				this.pns.get(i).px1 += curr[i][1]/total;
+			}
+			this.n++;
+			return this;	
+		}
 	
 		// Compute the probability of number of parents being active from pi messages in quadratic
 		// rather than exponential time.

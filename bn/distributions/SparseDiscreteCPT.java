@@ -487,6 +487,55 @@ public class SparseDiscreteCPT extends DiscreteDistribution
 			return this;
 		}
 		
+		@Override
+		public SparseCPTSuffStat update(Integer value,
+				Vector<DiscreteMessage> incomingPis)
+		{
+			HashMap<IndexWrapper, HashMap<Integer, Double>> current = new HashMap<SparseDiscreteCPT.IndexWrapper, HashMap<Integer,Double>>();
+			double sum = 0;
+			for(IndexWrapper indices : this.cpt.entries.keySet())
+			{
+				double current_prod = 1;
+				for(int i = 0; i < indices.indices.length; i++)
+					current_prod *= incomingPis.get(i).getValue(indices.indices[i]);
+				HashMap<Integer,Double> inner = this.cpt.entries.get(indices);
+				HashMap<Integer,Double> innerC = new HashMap<Integer, Double>();
+				
+				Double cptEntry = inner.get(value);
+				double expVal = current_prod*cptEntry;
+				innerC.put(value, expVal);
+				sum += expVal;
+				
+				if(innerC.size()>0)
+					current.put(indices, innerC);
+			}
+			
+			for(IndexWrapper indices : current.keySet())
+			{
+				HashMap<Integer,Double> innerE = this.expected_trans.get(indices);
+				HashMap<Integer,Double> innerC = current.get(indices);
+				if(innerE==null)
+				{
+					innerE = new HashMap<Integer, Double>();
+					this.expected_trans.put(indices,innerE);
+				}
+				double crowsum = 0;
+
+				Double existing = innerE.get(value);
+				if(existing==null)
+					existing = 0.0;
+				existing += innerC.get(value)/sum;
+				crowsum += existing;
+				innerE.put(value, existing);
+
+				Double existingrs = this.row_sum.get(indices);
+				if(existingrs==null)
+					existingrs = 0.0;
+				existingrs += crowsum;
+				this.row_sum.put(indices, existingrs);
+			}
+			return this;
+		}
 
 		public SparseCPTSuffStat update(SufficientStatistic stat) throws BNException
 		{

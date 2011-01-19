@@ -47,38 +47,6 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		node.printDistributionInfo(ps);
 	}
 	
-	public void sample() throws BNException
-	{
-		ArrayList<InternalIBayesNode> frontier = new ArrayList<InternalIBayesNode>();
-		for(InternalIBayesNode node : nodes.values())
-		{
-			if(node.numParents()==0)
-				frontier.add(node);
-		}
-		frontierSample(new HashSet<InternalIBayesNode>(), frontier);
-	}
-	
-	public void sample(String name) throws BNException
-	{
-		this.nodes.get(name).sample();
-	}
-	
-	private void frontierSample(HashSet<InternalIBayesNode> marks, ArrayList<InternalIBayesNode> frontier) throws BNException
-	{
-		ArrayList<InternalIBayesNode> newFrontier = new ArrayList<InternalIBayesNode>();
-		for(InternalIBayesNode node : frontier)
-		{
-			node.sample();
-			marks.add(node);
-			for(InternalIBayesNode child : node.getChildrenI())
-			{
-				if(!marks.contains(child))
-					newFrontier.add(child);
-			}
-		}
-		if(newFrontier.size()>0)
-			frontierSample(marks, newFrontier);
-	}
 	
 	public void clearAllEvidence()
 	{

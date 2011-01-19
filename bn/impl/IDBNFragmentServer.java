@@ -21,8 +21,6 @@ public interface IDBNFragmentServer extends Remote
 		public int numNodes() throws RemoteException;
 		public void setDistribution(String nodeName, Distribution dist) throws BNException, RemoteException;
 		public Iterable<String>	getNodeNames() throws RemoteException;
-		public void sample() throws BNException, RemoteException;
-		public void sample(String name) throws BNException, RemoteException;
 		public void clearAllEvidence() throws RemoteException;
 		public void collectSufficientStatistics(Iterable<String> nodeNames, HashMap<String,SufficientStatistic> stats) throws BNException, RemoteException;
 		public void optimize(Iterable<String> nodenames, HashMap<String,SufficientStatistic> stats) throws BNException, RemoteException;

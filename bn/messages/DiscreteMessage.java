@@ -134,6 +134,14 @@ public class DiscreteMessage extends Message
 		return ret;
 	}
 	
+	public static DiscreteMessage delta(int card, int val) throws BNException
+	{
+		if(val>=card) throw new BNException("Attempted to create delta message with delta outside of range.");
+		DiscreteMessage ret = new DiscreteMessage(card);
+		ret.setValue(val, 1);
+		return ret;
+	}
+	
 	/**
 	 * Set the value of this message.
 	 * @param index Index at which to set.

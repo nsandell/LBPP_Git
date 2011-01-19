@@ -71,12 +71,6 @@ abstract class DBNFragmentNode extends DBNNode {
 		}
 		int cardinality;
 	
-		@Override
-		protected void printCreation(PrintStream pr)
-		{
-			pr.println(this.getName()+":Discrete("+this.getCardinality()+")");
-		}
-		
 		public double betheFreeEnergy() throws BNException
 		{
 			double energy = 0;

@@ -147,27 +147,6 @@ public class CompositeDBN implements IDynBayesNet {
 	}
 
 	@Override
-	public void sample() throws BNException {
-		try {
-			for(int i = 0; i < fragments.length; i++)
-				fragments[i].sample();
-		} catch(RemoteException e) {
-			throw new BNException("RMI Error while sampling : " + e.getMessage());
-		}
-	}
-	
-	@Override
-	public void sample(String node) throws BNException
-	{
-		try {
-			for(int i = 0; i < fragments.length; i++)
-				fragments[i].sample(node);
-		} catch(RemoteException e) {
-			throw new BNException("RMI Error while sampling : " + e.getMessage());
-		}
-	}
-
-	@Override
 	public void clearAllEvidence() {
 		try {
 			for(int i = 0; i < fragments.length; i++)

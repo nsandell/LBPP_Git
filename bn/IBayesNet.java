@@ -59,15 +59,6 @@ public interface IBayesNet<BaseInterface> {
 	public BaseInterface getNode(String name) throws BNException;
 	
 	/**
-	 * Sample all nodes in this network.  The nodes will be set as observed and the values
-	 * will be stored inside the nodes themselves.
-	 * @throws BNException If a node can't be sampled for any reason.
-	 */
-	public void sample() throws BNException;
-	
-	public void sample(String name) throws BNException;
-	
-	/**
 	 * Clear all the observations set in this network.  Destroys the values the nodes hold.
 	 */
 	public void clearAllEvidence();

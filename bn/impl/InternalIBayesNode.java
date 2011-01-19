@@ -42,14 +42,6 @@ interface InternalIBayesNode extends IBayesNode
 	double optimizeParameters(SufficientStatistic stat) throws BNException;
 	
 	/**
-	 * Sample this node from its CPT.  This requires that this node's set of
-	 * parents be observed and have a value.  Sampling this node will set its
-	 * value and set it to be observed.
-	 * @throws BNException If the parents aren't observed. 
-	 */
-	void sample() throws BNException;
-	
-	/**
 	 * Get a sufficient statistic about this node given the evidence currently 
 	 * present in the network.  
 	 * @return The sufficient statistic.

@@ -107,7 +107,7 @@ public class DiscreteNode<Context> implements InnerNode<Context>, Serializable
 				local_lambda.setValue(i,tmp);
 			}
 		}
-		this.contextManager.setLLNormalization(ctxt, Math.log(local_lambda.normalize()));
+		local_lambda.normalize();
 
 		for(int i = 0; i < this.cardinality; i++)
 			local_pi.setValue(i, 0);
@@ -285,16 +285,6 @@ public class DiscreteNode<Context> implements InnerNode<Context>, Serializable
 		for(int i = 0; i < parentDimesions.length; i++)
 			parentDimesions[i] = incomingPis.get(i).getCardinality();
 		return parentDimesions;
-	}
-	
-	@Override
-	public double getLLAdjust(Context ctxt) {
-		return this.contextManager.getLLNormalization(ctxt);
-	}
-	
-	@Override
-	public double getMarginalNorm(Context ctxt) throws BNException {
-		return Math.log(this.contextManager.getLocalLambda(ctxt).multiply(this.contextManager.getLocalPi(ctxt)).normalize());
 	}
 	
 	public static final long serialVersionUID = 50L;

@@ -468,8 +468,6 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		}
 	}
 	
-	protected abstract void printCreation(PrintStream ps);
-
 	public double updateMessages() throws BNException
 	{
 		return updateMessages(0,this.bayesNet.getT()-1);
@@ -507,18 +505,9 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 			return sum;
 		}
 		
-		public void sample() throws BNException
-		{
-			for(int t = 0; t < this.bayesNet.getT(); t++)
-				this.sample(t);
-		}
 
-		@Override
-		protected void printCreation(PrintStream pr)
-		{
-			pr.println(this.getName()+":Discrete("+this.getCardinality()+")");
-		}
-		
+	
+
 		@Override
 		public DiscreteDistribution getInitialDistribution() {
 			return (DiscreteDistribution) this.innerNode.getDistribution(0);
@@ -561,24 +550,6 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 		public DiscreteMessage getMarginal(int t) throws BNException
 		{
 			return (DiscreteMessage)this.innerNode.getMarginal(t);
-		}
-		
-		public void sample(int t) throws BNException
-		{
-			Integer[] pvals;
-			if(t==0)
-			{
-				pvals = new Integer[this.intraParents.size()];
-				for(int i = 0; i < pvals.length; i++)
-					pvals[i] = ((DiscreteDBNNode)this.intraParents.get(i)).getValue(t);
-			}
-			else
-			{
-				pvals = new Integer[this.parents.size()];
-				for(int i = 0; i < pvals.length; i++)
-					pvals[i] = ((DiscreteDBNNode)this.parents.get(i).parent).getValue(t - (this.parents.get(i).inter ? 1 : 0));
-			}
-			this.setValue(t, ((DiscreteDistribution)this.innerNode.getDistribution(t)).sample(new Distribution.ValueSet<Integer>(pvals)));
 		}
 		
 		public String getNodeDefinition()

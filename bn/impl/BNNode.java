@@ -192,8 +192,6 @@ abstract class BNNode implements InternalIBayesNode
 	{
 	}
 
-	protected abstract void printCreation(PrintStream ps);
-	
 	public void validate() throws BNException
 	{
 		try
@@ -221,12 +219,6 @@ abstract class BNNode implements InternalIBayesNode
 		}
 		
 		int cardinality;
-		
-		@Override
-		protected void printCreation(PrintStream pr)
-		{
-			pr.println(this.getName()+":Discrete("+this.getCardinality()+")");
-		}
 		
 		@Override
 		public int getCardinality() {

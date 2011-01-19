@@ -67,8 +67,7 @@ public class TrueOr extends DiscreteDistribution {
 				throw new BNException("TrueOr node needs only binary parents!");
 	}
 
-	@Override
-	public void computeLocalPi(DiscreteMessage local_pi,
+	static void computeLocalPiS(DiscreteMessage local_pi,
 			Vector<DiscreteMessage> incoming_pis, Integer value)
 			throws BNException {
 		
@@ -78,9 +77,15 @@ public class TrueOr extends DiscreteDistribution {
 		local_pi.setValue(0, probability_all0);
 		local_pi.setValue(1, 1-probability_all0);
 	}
-
+	
 	@Override
-	public void computeLambdas(Vector<DiscreteMessage> lambdas_out,
+	public void computeLocalPi(DiscreteMessage local_pi,
+			Vector<DiscreteMessage> incoming_pis, Integer value)
+			throws BNException {
+		computeLocalPiS(local_pi, incoming_pis, value);
+	}
+	
+	static void computeLambdasS(Vector<DiscreteMessage> lambdas_out,
 			Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda,
 			Integer value) throws BNException {
 		
@@ -124,33 +129,36 @@ public class TrueOr extends DiscreteDistribution {
 	}
 
 	@Override
-	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis,
-			DiscreteMessage local_lambda, DiscreteMessage marginal,
-			Integer value, int numChildren) throws BNException {
-		double H1 = 0, H2 = 0;
-		
-		// E is always 0 here
+	public void computeLambdas(Vector<DiscreteMessage> lambdas_out,
+			Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda,
+			Integer value) throws BNException {
+			computeLambdasS(lambdas_out, incoming_pis, local_lambda, value);
+	}
+	
+	static double computeH1(Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda)
+	{
 		// H1 = -H(X,I | Ex, Ei) = -H(X | I, Ex, Ei) - H(I|Ex,Ei)
 		// = pXNotAll0*(-H(X|Ex)+H(X!=All0|Ex))-H(I|Ex,Ei)
 		
+		double H1;
 		double pAll0 = 1;
 		double HX = 0;
-		
+
 		for(int i = 0; i < incoming_pis.size(); i++)
 		{
 			double tmp1 = incoming_pis.get(i).getValue(0);
 			double tmp2 = incoming_pis.get(i).getValue(1);
 			tmp1 /= (tmp1+tmp2);
 			tmp2 /= (tmp1+tmp2);
-			
+
 			pAll0 *= tmp1;
-			
+
 			if(tmp1 > 0)
 				HX -= tmp1*Math.log(tmp1);
 			if(tmp2 > 0)
 				HX -= tmp2*Math.log(tmp2);
 		}
-		
+
 		double C = pAll0*local_lambda.getValue(0) + (1-pAll0)*local_lambda.getValue(1);
 		double ll0 = local_lambda.getValue(0);
 		double ll1 = local_lambda.getValue(1);
@@ -168,6 +176,12 @@ public class TrueOr extends DiscreteDistribution {
 		if(pAll0*ll0 > 0)
 			H1 += pAll0*ll0/C*Math.log(pAll0*ll0/C);
 		
+		return H1;
+	}
+	
+	static double computeH2(DiscreteMessage marginal, int numChildren)
+	{
+		double H2 = 0;
 		double m1 = marginal.getValue(1);
 		double m0 = marginal.getValue(0);
 		if(m1 > 0 && m0 > 0)
@@ -176,7 +190,17 @@ public class TrueOr extends DiscreteDistribution {
 			H2 += m1*Math.log(m1);
 			H2 *= numChildren;
 		}
-	
+		return H2;
+	}
+
+	@Override
+	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis,
+			DiscreteMessage local_lambda, DiscreteMessage marginal,
+			Integer value, int numChildren) throws BNException {
+		
+		double H1 = computeH1(incoming_pis,local_lambda);
+		double H2 = computeH2(marginal,numChildren);
+		// E is always 0 here
 		return H1-H2;
 	}
 }

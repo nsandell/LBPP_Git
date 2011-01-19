@@ -177,7 +177,6 @@ public class DiscreteCPT extends DiscreteDistribution
 		while((indices = DiscreteDistribution.incrementIndices(indices, dimSizes))!=null);
 		
 		local_pi.normalize();
-		//TODO Evaluate underflow and whether this should be built logarithmically
 	}
 	
 	@Override

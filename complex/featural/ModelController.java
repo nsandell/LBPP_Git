@@ -1,6 +1,7 @@
 package complex.featural;
 
 import java.io.PrintStream;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
@@ -11,41 +12,18 @@ import bn.BNException;
 import bn.IDynBayesNet;
 import bn.IDynBayesNode;
 
-public abstract class ModelController {
-	
-	public ModelController(IDynBayesNet net, boolean learn)
-	{
-		this(net,30,1e-5,5,1e-5);
-		this.learning = learn;
-	}
+public abstract class ModelController
+{
 
-	public ModelController(IDynBayesNet net, int run_it, double run_conv)
-	{
-		this.learning = false;
-		this.run_it = run_it;
-		this.run_conv = run_conv;
-		this.network = net;
-	}
-	
-	public ModelController(IDynBayesNet net, int run_it, double run_conv, int learn_it, double learn_conv)
-	{
-		this.learning = false;
-		this.run_it = run_it;
-		this.run_conv = run_conv;
-		this.learn_it = learn_it;
-		this.learn_conv = learn_conv;
-		this.network = net;
-	}
-	
-	public double run()  throws FMMException
+	public double run(int max_it, double conv)  throws FMMException
 	{
 		try {
-			this.network.run_parallel_block(run_it, run_conv);
+			this.network.run_parallel_block(max_it, conv);
 			double ll = this.network.getLogLikelihood();
 			if(Double.isNaN(ll))
 			{
 				this.network.resetMessages();
-				this.network.run_parallel_block(run_it,run_conv);
+				this.network.run_parallel_block(max_it,conv);
 				if(Double.isNaN(ll))
 					throw new FMMException("Model returns NaN log likelihood!");
 			}
@@ -55,61 +33,68 @@ public abstract class ModelController {
 		}
 	}
 	
-	public double learn() throws FMMException
+	public double learn(int max_learn_it, double learn_conv, int max_run_it, double run_conv) throws FMMException
 	{
 		try {
-			this.network.optimize_parallel(learn_it, learn_conv, run_it, run_conv);
-			return this.run();
+			this.network.optimize_parallel(max_learn_it, learn_conv, max_run_it, run_conv);
+			return this.run(max_run_it,run_conv);
 		} catch(BNException e) {
 			throw new FMMException("Error running the model : " + e.toString());
 		}
 	}
 
-	public IDynBayesNode newLatentModel() throws FMMException
+	public IParentProcess newLatentModel() throws FMMException
 	{
-		IDynBayesNode newl = this.newLatentModelI();
+		IParentProcess newl = this.newLatentModelI();
 		this.latents.add(newl);
 		return newl;
 	}
 
-	public void killLatentModel(IDynBayesNode node) throws FMMException
+	public void killLatentModel(IParentProcess node) throws FMMException
 	{
 		this.killLatentModelI(node);
 		this.latents.remove(node);
 	}
 
-	public LatentBackup backupAndRemoveLatentModel(IDynBayesNode latent) throws FMMException
-	{
+	public LatentBackup backupAndRemoveLatentModel(IParentProcess latent) throws FMMException
+	{/*
 		LatentBackup backup = new LatentBackup(this, latent);
 		for(IDynBayesNode child : backup.children)
 			this.disconnect(latent, child);
 		this.killLatentModel(latent);
-		return backup;
+		return backup;*/return null;
 	}
 
 	public IDynBayesNode restoreBackup(LatentBackup backup) throws FMMException
-	{
+	{/*
 		IDynBayesNode latent = this.newLatentModel();
 		for(IDynBayesNode child : backup.children)
 			this.connect(latent, child);
-		return latent;
+		return latent;*/return null;
 	}
 
-	public void connect(IDynBayesNode latent, IDynBayesNode observed) throws FMMException
+	public void connect(IParentProcess latent, IChildProcess observed) throws FMMException
 	{
 		this.connectI(latent,observed);
 		this.children.get(latent).add(observed);
+		this.parents.get(observed).add(latent);
 	}
 
-	public void disconnect(IDynBayesNode latent, IDynBayesNode observed) throws FMMException
+	public void disconnect(IParentProcess latent, IChildProcess observed) throws FMMException
 	{
 		this.disconnectI(latent, observed);
 		this.children.get(latent).remove(observed);
+		this.parents.get(observed).remove(latent);
 	}
 
-	public HashSet<IDynBayesNode> getChildren(IDynBayesNode latent)
+	public HashSet<IChildProcess> getChildren(IParentProcess latent)
 	{
 		return this.children.get(latent);
+	}
+	
+	public HashSet<IParentProcess> getParents(IChildProcess obs)
+	{
+		return this.parents.get(obs);
 	}
 	
 	public void log(String msg)
@@ -125,8 +110,8 @@ public abstract class ModelController {
 	
 	public static class LatentPair
 	{
-		public LatentPair(IDynBayesNode l1, IDynBayesNode l2){this.l1 = l1; this.l2 = l2;}
-		public IDynBayesNode l1, l2;
+		public LatentPair(IParentProcess l1, IParentProcess l2){this.l1 = l1; this.l2 = l2;}
+		public IParentProcess l1, l2;
 	}
 	
 	public LatentPair randomLatentPair()
@@ -144,37 +129,35 @@ public abstract class ModelController {
 		return new LatentPair(this.latents.get(i1), this.latents.get(i2));
 	}
 	
-	public IDynBayesNode randomLatent()
+	public IParentProcess randomLatent()
 	{
 		return this.latents.get(MathUtil.rand.nextInt(this.latents.size()));
 	}
 	
-	public Vector<IDynBayesNode> getLatentNodes(){return this.latents;}
-	public Vector<IDynBayesNode> getObservedNodes(){return this.observables;}
+	public Vector<IParentProcess> getLatentNodes(){return this.latents;}
+	public Vector<IChildProcess> getObservedNodes(){return this.observables;}
 
-	public abstract void saveInfo(Vector<IDynBayesNode> latents, Vector<IDynBayesNode> observeds, double ll);
+	public abstract void saveInfo();
 	
-	protected abstract void killLatentModelI(IDynBayesNode node) throws FMMException;
-	protected abstract IDynBayesNode newLatentModelI() throws FMMException;
+	protected abstract void killLatentModelI(IParentProcess node) throws FMMException;
+	protected abstract IParentProcess newLatentModelI() throws FMMException;
 	
-	protected abstract void disconnectI(IDynBayesNode latent, IDynBayesNode observed) throws FMMException;
-	protected abstract void connectI(IDynBayesNode latent, IDynBayesNode observed) throws FMMException;
+	protected abstract void disconnectI(IParentProcess latent, IChildProcess observed) throws FMMException;
+	protected abstract void connectI(IParentProcess latent, IChildProcess observed) throws FMMException;
 	
 	public static class LatentBackup
 	{
-		public LatentBackup(ModelController cont, IDynBayesNode node)
+		public LatentBackup(ModelController cont, IParentProcess node)
 		{
 			this.children = cont.getChildren(node);
 		}
-		public HashSet<IDynBayesNode> children;
+		public HashSet<IChildProcess> children;
 	}
 
 	protected PrintStream logger = null;
-	protected int learn_it, run_it;
-	protected double learn_conv, run_conv;
-	protected boolean learning;
 	protected IDynBayesNet network;
-	protected Vector<IDynBayesNode> latents = new Vector<IDynBayesNode>();
-	protected Vector<IDynBayesNode> observables = new Vector<IDynBayesNode>();
-	private HashMap<IDynBayesNode, HashSet<IDynBayesNode>> children = new HashMap<IDynBayesNode, HashSet<IDynBayesNode>>();
+	protected Vector<IParentProcess> latents = new Vector<IParentProcess>();
+	protected Vector<IChildProcess> observables = new Vector<IChildProcess>();
+	private HashMap<IParentProcess, HashSet<IChildProcess>> children = new HashMap<IParentProcess, HashSet<IChildProcess>>();
+	private HashMap<IChildProcess, HashSet<IParentProcess>> parents = new HashMap<IChildProcess, HashSet<IParentProcess>>();
 }

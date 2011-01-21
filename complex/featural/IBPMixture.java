@@ -1,12 +1,11 @@
 package complex.featural;
 
+import java.util.HashSet;
 import java.util.Vector;
 
 import complex.featural.ProposalGenerator.Proposal;
 
 import util.MathUtil;
-
-import bn.IDynBayesNode;
 
 public class IBPMixture {
 	
@@ -63,6 +62,9 @@ public class IBPMixture {
 			return assign;
 		}
 	
+		public int max_run_it = 30, max_learn_it = 5;
+		public double run_conv = 1e-6, learn_conv = 1e-5;
+		
 		public ModelController controller;
 		public boolean optimizeParameters = false;		// Optimize parameters at each time step
 		public double alpha = 1;						// Indian Buffet
@@ -75,12 +77,16 @@ public class IBPMixture {
 		ModelController cont = opts.controller;
 		//int N = opts.initialAssignments.length;  	// The number of obsevation sequences
 		int M = opts.initialAssignments[0].length;	// The number of latent processes
+		
+		
+		Vector<IChildProcess> obs = cont.getObservedNodes();
+		Vector<IParentProcess> lats = cont.getLatentNodes();
 	
 		for(int i = 0; i < M; i++)
 		{
-			IDynBayesNode latent = cont.newLatentModel();
+			IParentProcess latent = cont.newLatentModel();
 			int counter = 0;
-			for(IDynBayesNode child : cont.getObservedNodes())
+			for(IChildProcess child : cont.getObservedNodes())
 			{
 				if(opts.initialAssignments[counter][i])
 					cont.connect(latent, child);
@@ -88,7 +94,7 @@ public class IBPMixture {
 			}
 		}
 	
-		double ll = cont.run() + structureLL(cont);
+		double ll = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont);
 		
 		cont.log("Learning run started: Initial Log Likelihood = " + ll);
 		
@@ -97,19 +103,36 @@ public class IBPMixture {
 			int choice = MathUtil.discreteSample(this.main_probs);
 			if(choice==0)
 			{
-				Vector<IDynBayesNode> obs = cont.getObservedNodes();
-				Vector<IDynBayesNode> lats = cont.getLatentNodes();
 				choice = MathUtil.rand.nextInt(obs.size());
-				IDynBayesNode hsn = obs.get(choice);
-				cont.log("Starting horizontal sample run for node : " + hsn.getName());
+				IChildProcess hsn = obs.get(choice);
+				//TODO FIX cont.log("Starting horizontal sample run for node : " + hsn.getName());
+				
+				HashSet<IParentProcess> parents = cont.getParents(hsn);
+				
+				for(IParentProcess latNd : lats)
+				{
+					if(parents.contains(latNd))
+						ll = this.attemptDisconnect(latNd, hsn, cont, opts, ll);
+					else
+						ll = this.attemptConnect(latNd, hsn, cont, opts, ll);
+				}
 			}
 			else if(choice==1)
 			{
-				Vector<IDynBayesNode> obs = cont.getObservedNodes();
-				Vector<IDynBayesNode> lats = cont.getLatentNodes();
 				choice = MathUtil.rand.nextInt(lats.size());
-				IDynBayesNode vsn = lats.get(choice);
-				cont.log("Starting vertical sample run for node : " + vsn.getName());
+				IParentProcess vsn = lats.get(choice);
+				//TODO FIX cont.log("Starting vertical sample run for node : " + vsn.getName());
+
+				HashSet<IChildProcess> children = cont.getChildren(vsn);
+
+				for(IChildProcess obsNode : obs)
+				{
+					if(children.contains(obsNode))
+						ll = this.attemptDisconnect(vsn, obsNode, cont, opts, ll);
+					else
+						ll = this.attemptConnect(vsn, obsNode, cont, opts, ll);
+				}
+				
 			}
 			else
 			{
@@ -120,15 +143,50 @@ public class IBPMixture {
 					continue;
 				
 				proposal.action().perform(cont);
-				double newLL = cont.run() + structureLL(cont);
+				double newLL = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont);
 				
-				double p_accept = Math.exp(ll+Math.log(proposal.forwardP())-newLL-Math.log(proposal.backwardP()));
-				if(MathUtil.rand.nextDouble() < p_accept)
+				if(accept(newLL,proposal.forwardP(),ll,proposal.backwardP(),cont))
 					ll = newLL;
 				else
 					proposal.action().undo(cont);
 			}
 		}
+	}
+	
+	private double attemptDisconnect(IParentProcess latent, IChildProcess observed, ModelController cont, IBPMModelOptions opts, double ll) throws FMMException
+	{
+		//TODO FIX cont.log("Attempting to disconnect observation " + observed.getName() + " from latent sequence " + latent.getName());
+		cont.disconnect(latent, observed);
+		double newLL = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont);
+		if(accept(newLL,this.main_probs[1]+this.main_probs[0],ll,this.main_probs[1]+this.main_probs[0],cont))
+			ll = newLL;
+		else
+			cont.connect(latent, observed);
+		
+		return ll;
+	}
+	
+	private double attemptConnect(IParentProcess latent, IChildProcess observed, ModelController cont, IBPMModelOptions opts, double ll) throws FMMException
+	{
+		//TODO FIX cont.log("Attempting to connect observation " + observed.getName() + " to latent sequence " + latent.getName());
+		cont.connect(latent, observed);
+		double newLL = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont);
+		if(accept(newLL,this.main_probs[1]+this.main_probs[0],ll,this.main_probs[1]+this.main_probs[0],cont))
+			ll = newLL;
+		else
+			cont.disconnect(latent, observed);
+		
+		return ll;
+	}
+	
+	private boolean accept(double newLL, double pf, double oldLL, double pb, ModelController cont)
+	{
+		boolean ret = (MathUtil.rand.nextDouble() < Math.exp(newLL+Math.log(pb)-oldLL-Math.log(pf)));
+		if(ret)
+			cont.log("Proposal accepted.");
+		else
+			cont.log("Proposal rejected.");
+		return ret;
 	}
 	
 	private double structureLL(ModelController cont)

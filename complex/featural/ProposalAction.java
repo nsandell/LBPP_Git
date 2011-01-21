@@ -4,8 +4,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Vector;
 
-import bn.IDynBayesNode;
-
 import complex.featural.ModelController.LatentBackup;
 
 public abstract class ProposalAction
@@ -18,7 +16,7 @@ public abstract class ProposalAction
 
 	public static class SplitAction extends ProposalAction
 	{
-		public SplitAction(IDynBayesNode latent, HashSet<IDynBayesNode> movers)
+		public SplitAction(IParentProcess latent, HashSet<IChildProcess> movers)
 		{
 			this.latentFeature = latent;
 			this.movers = movers;
@@ -27,26 +25,26 @@ public abstract class ProposalAction
 		public void perform(ModelController cont) throws FMMException
 		{
 			this.newFeature = cont.newLatentModel();
-			for(IDynBayesNode child : this.movers)
+			for(IChildProcess child : this.movers)
 				cont.connect(this.newFeature,child);
 		}
 
 		public void undo(ModelController cont) throws FMMException
 		{
-			for(IDynBayesNode child : this.movers)
+			for(IChildProcess child : this.movers)
 				cont.connect(latentFeature,child);
 			cont.killLatentModel(this.newFeature);
 		}
 
-		private IDynBayesNode latentFeature;
-		private IDynBayesNode newFeature;
-		private HashSet<IDynBayesNode> movers;
+		private IParentProcess latentFeature;
+		private IParentProcess newFeature;
+		private HashSet<IChildProcess> movers;
 	}
 
 	public static class MergeAction extends ProposalAction
 	{
 
-		public MergeAction(IDynBayesNode l1, IDynBayesNode l2)
+		public MergeAction(IParentProcess l1, IParentProcess l2)
 		{
 			this.latent1 = l1;
 			this.latent2 = l2;
@@ -55,9 +53,9 @@ public abstract class ProposalAction
 		public void perform(ModelController cont) throws FMMException
 		{
 			this.latent2Backup = cont.backupAndRemoveLatentModel(latent2);
-			this.newl1Children = new HashSet<IDynBayesNode>();
-			HashSet<IDynBayesNode> l1Children = cont.getChildren(this.latent1);
-			for(IDynBayesNode child : this.latent2Backup.children)
+			this.newl1Children = new HashSet<IChildProcess>();
+			HashSet<IChildProcess> l1Children = cont.getChildren(this.latent1);
+			for(IChildProcess child : this.latent2Backup.children)
 			{
 				if(!l1Children.contains(child))
 				{
@@ -69,18 +67,18 @@ public abstract class ProposalAction
 
 		public void undo(ModelController cont) throws FMMException
 		{
-			this.latent2 = cont.restoreBackup(this.latent2Backup);
-			for(IDynBayesNode child : this.newl1Children)
+			//TODO FIX this.latent2 = cont.restoreBackup(this.latent2Backup);
+			for(IChildProcess child : this.newl1Children)
 				cont.disconnect(this.latent1,child);
 		}
-		private IDynBayesNode latent1, latent2;
+		private IParentProcess latent1, latent2;
 		private LatentBackup latent2Backup;
-		private HashSet<IDynBayesNode> newl1Children;
+		private HashSet<IChildProcess> newl1Children;
 	}
 
 	public static class SwitchAction extends ProposalAction
 	{
-		public SwitchAction(IDynBayesNode from, IDynBayesNode to, Vector<IDynBayesNode> switches)
+		public SwitchAction(IParentProcess from, IParentProcess to, Vector<IChildProcess> switches)
 		{
 			this.lfrom = from; this.lto = to; this.switches = switches;
 		}
@@ -88,7 +86,7 @@ public abstract class ProposalAction
 		public void perform(ModelController cont) throws FMMException
 		{
 			// It is assumed anything switching wasn't already in the to node.
-			for(IDynBayesNode child : this.switches)
+			for(IChildProcess child : this.switches)
 			{
 				cont.disconnect(lfrom, child);
 				cont.connect(lto, child);
@@ -97,20 +95,20 @@ public abstract class ProposalAction
 
 		public void undo(ModelController cont) throws FMMException
 		{
-			for(IDynBayesNode child : this.switches)
+			for(IChildProcess child : this.switches)
 			{
 				cont.disconnect(lto, child);
 				cont.connect(lfrom, child);
 			}
 		}
 
-		private IDynBayesNode lfrom, lto;
-		private Vector<IDynBayesNode> switches;
+		private IParentProcess lfrom, lto;
+		private Vector<IChildProcess> switches;
 	}
 
 	public static class DisconnectAction extends ProposalAction
 	{
-		public DisconnectAction(IDynBayesNode latent, Collection<IDynBayesNode> discons)
+		public DisconnectAction(IParentProcess latent, Collection<IChildProcess> discons)
 		{
 			this.latent = latent;
 			this.disconnects = discons;
@@ -118,23 +116,23 @@ public abstract class ProposalAction
 
 		public void perform(ModelController cont) throws FMMException
 		{
-			for(IDynBayesNode child : this.disconnects)
+			for(IChildProcess child : this.disconnects)
 				cont.disconnect(this.latent, child);
 		}
 
 		public void undo(ModelController cont) throws FMMException
 		{
-			for(IDynBayesNode child : this.disconnects)
+			for(IChildProcess child : this.disconnects)
 				cont.connect(this.latent, child);
 		}
 
-		private IDynBayesNode latent;
-		private Collection<IDynBayesNode> disconnects;
+		private IParentProcess latent;
+		private Collection<IChildProcess> disconnects;
 	}
 
 	public static class ConnectAction extends ProposalAction
 	{
-		public ConnectAction(IDynBayesNode latent, Collection<IDynBayesNode> cons)
+		public ConnectAction(IParentProcess latent, Collection<IChildProcess> cons)
 		{
 			this.latent = latent;
 			this.connects = cons;
@@ -142,17 +140,17 @@ public abstract class ProposalAction
 
 		public void perform(ModelController cont) throws FMMException
 		{
-			for(IDynBayesNode child : this.connects)
+			for(IChildProcess child : this.connects)
 				cont.connect(this.latent, child);
 		}
 
 		public void undo(ModelController cont) throws FMMException
 		{
-			for(IDynBayesNode child : this.connects)
+			for(IChildProcess child : this.connects)
 				cont.disconnect(this.latent, child);
 		}
 
-		private IDynBayesNode latent;
-		private Collection<IDynBayesNode> connects;
+		private IParentProcess latent;
+		private Collection<IChildProcess> connects;
 	}
 }

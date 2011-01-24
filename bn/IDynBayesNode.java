@@ -33,6 +33,8 @@ public interface IDynBayesNode extends IBayesNode
 	 */	
 	Iterable<? extends IDynBayesNode> getIntraParents();
 	
+	void setInitialDistribution(Distribution initDist) throws BNException;
+	
 	boolean hasInterChild(IDynBayesNode child);
 	boolean hasIntraChild(IDynBayesNode child);
 	boolean hasInterParent(IDynBayesNode child);

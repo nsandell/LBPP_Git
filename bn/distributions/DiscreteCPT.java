@@ -373,7 +373,10 @@ public class DiscreteCPT extends DiscreteDistribution
 			{
 				for(int j = 0; j < stato.cpt.getCardinality(); j++)
 				{
-					double newval = stato.exp_tr[i][j]/rowsum;
+					double newval;
+					if(!clampedLearn)
+						newval = stato.exp_tr[i][j]/rowsum;
+					else newval = (stato.exp_tr[i][j] + clampPct*rowsum/this.getCardinality())/(rowsum*(1+clampPct));
 					maxdiff = Math.max(Math.abs(this.values[i][j]-newval), maxdiff);
 					this.values[i][j] = newval;
 				}
@@ -477,6 +480,14 @@ public class DiscreteCPT extends DiscreteDistribution
 			return "";
 		}
 	}
+	
+	public static void setClampedLearn(boolean on)
+	{
+		clampedLearn = on;
+	}
+	
+	private static boolean clampedLearn = false;
+	private static double clampPct = 1e-15;
 	
 	private int dimprod;
 	private int[] dimSizes;

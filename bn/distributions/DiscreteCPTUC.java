@@ -115,7 +115,11 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		UDSuffStat stato = (UDSuffStat)stat; 
 		for(int i = 0; i < stato.expected_data.length; i++)
 		{
-			double newval = stato.expected_data[i]/stato.expected_sum;
+			double newval;
+			if(!clampedLearn)
+				newval = stato.expected_data[i]/stato.expected_sum;
+			else
+				newval = (stato.expected_data[i]+clampPct*stato.expected_sum/this.getCardinality())/((1+clampPct)*stato.expected_sum);
 			maxdiff = Math.max(Math.abs(newval-dist[i]), maxdiff);
 			this.dist[i] = newval; 
 		}
@@ -238,6 +242,14 @@ public class DiscreteCPTUC extends DiscreteDistribution
 		ret += "\n";
 		return ret;
 	}
+	
+	public static void setClampedLearn(boolean on)
+	{
+		clampedLearn = on;
+	}
+	
+	public static boolean clampedLearn = false;
+	public static double clampPct = 1e-15;
 	
 	private static final long serialVersionUID = 50L;
 	private final double[] dist;

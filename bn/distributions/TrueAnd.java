@@ -41,7 +41,7 @@ public class TrueAnd extends DiscreteDistribution {
 
 	@Override
 	public DiscreteSufficientStatistic getSufficientStatisticObj() {
-		return null; //TODO I think it can be null but check.
+		return Distribution.NullDiscreteSufficientStatistic.instance();
 	}
 
 	@Override

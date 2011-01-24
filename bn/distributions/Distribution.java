@@ -83,6 +83,29 @@ public interface Distribution
 		public DiscreteSufficientStatistic update(Integer value, Vector<DiscreteMessage> incomingPis) throws BNException;
 	}
 	
+	public static class NullDiscreteSufficientStatistic implements DiscreteSufficientStatistic
+	{
+		private NullDiscreteSufficientStatistic(){}
+		private static NullDiscreteSufficientStatistic singleton = new NullDiscreteSufficientStatistic();
+		public static NullDiscreteSufficientStatistic instance(){return singleton;}
+
+		@Override
+		public void reset() {}
+
+		@Override
+		public DiscreteSufficientStatistic update(SufficientStatistic stat)
+				throws BNException {return this;}
+
+		@Override
+		public DiscreteSufficientStatistic update(DiscreteMessage lambda,
+				Vector<DiscreteMessage> incomingPis) throws BNException {return this;}
+
+		@Override
+		public DiscreteSufficientStatistic update(Integer value,
+				Vector<DiscreteMessage> incomingPis) throws BNException {return this;}
+		
+	}
+	
 	/**
 	 * An index wrapper function such that we can pass discrete CPDs parent values either through
 	 * an array of integers or a vector of objects that have an integer value (i.e. discrete nodes)

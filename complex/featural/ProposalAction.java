@@ -67,7 +67,7 @@ public abstract class ProposalAction
 
 		public void undo(ModelController cont) throws FMMException
 		{
-			//TODO FIX this.latent2 = cont.restoreBackup(this.latent2Backup);
+			this.latent2 = cont.restoreBackup(this.latent2Backup);
 			for(IChildProcess child : this.newl1Children)
 				cont.disconnect(this.latent1,child);
 		}
@@ -128,6 +128,28 @@ public abstract class ProposalAction
 
 		private IParentProcess latent;
 		private Collection<IChildProcess> disconnects;
+	}
+	
+	public static class UniqueParentAddAction extends ProposalAction
+	{
+		public UniqueParentAddAction(IChildProcess cp)
+		{
+			this.cp = cp;
+		}
+
+		@Override
+		public void perform(ModelController cont) throws FMMException {
+			this.uniqParent = cont.newLatentModel();
+			cont.connect(uniqParent,cp);
+		}
+
+		@Override
+		public void undo(ModelController cont) throws FMMException {
+			cont.killLatentModel(this.uniqParent);
+		}
+		
+		IParentProcess uniqParent;
+		IChildProcess cp;
 	}
 
 	public static class ConnectAction extends ProposalAction

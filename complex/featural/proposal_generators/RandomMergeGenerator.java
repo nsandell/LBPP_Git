@@ -14,6 +14,11 @@ public class RandomMergeGenerator implements ProposalGenerator
 		this.psplit = psplit;
 	}
 	
+	public String name()
+	{
+		return "Random merges";
+	}
+	
 	public Proposal generate(ModelController cont)
 	{
 		int N = cont.getLatentNodes().size();

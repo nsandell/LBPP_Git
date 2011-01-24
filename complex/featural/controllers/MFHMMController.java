@@ -8,6 +8,7 @@ import bn.BNException;
 import bn.IDynBayesNet;
 import bn.IDynBayesNode;
 import bn.distributions.DiscreteCPT;
+import bn.distributions.DiscreteCPTUC;
 import complex.featural.FMMException;
 import complex.featural.IChildProcess;
 import complex.featural.IParentProcess;
@@ -38,11 +39,12 @@ public class MFHMMController extends ModelController {
 	public static interface MFHMMInitialParamGenerator
 	{
 		public DiscreteCPT getInitialA();
-		public DiscreteCPT getInitialPi();
+		public DiscreteCPTUC getInitialPi();
 	}
 	
 	public MFHMMController(IDynBayesNet network, Vector<IFHMMChild> observations, MFHMMInitialParamGenerator paramgen, int Ns) throws BNException
 	{
+		super(observations);
 		this.network = network;
 		for(IFHMMChild child : observations)
 			this.observables.add(child);
@@ -50,11 +52,6 @@ public class MFHMMController extends ModelController {
 		this.ns = Ns;
 	}
 
-	@Override
-	public void saveInfo()
-	{
-		// TODO Auto-generated method stub
-	}
 
 	@Override
 	protected void killLatentModelI(IParentProcess node) throws FMMException {
@@ -102,12 +99,14 @@ public class MFHMMController extends ModelController {
 	private int nextID()
 	{
 		int ret = this.minimum_available_id;
+		this.usedIDs.add(ret);
 		while(true)
 		{
 			this.minimum_available_id++;
 			if(!this.usedIDs.contains(this.minimum_available_id))
-				return ret;
+				break;
 		}
+		return ret;
 	}
 	
 	private void killID(int id)
@@ -120,6 +119,5 @@ public class MFHMMController extends ModelController {
 	private HashSet<Integer> usedIDs = new HashSet<Integer>();
 	private int minimum_available_id = 0;
 	private int ns;
-	private IDynBayesNet network;
 	private MFHMMInitialParamGenerator paramgen;
 }

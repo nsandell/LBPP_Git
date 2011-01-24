@@ -18,6 +18,11 @@ public class RandomSplitGenerator implements ProposalGenerator
 		this.psplit = psplit;
 	}
 	
+	public String name()
+	{
+		return "Random splits";
+	}
+	
 	public Proposal generate(ModelController cont)
 	{
 		int N = cont.getLatentNodes().size();

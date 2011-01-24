@@ -196,14 +196,6 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 			this.innerNode.setValue(t0+t, ev[t]);
 	}
 	
-	/*public void invalidate() //TODO THink this is no longer needed, verify!
-	{
-		for(int t = 0; t < this.bayesNet.getT(); t++)
-			this.contextManager.getLocalLambda(t).invalidate();
-		for(int t = 0; t < this.bayesNet.getT(); t++)
-			this.contextManager.getLocalPi(t).invalidate();
-	}*/
-	
 	public void setEvidence(int t, Object ev) throws BNException
 	{
 		this.innerNode.setValue(t, ev);
@@ -477,6 +469,118 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 	{
 		return this.bayesNet.getT();
 	}
+
+
+	static class DiscreteDBNValueNode extends DBNNode implements IDiscreteDynBayesNode, ValueObject<Integer>
+	{
+		public DiscreteDBNValueNode(DynamicBayesianNetwork net, String name, int cardinality) throws BNException
+		{
+			super(net,name,new DiscreteNode<Integer>(cardinality,null));
+			this.cardinality = cardinality;
+		}
+		int cardinality;
+
+		public double betheFreeEnergy() throws BNException
+		{
+			double sum = 0;
+			for(int i = 0; i < this.getT(); i++)
+				sum += this.innerNode.betheFreeEnergy(i);
+			return sum;
+		}
+		
+		@Override
+		public void validate() throws BNException
+		{
+			super.validate();
+			for(int i = 0; i < this.getT(); i++)
+			{
+				if(this.innerNode.getValue(i)==null)
+					throw new BNException("Value node " + this.getName() + " has no value set at time " + i);
+			}
+		}
+
+		@Override
+		public DiscreteDistribution getInitialDistribution() {
+			return null;
+		}
+
+		@Override
+		public void setInitialDistribution(DiscreteDistribution dist)
+		throws BNException {
+			throw new BNException("Cannot set a distribution on a value node!");
+		}
+
+		@Override
+		public void setAdvanceDistribution(DiscreteDistribution dist)
+		throws BNException {
+			throw new BNException("Cannot set a distribution on a value node!");
+		}
+
+		@Override
+		public void setValue(int t, int value) throws BNException {
+			this.innerNode.setValue(t, value);
+		}
+
+		@Override
+		public void setValue(int[] values, int t0) throws BNException {
+			for(int i = 0; i < values.length; i++)
+				this.setValue(t0+i,values[i]);
+		}
+
+		@Override
+		public Integer getValue(int t) throws BNException {
+			return (Integer)this.innerNode.getValue(t);
+		}
+
+		@Override
+		public int getCardinality() {
+			return this.cardinality;
+		}
+
+		@Override
+		public DiscreteMessage getMarginal(int t) throws BNException
+		{
+			return DiscreteMessage.delta(this.cardinality, this.getValue(t));
+		}
+
+		public String getNodeDefinition()
+		{
+			String ret = this.getName()+":DiscreteValue("+this.getCardinality()+")\n";
+			boolean inSequence = false;
+			for(int i = 0; i < this.getT(); i++)
+			{
+				if(this.innerNode.getValue(i)!=null)
+				{
+					if(inSequence)
+						ret += " " + this.innerNode.getValue(i);
+					else
+					{
+						ret += this.getName() +"("+i+") = " + this.innerNode.getValue(i);
+						inSequence = true;
+					}
+				}
+				else if(inSequence)
+				{
+					inSequence = false;
+					ret += "\n";
+				}
+			}
+			if(inSequence)
+				ret+="\n";
+			return ret;
+		}
+
+		public String getEdgeDefinition()
+		{
+			String ret = "";
+			for(DBNNode child : this.intraChildren.keySet())
+				ret += this.getName()+"->"+child.getName()+"\n";
+			for(DBNNode child : this.interChildren.keySet())
+				ret += this.getName()+"=>"+child.getName()+"\n";
+			return ret;
+		}
+
+	}
 	
 	static class DiscreteDBNNode extends DBNNode implements IDiscreteDynBayesNode, ValueObject<Integer>
 	{
@@ -505,8 +609,6 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 			return sum;
 		}
 		
-
-	
 
 		@Override
 		public DiscreteDistribution getInitialDistribution() {

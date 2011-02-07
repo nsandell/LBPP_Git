@@ -57,5 +57,5 @@ class FlatNoisyOrCreator implements ICPDCreator
 	public final String getPrompt() {return "Enter activation parameter: ";}			
 	private HashMap<String,Distribution> distmap;
 	private static int[] groups = new int[]{1};
-	private static Pattern patt = Pattern.compile("([\\.e\\-0-9]*)");
+	private static Pattern patt = Pattern.compile("([\\.e\\-0-9E]*)");
 }

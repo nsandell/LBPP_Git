@@ -70,5 +70,5 @@ class DiscreteCPTUCCreator implements ICPDCreator
 	public final String getPrompt() {return "Enter probability vector: ";}			
 	private HashMap<String,Distribution> distmap;
 	private static int[] groups = new int[]{1};
-	private static Pattern patt = Pattern.compile("\\[?\\s*(([\\.e\\-0-9]+\\s*)+)\\]?");
+	private static Pattern patt = Pattern.compile("\\[?\\s*(([\\.e\\-0-9E]+\\s*)+)\\]?");
 }

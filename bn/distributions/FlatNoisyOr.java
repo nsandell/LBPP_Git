@@ -4,9 +4,10 @@ import java.io.PrintStream;
 import java.util.Vector;
 
 import bn.BNException;
+import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.messages.DiscreteMessage;
 
-public class FlatNoisyOr extends DiscreteDistribution {
+public class FlatNoisyOr extends DiscreteFiniteDistribution {
 	
 	public FlatNoisyOr(double c) throws BNException
 	{

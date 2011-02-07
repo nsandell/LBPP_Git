@@ -5,6 +5,7 @@ import java.util.Vector;
 
 import util.MathUtil;
 
+import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.distributions.SparseDiscreteCPT.Entry;
 import bn.messages.DiscreteMessage;
 import bn.BNException;
@@ -13,7 +14,7 @@ import bn.BNException;
  * Standard dense storage of a CPT of arbitrary number of conditions.
  * @author Nils F Sandell
  */
-public class DiscreteCPT extends DiscreteDistribution
+public class DiscreteCPT extends DiscreteFiniteDistribution
 {
 	/**
 	 * Create a dense CPT

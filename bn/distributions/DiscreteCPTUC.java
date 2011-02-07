@@ -6,13 +6,14 @@ import java.util.Vector;
 import util.MathUtil;
 
 import bn.BNException;
+import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.messages.DiscreteMessage;
 
 /**
  * A probability vector - a CPT with non conditioning variables.
  * @author Nils F. Sandell
  */
-public class DiscreteCPTUC extends DiscreteDistribution
+public class DiscreteCPTUC extends DiscreteFiniteDistribution
 {
 	/**
 	 * Create a probability vector

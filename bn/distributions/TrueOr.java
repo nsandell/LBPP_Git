@@ -4,9 +4,10 @@ import java.io.PrintStream;
 import java.util.Vector;
 
 import bn.BNException;
+import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.messages.DiscreteMessage;
 
-public class TrueOr extends DiscreteDistribution {
+public class TrueOr extends DiscreteFiniteDistribution {
 	
 	private TrueOr(){super(2);}
 	

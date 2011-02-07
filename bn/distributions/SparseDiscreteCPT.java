@@ -10,6 +10,7 @@ import java.util.Vector;
 import util.MathUtil;
 
 import bn.BNException;
+import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.messages.DiscreteMessage;
 
 /**
@@ -19,7 +20,7 @@ import bn.messages.DiscreteMessage;
  * it will cause an exception.
  * @author Nils F. Sandell
  */
-public class SparseDiscreteCPT extends DiscreteDistribution
+public class SparseDiscreteCPT extends DiscreteFiniteDistribution
 {
 	/**
 	 * Class representative of an entry in a CPT, this is for outside classes

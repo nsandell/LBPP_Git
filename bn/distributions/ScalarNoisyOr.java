@@ -5,6 +5,7 @@ import java.util.Vector;
 
 import util.MathUtil;
 import bn.BNException;
+import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.messages.DiscreteMessage;
 
 /**
@@ -15,7 +16,7 @@ import bn.messages.DiscreteMessage;
  * Note this is only valid for binary nodes with binary parents
  * @author Nils F. Sandell
  */
-public class ScalarNoisyOr extends DiscreteDistribution
+public class ScalarNoisyOr extends DiscreteFiniteDistribution
 {
 	
 	/**

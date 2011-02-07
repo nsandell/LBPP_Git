@@ -10,29 +10,19 @@ import bn.messages.DiscreteMessage;
  * @author Nils F. Sandell
  */
 public abstract class DiscreteDistribution implements Distribution {
+	
+	public static abstract class DiscreteFiniteDistribution extends DiscreteDistribution
+	{
+		public DiscreteFiniteDistribution(int cardinality){this.cardinality = cardinality;}
+		public int getCardinality(){return this.cardinality;}
+		private int cardinality;
+	}
 
 	/**
 	 * Only constructor - all discrete distributions must be over some set cardinality.
 	 * @param cardinality The cardinality this distribution is over.
 	 */
-	protected DiscreteDistribution(int cardinality)
-	{
-		this.cardinality = cardinality;
-	}
-	
-	protected DiscreteDistribution()
-	{
-		this.cardinality = -1;  //TODO Should we just get rid of cardinality at this level?
-	}
-	
-	/**
-	 * Get the cardinality of this distribution
-	 * @return The cardinality.
-	 */
-	public final int getCardinality()
-	{
-		return this.cardinality;
-	}
+	protected DiscreteDistribution(){}
 	
 	/**
 	 * Sample this distribution given a set of parent values.
@@ -164,6 +154,4 @@ public abstract class DiscreteDistribution implements Distribution {
 									DiscreteMessage local_lambda, DiscreteMessage marginal, Integer value, int numChildren) throws BNException;
 	
 	private static final long serialVersionUID = 50L;
-	
-	private int cardinality;
 }

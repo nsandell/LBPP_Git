@@ -7,7 +7,7 @@ import bn.BNException;
  * and nodes that can be connected to discrete nodes.
  * @author Nils F. Sandell
  */
-public class DiscreteMessage extends Message
+public class DiscreteMessage extends DiscreteMessageBase
 {
 	/**
 	 * Creates a message with desired cardinality.
@@ -25,6 +25,7 @@ public class DiscreteMessage extends Message
 	 * message is all 0s it stays that way and returns 0.
 	 * @return The sum that was used to normalize.
 	 */
+	
 	public double normalize()
 	{
 		double sum = 0;
@@ -61,12 +62,13 @@ public class DiscreteMessage extends Message
 		return this.getMarginal((DiscreteMessage)other);
 	}
 	
-	public DiscreteMessage copy()
+	protected DiscreteMessage copyI()
 	{
 		DiscreteMessage newMsg = new DiscreteMessage(this.message_values.length);
 		newMsg.message_values = this.message_values.clone();
 		return newMsg;
 	}
+	
 	
 	public void empty()
 	{
@@ -90,6 +92,7 @@ public class DiscreteMessage extends Message
 			ret.setValue(i, this.message_values[i]/other.message_values[i]);
 		return ret;
 	}
+	
 	
 	public void setInitial()
 	{
@@ -142,6 +145,7 @@ public class DiscreteMessage extends Message
 		return ret;
 	}
 	
+	
 	/**
 	 * Set the value of this message.
 	 * @param index Index at which to set.
@@ -175,6 +179,7 @@ public class DiscreteMessage extends Message
 	{
 		this.message_values = new double[newCard];
 	}
+	
 	
 	public void adopt(Message msg) throws BNException
 	{

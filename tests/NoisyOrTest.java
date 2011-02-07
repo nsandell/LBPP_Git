@@ -87,7 +87,7 @@ public class NoisyOrTest
 		double twosFrac = 0;
 		for(int trial = 0; trial < N; trial++)
 		{
-			snet.sample();
+			//snet.sample(); //TODO I think this test is broken because of no sampling
 			ydat[trial] = (Integer)snet.getEvidence("Y");//y.getValue();
 			int x1val = (Integer)snet.getEvidence("X");
 			int x2val = (Integer)snet.getEvidence("X2");
@@ -171,7 +171,7 @@ public class NoisyOrTest
 		IStaticBayesNet snet = BayesNetworkFactory.getStaticNetwork();
 		IDiscreteBayesNode x1 = snet.addDiscreteNode("X1", 2);
 		IDiscreteBayesNode x2 = snet.addDiscreteNode("X2", 2);
-		IDiscreteBayesNode x3 = snet.addDiscreteNode("X3", 2);
+		snet.addDiscreteNode("X3", 2);
 		snet.addDiscreteNode("Y", 2);
 		snet.addEdge("X1", "Y");
 		snet.addEdge("X2", "Y");

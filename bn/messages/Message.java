@@ -8,8 +8,6 @@ public abstract class Message implements Serializable {
 
 	abstract Message copy();
 	
-	public abstract Message getMarginal(Message other) throws BNException;
-
 	public static class MessageInterface implements Serializable
 	{
 		public MessageInterface(Message lambda, Message pi)
@@ -40,7 +38,7 @@ public abstract class Message implements Serializable {
 	
 	public abstract void setInitial();
 	
-	public abstract void adopt(Message msg) throws BNException;
+	//public abstract void adopt(Message msg) throws BNException;
 	
 	boolean valid = true;
 	

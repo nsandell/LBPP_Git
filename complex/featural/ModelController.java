@@ -13,7 +13,6 @@ import util.MathUtil;
 
 import bn.BNException;
 import bn.IDynBayesNet;
-import bn.IDynBayesNode;
 
 public abstract class ModelController
 {

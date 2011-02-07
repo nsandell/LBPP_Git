@@ -97,7 +97,7 @@ public class DBNFragment extends DynamicBayesianNetwork implements IDBNFragmentS
 				MessageInterface innerMost = inner.get(ent2.getKey());
 				if(innerMost==null)
 					throw new BNException("Failed to sync fragment interfaces...");
-				innerMost.pi.adopt(ent2.getValue().pi);
+				//innerMost.pi.adopt(ent2.getValue().pi);  //TODO Gotta figure this shit out.
 			}
 		}
 	}
@@ -114,7 +114,7 @@ public class DBNFragment extends DynamicBayesianNetwork implements IDBNFragmentS
 				MessageInterface innerMost = inner.get(ent2.getKey());
 				if(innerMost==null)
 					throw new BNException("Failed to sync fragment interfaces...");
-				innerMost.lambda.adopt(ent2.getValue().lambda);
+				//innerMost.lambda.adopt(ent2.getValue().lambda);  //TODO Gotta figure this shit out
 			}
 		}
 	}

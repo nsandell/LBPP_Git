@@ -272,7 +272,7 @@ public class DiscreteNode<Context> implements InnerNode<Context>, Serializable
 		if(cpt==null) throw new BNException("No CPT Set!");
 		try
 		{
-			cpt.validateConditionDimensions(this.getParentDimensions(ctxt));
+			cpt.validateDimensionality(this.getParentDimensions(ctxt), this.cardinality);
 		} catch(BNException e) {
 			throw new BNException("CPT has incorrect number of conditions: " + e.getMessage());
 		}

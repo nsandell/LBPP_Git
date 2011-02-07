@@ -212,7 +212,7 @@ abstract class BNNode implements InternalIBayesNode
 	{
 		public DiscreteBNNode(StaticBayesianNetwork net, String name, int cardinality) 
 		{
-			super(net,name,new DiscreteNode<Void>(cardinality, new StaticContextManager<DiscreteDistribution, 
+			super(net,name,new FiniteDiscreteNode<Void>(cardinality, new StaticContextManager<DiscreteDistribution, 
 					DiscreteMessage, Integer>(	DiscreteMessage.normalMessage(cardinality),
 												DiscreteMessage.normalMessage(cardinality))));
 			this.cardinality = cardinality;

@@ -14,9 +14,9 @@ import bn.interfaces.ContextManager;
 import bn.messages.DiscreteMessage;
 import bn.messages.Message.MessageInterface;
 
-public class DiscreteNode<Context> implements InnerNode<Context>, Serializable
+public class FiniteDiscreteNode<Context> implements InnerNode<Context>, Serializable
 {
-	public DiscreteNode(int cardinality, ContextManager<DiscreteDistribution,Context,DiscreteMessage,Integer> contextManager)
+	public FiniteDiscreteNode(int cardinality, ContextManager<DiscreteDistribution,Context,DiscreteMessage,Integer> contextManager)
 	{
 		this.cardinality = cardinality;
 		this.contextManager = contextManager;

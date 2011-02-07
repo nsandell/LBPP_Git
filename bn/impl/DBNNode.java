@@ -475,7 +475,7 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 	{
 		public DiscreteDBNValueNode(DynamicBayesianNetwork net, String name, int cardinality) throws BNException
 		{
-			super(net,name,new DiscreteNode<Integer>(cardinality,null));
+			super(net,name,new FiniteDiscreteNode<Integer>(cardinality,null));
 			this.cardinality = cardinality;
 		}
 		int cardinality;
@@ -586,7 +586,7 @@ abstract class DBNNode implements InternalIBayesNode, IDynBayesNode
 	{
 		public DiscreteDBNNode(DynamicBayesianNetwork net, String name, int cardinality) throws BNException
 		{
-			super(net,name,new DiscreteNode<Integer>(cardinality, new DynamicContextManager<DiscreteDistribution,
+			super(net,name,new FiniteDiscreteNode<Integer>(cardinality, new DynamicContextManager<DiscreteDistribution,
 					DiscreteMessage, Integer>(	getMessageSet(cardinality, net.getT()),
 												getMessageSet(cardinality, net.getT()))));
 			this.cardinality = cardinality;

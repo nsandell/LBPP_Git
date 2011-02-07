@@ -60,7 +60,7 @@ abstract class DBNFragmentNode extends DBNNode {
 		public DiscreteDBNFNode(DBNFragment net, String name, int cardinality) throws BNException
 		{
 			super(net,name,
-				  new DiscreteNode<Integer>(cardinality,
+				  new FiniteDiscreteNode<Integer>(cardinality,
 					new DynamicFragmentManager<DiscreteDistribution,DiscreteMessage, Integer>(
 										getMessageSet(cardinality, net.getT()),
 										getMessageSet(cardinality, net.getT()),

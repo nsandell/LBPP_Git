@@ -59,7 +59,7 @@ public class TrueOr extends DiscreteFiniteDistribution {
 	}
 
 	@Override
-	public void validateConditionDimensions(int[] dimensions)
+	protected void validateConditionDimensions(int[] dimensions)
 			throws BNException {
 		if(dimensions.length==0)
 			throw new BNException("Or node has no parents!");

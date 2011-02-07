@@ -83,7 +83,7 @@ public class FlatNoisyOr extends DiscreteFiniteDistribution {
 
 
 	@Override
-	public void validateConditionDimensions(int[] dimensions)
+	protected void validateConditionDimensions(int[] dimensions)
 			throws BNException {
 		if(dimensions.length==0)
 			throw new BNException("Flat Noisy-Or node has no parents!");

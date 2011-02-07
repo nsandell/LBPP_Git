@@ -244,7 +244,7 @@ public class SparseDiscreteCPT extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public void validateConditionDimensions(int [] dimens) throws BNException
+	protected void validateConditionDimensions(int [] dimens) throws BNException
 	{
 		if(dimens.length!=this.dimSizes.length)
 			throw new BNException("Invalid parent set for CPT!");

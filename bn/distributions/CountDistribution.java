@@ -13,7 +13,6 @@ import bn.messages.DiscreteMessage;
  */
 public class CountDistribution extends DiscreteDistribution
 {
-	
 	private CountDistribution(){}
 	private static CountDistribution singleton = null;
 	public static CountDistribution getSingleton()
@@ -67,7 +66,7 @@ public class CountDistribution extends DiscreteDistribution
 	}
 
 	@Override
-	public void validateConditionDimensions(int[] dimensions)
+	public void validateDimensionality(int[] dimensions, int cardinality)
 			throws BNException {
 		for(int dim : dimensions)
 			if(dim!=2)

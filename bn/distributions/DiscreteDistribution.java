@@ -14,6 +14,16 @@ public abstract class DiscreteDistribution implements Distribution {
 	public static abstract class DiscreteFiniteDistribution extends DiscreteDistribution
 	{
 		public DiscreteFiniteDistribution(int cardinality){this.cardinality = cardinality;}
+		
+		@Override
+		public void validateDimensionality(int[] dimensions, int cardinality) throws BNException
+		{
+			if(this.cardinality!=cardinality)
+				throw new BNException("Failure to validate - finite discrete distribution has incorrect dimensionality for the support variable!");
+			this.validateConditionDimensions(dimensions);
+		}
+		protected abstract void validateConditionDimensions(int[] dimensions) throws BNException;
+		
 		public int getCardinality(){return this.cardinality;}
 		private int cardinality;
 	}
@@ -52,9 +62,10 @@ public abstract class DiscreteDistribution implements Distribution {
 	 * Validate that this distribution can handle a set of parents with the dimensions
 	 * provided.
 	 * @param dimensions Dimensions of the conditioning variables.
+	 * @param cardinality Dimension of the support node.
 	 * @throws BNException If this node cannot handle the given dimension vector.
 	 */
-	public abstract void validateConditionDimensions(int[] dimensions) throws BNException;
+	public abstract void validateDimensionality(int[] dimensions, int cardinality) throws BNException;
 
 	/**
 	 * Static helper function, converts a set of conditioning variable values into

@@ -66,7 +66,7 @@ public class ScalarNoisyOr extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public void validateConditionDimensions(int[] dims) throws BNException
+	protected void validateConditionDimensions(int[] dims) throws BNException
 	{
 		if(dims.length==0)
 			throw new BNException("Noisy-Or node has no parents!");

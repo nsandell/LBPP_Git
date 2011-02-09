@@ -127,6 +127,7 @@ public class DiscreteDBNNode extends DBNNode implements IDynFDiscNode, Optimizab
 	@Override
 	public double updateMessages(int t) throws BNException
 	{
+		int j =t;
 		return FiniteDiscreteNode.updateMessages((t==0 && this.initialDist!=null) ? this.initialDist : this.advanceDist, 
 				this.localLambda.get(t), this.localPi.get(t),
 				this.parentMessages.getIncomingPis(t),this.childrenMessages.getOutgoingPis(t),

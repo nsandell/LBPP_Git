@@ -19,7 +19,9 @@ public class DynamicContextManager
 		{
 			public DMSIterator(Iterator<MessageType> it1, Iterator<MessageType> it2)
 			{
-				this.it1 = it1; this.it2 = it2;
+				if(it1.hasNext())
+					this.it1 = it1;
+				this.it2 = it2;
 			}
 
 			@Override
@@ -48,7 +50,7 @@ public class DynamicContextManager
 
 			public void remove(){throw new UnsupportedOperationException();}
 	
-			private Iterator<MessageType> it1, it2;
+			private Iterator<MessageType> it1 = null, it2 = null;
 		}
 		
 		@Override

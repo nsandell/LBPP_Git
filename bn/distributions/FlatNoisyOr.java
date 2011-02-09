@@ -66,7 +66,7 @@ public class FlatNoisyOr extends DiscreteFiniteDistribution {
 
 
 	@Override
-	public DiscreteDistribution copy() throws BNException {
+	public FlatNoisyOr copy() throws BNException {
 		return new FlatNoisyOr(this.c);
 	}
 

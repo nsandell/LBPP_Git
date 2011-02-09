@@ -46,7 +46,7 @@ public class TrueOr extends DiscreteFiniteDistribution {
 	}
 
 	@Override
-	public DiscreteDistribution copy() throws BNException {
+	public TrueOr copy() throws BNException {
 		return this;
 	}
 

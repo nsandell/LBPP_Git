@@ -23,6 +23,9 @@ public abstract class DiscreteDistribution implements Distribution {
 		}
 		protected abstract void validateConditionDimensions(int[] dimensions) throws BNException;
 		
+		@Override
+		public abstract DiscreteFiniteDistribution copy() throws BNException;
+		
 		public int getCardinality(){return this.cardinality;}
 		private int cardinality;
 	}

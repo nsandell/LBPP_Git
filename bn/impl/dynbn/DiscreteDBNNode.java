@@ -127,7 +127,6 @@ public class DiscreteDBNNode extends DBNNode implements IDynFDiscNode, Optimizab
 	@Override
 	public double updateMessages(int t) throws BNException
 	{
-		int j =t;
 		return FiniteDiscreteNode.updateMessages((t==0 && this.initialDist!=null) ? this.initialDist : this.advanceDist, 
 				this.localLambda.get(t), this.localPi.get(t),
 				this.parentMessages.getIncomingPis(t),this.childrenMessages.getOutgoingPis(t),
@@ -177,17 +176,17 @@ public class DiscreteDBNNode extends DBNNode implements IDynFDiscNode, Optimizab
 	}
 	public void setAdvanceDistribution(DiscreteFiniteDistribution dist)
 	throws BNException {
-		this.advanceDist = dist;
+		this.advanceDist = dist.copy();
 	}
 	public void setInitialDistribution(Distribution dist)
 	throws BNException {
 		if(dist instanceof DiscreteFiniteDistribution)
-			this.initialDist = (DiscreteFiniteDistribution)dist;
+			this.initialDist = (DiscreteFiniteDistribution)dist.copy();
 	}
 	public void setAdvanceDistribution(Distribution dist)
 	throws BNException {
 		if(dist instanceof DiscreteFiniteDistribution)
-			this.advanceDist = (DiscreteFiniteDistribution)dist;
+			this.advanceDist = (DiscreteFiniteDistribution)dist.copy();
 	}
 	
 	public void setValue(int t, int value) throws BNException {
@@ -265,10 +264,10 @@ public class DiscreteDBNNode extends DBNNode implements IDynFDiscNode, Optimizab
 	{
 		if(this.initialDist!=null)
 		{
-			ps.println("Initial distribution for node " + this.getName() + " :");
+			ps.println("Initial distribution for node " + this.getName() + " : ");
 			this.initialDist.printDistribution(ps);
 		}
-		ps.println("Advance distribution for node " + this.getName() + " :");
+		ps.println("Advance distribution for node " + this.getName() + " : ");
 		this.advanceDist.printDistribution(ps);
 	}
 	

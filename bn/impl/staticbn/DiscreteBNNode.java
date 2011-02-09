@@ -107,15 +107,15 @@ class DiscreteBNNode extends BNNode implements IDiscreteBayesNode, Optimizable
 		this.value = null;
 	}
 	
-	public void setDistribution(DiscreteFiniteDistribution dist)
+	public void setDistribution(DiscreteFiniteDistribution dist) throws BNException
 	{
-		this.cpt = dist;
+		this.cpt = dist.copy();
 	}
 	
 	public void setDistribution(Distribution dist) throws BNException
 	{
 		if(dist instanceof DiscreteFiniteDistribution)
-			this.cpt = (DiscreteFiniteDistribution)dist;
+			this.cpt = (DiscreteFiniteDistribution)dist.copy();
 		else 
 			throw new BNException("Attempted to set discrete finite node's CPT to a non discrete distribution.");
 	}

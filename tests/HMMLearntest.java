@@ -2,10 +2,10 @@ package tests;
 
 
 import bn.BNException;
-import bn.IDiscreteDynBayesNode;
 
-import bn.IDynBayesNet;
 import bn.commandline.DynamicCommandLine;
+import bn.dynamic.IDynFDiscNode;
+import bn.dynamic.IDynNet;
 
 public class HMMLearntest {
 	public static void main(String[] args)
@@ -13,7 +13,7 @@ public class HMMLearntest {
 		String parallel = args[0];
 		try
 		{
-			IDynBayesNet dbn = DynamicCommandLine.loadNetwork("/Users/nsandell/LBPPack/trunk/test_files/hmmLearn.dlbp");
+			IDynNet dbn = DynamicCommandLine.loadNetwork("/Users/nsandell/LBPPack/trunk/test_files/hmmLearn.dlbp");
 			dbn.validate();
 			
 			for(int it = 0; it < 28; it++)
@@ -33,7 +33,7 @@ public class HMMLearntest {
 				{
 					for(int i = 0; i < 3; i++)
 					{
-						System.out.print(((IDiscreteDynBayesNode)dbn.getNode("X")).getMarginal(i).getValue(j)+ " ");
+						System.out.print(((IDynFDiscNode)dbn.getNode("X")).getMarginal(i).getValue(j)+ " ");
 					}System.out.println();
 				}
 				dbn.optimize(1,0,0,0);

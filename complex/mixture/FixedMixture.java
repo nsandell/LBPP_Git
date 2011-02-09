@@ -5,8 +5,8 @@ import java.util.Vector;
 import util.MathUtil;
 
 import bn.BNException;
-import bn.IDynBayesNet;
-import bn.IDynBayesNode;
+import bn.dynamic.IDynNet;
+import bn.dynamic.IDynNode;
 
 public class FixedMixture
 {
@@ -20,10 +20,10 @@ public class FixedMixture
 	}
 	
 	public static interface ModelController {
-		public IDynBayesNode newLatentModel(IDynBayesNet network);
-		public void connect(IDynBayesNet network, IDynBayesNode latent, IDynBayesNode observed) throws FMMException;
-		public void disconnect(IDynBayesNet network, IDynBayesNode latent, IDynBayesNode observed) throws FMMException;
-		public void saveInfo(IDynBayesNet network, Vector<IDynBayesNode> latents, Vector<IDynBayesNode> observeds, double ll);
+		public IDynNode newLatentModel(IDynNet network);
+		public void connect(IDynNet network, IDynNode latent, IDynNode observed) throws FMMException;
+		public void disconnect(IDynNet network, IDynNode latent, IDynNode observed) throws FMMException;
+		public void saveInfo(IDynNet network, Vector<IDynNode> latents, Vector<IDynNode> observeds, double ll);
 	}
 
 	public static class FMModelOptions
@@ -49,9 +49,9 @@ public class FixedMixture
 	 * @param obsConnectors Vector of nodes that will be used to connect the latent 
 	 * processes to the observed processes.
 	 */
-	static void learnFixedMixture(IDynBayesNet network,Vector<IDynBayesNode> obsConnectors, FMModelOptions opts) throws FMMException
+	static void learnFixedMixture(IDynNet network,Vector<IDynNode> obsConnectors, FMModelOptions opts) throws FMMException
 	{
-		Vector<IDynBayesNode> latentProcs = new Vector<IDynBayesNode>();
+		Vector<IDynNode> latentProcs = new Vector<IDynNode>();
 		for(int i = 0; i < opts.N; i++)
 			latentProcs.add(opts.controller.newLatentModel(network));
 		

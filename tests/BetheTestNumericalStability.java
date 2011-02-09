@@ -1,11 +1,13 @@
 package tests;
 
 import bn.BNException;
-import bn.IStaticBayesNet;
+
 import bn.IBayesNet.RunResults;
 import bn.distributions.DiscreteCPTUC;
 import bn.distributions.ScalarNoisyOr;
-import bn.impl.BayesNetworkFactory;
+import bn.impl.staticbn.StaticNetworkFactory;
+import bn.statc.IDiscreteBayesNode;
+import bn.statc.IStaticBayesNet;
 
 public class BetheTestNumericalStability {
 
@@ -13,8 +15,8 @@ public class BetheTestNumericalStability {
 	{
 		for(int N = 6; N < 40; N++)
 		{
-			IStaticBayesNet bn = BayesNetworkFactory.getStaticNetwork();
-			bn.addDiscreteNode("Child", 2);
+			IStaticBayesNet bn = StaticNetworkFactory.getNetwork();
+			IDiscreteBayesNode child = bn.addDiscreteNode("Child", 2);
 			
 			double eps = 1e-7;
 
@@ -31,7 +33,7 @@ public class BetheTestNumericalStability {
 			bn.setDistribution("Parent4", new DiscreteCPTUC(new double[]{eps,1-eps}));
 			bn.setDistribution("Parent5", new DiscreteCPTUC(new double[]{eps,1-eps}));
 
-			bn.addEvidence("Child", 0);
+			child.setValue(0);
 			bn.setDistribution("Child", new ScalarNoisyOr(.9));
 
 			bn.validate();
@@ -39,7 +41,7 @@ public class BetheTestNumericalStability {
 			System.out.println("N : " + N);
 			System.out.println(rr.numIts + " : " + rr.error);
 			System.out.println("BE : " + bn.getLogLikelihood());
-			bn.addEvidence("Child", 1);
+			child.setValue(1);
 			rr = bn.run(100, 0);
 			System.out.println(rr.numIts + " : " + rr.error);
 			System.out.println("BE : " + bn.getLogLikelihood());

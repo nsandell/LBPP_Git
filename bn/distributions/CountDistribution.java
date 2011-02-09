@@ -2,9 +2,9 @@ package bn.distributions;
 
 import java.io.PrintStream;
 import java.util.Vector;
-
 import bn.BNException;
-import bn.messages.DiscreteMessage;
+import bn.interfaces.MessageSet;
+import bn.messages.FiniteDiscreteMessage;
 
 /**
  * This distribution is deterministic - given a set of boolean parents,
@@ -74,8 +74,8 @@ public class CountDistribution extends DiscreteDistribution
 	}
 
 	@Override //TODO verify this...
-	public void computeLocalPi(DiscreteMessage local_pi,
-			Vector<DiscreteMessage> incoming_pis, Integer value)
+	public void computeLocalPi(FiniteDiscreteMessage local_pi,
+			MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value)
 			throws BNException {
 		
 		int L = incoming_pis.size();
@@ -83,7 +83,7 @@ public class CountDistribution extends DiscreteDistribution
 			local_pi.adjustCardinality(L+1);
 		
 		//Changing this method to treat any number < 1e-8 as 0 for numerical stability issue
-		Vector<DiscreteMessage> incPis2 = new Vector<DiscreteMessage>();
+		Vector<FiniteDiscreteMessage> incPis2 = new Vector<FiniteDiscreteMessage>();
 		int numZero = 0;
 		for(int i = 0; i < L; i++)
 		{
@@ -94,7 +94,7 @@ public class CountDistribution extends DiscreteDistribution
 		}
 		if(numZero==L)
 		{
-			DiscreteMessage ret = new DiscreteMessage(L+1);
+			FiniteDiscreteMessage ret = new FiniteDiscreteMessage(L+1);
 			ret.setValue(L, 1-1e-8);
 			for(int i = 0; i < L; i++)
 				ret.setValue(i, 1e-8/L);
@@ -102,7 +102,7 @@ public class CountDistribution extends DiscreteDistribution
 		}
 		if(numZero > 0)
 		{
-			DiscreteMessage local_pi_tmp = new DiscreteMessage(L-numZero);
+			FiniteDiscreteMessage local_pi_tmp = new FiniteDiscreteMessage(L-numZero);
 			this.computeLocalPi(local_pi_tmp, incoming_pis, value);
 			local_pi.empty();
 			for(int i = numZero; i < local_pi_tmp.getCardinality(); i++)
@@ -138,16 +138,16 @@ public class CountDistribution extends DiscreteDistribution
 	}
 
 	@Override
-	public void computeLambdas(Vector<DiscreteMessage> lambdas_out,
-			Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda,
+	public void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out,
+			MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda,
 			Integer value) throws BNException {
 		// TODO Auto-generated method stub
 		
 	}
 
 	@Override
-	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis,
-			DiscreteMessage local_lambda, DiscreteMessage marginal,
+	public double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis,
+			FiniteDiscreteMessage local_lambda, FiniteDiscreteMessage marginal,
 			Integer value, int numChildren) throws BNException {
 		// TODO Auto-generated method stub
 		return 0;

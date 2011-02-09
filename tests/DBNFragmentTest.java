@@ -1,17 +1,7 @@
 package tests;
 
-import bn.BNException;
-import bn.IBayesNet.RunResults;
-import bn.IDiscreteDynBayesNode;
-import bn.IDynBayesNet;
-import bn.distributions.DiscreteCPT;
-import bn.distributions.DiscreteCPTUC;
-import bn.impl.BayesNetworkFactory;
-import bn.impl.DBNFragment;
-import bn.impl.DBNFragment.FragmentSpot;
-
 public class DBNFragmentTest {
-
+/*
 	public static void main(String[] args) throws BNException
 	{
 		double[][] A = {{.85, .05, .05, .05},{.05, .85, .05, .05},{.05, .05, .85, .05},{.05, .05, .05, .85}};
@@ -21,7 +11,7 @@ public class DBNFragmentTest {
 		DiscreteCPT BCPT = new DiscreteCPT(new int[]{4}, 2, B);
 		DiscreteCPTUC piCPT = new DiscreteCPTUC(pi);
 		
-		IDynBayesNet idbn = BayesNetworkFactory.getDynamicNetwork(300);
+		IDynNet idbn = BayesNetworkFactory.getDynamicNetwork(300);
 		
 		DBNFragment frag1 = new DBNFragment(99, FragmentSpot.Front);
 		DBNFragment frag2 = new DBNFragment(99, FragmentSpot.Middle);
@@ -137,9 +127,9 @@ public class DBNFragmentTest {
 			double diffs = 0;
 			for(int i = 0; i < 4; i++)
 			{
-				val1[i] = ((IDiscreteDynBayesNode)idbn.getNode("X")).getMarginal(t).getValue(i);
+				val1[i] = ((IDynFDiscNode)idbn.getNode("X")).getMarginal(t).getValue(i);
 				diff[i] = val1[i];
-				diff[i] -= ((IDiscreteDynBayesNode)frg.getNode("X")).getMarginal(tadj).getValue(i);
+				diff[i] -= ((IDynFDiscNode)frg.getNode("X")).getMarginal(tadj).getValue(i);
 				diffs += Math.abs(diff[i]);
 			}
 			if(diffs!=0)
@@ -149,5 +139,5 @@ public class DBNFragmentTest {
 		}
 		
 		
-	}
+	}*/
 }

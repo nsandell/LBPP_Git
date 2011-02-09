@@ -1,23 +1,9 @@
 package tests;
 
-import java.rmi.Naming;
-import java.rmi.RMISecurityManager;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-
-import bn.IDiscreteDynBayesNode;
-import bn.IDynBayesNet;
-import bn.IBayesNet.RunResults;
-import bn.distributions.DiscreteCPT;
-import bn.distributions.DiscreteCPTUC;
-import bn.impl.BayesNetworkFactory;
-import bn.impl.CompositeDBN;
-import bn.impl.IDBNFragmentServer;
-import bn.messages.DiscreteMessage;
-
 public class RemoteFragmentTest {
 	public static void main(String[] args)
 	{
+		/*
 		System.setSecurityManager(new RMISecurityManager());
 		
 		IDBNFragmentServer server = null;
@@ -38,7 +24,7 @@ public class RemoteFragmentTest {
 			DiscreteCPTUC piCPT = new DiscreteCPTUC(pi);
 			
 			CompositeDBN cdbn = new CompositeDBN(8000, "testDBN", new double[] {.1,.45,.45}, servers);
-			IDynBayesNet idbn = BayesNetworkFactory.getDynamicNetwork(8000);
+			IDynNet idbn = BayesNetworkFactory.getDynamicNetwork(8000);
 
 			cdbn.addDiscreteNode("X", 4);
 			cdbn.addDiscreteNode("Y", 2);
@@ -100,9 +86,9 @@ public class RemoteFragmentTest {
 				double diffs = 0;
 				for(int i = 0; i < 4; i++)
 				{
-					val1[i] = ((IDiscreteDynBayesNode)idbn.getNode("X")).getMarginal(t).getValue(i);
+					val1[i] = ((IDynFDiscNode)idbn.getNode("X")).getMarginal(t).getValue(i);
 					diff[i] = val1[i];
-					DiscreteMessage msg1 = (DiscreteMessage)cdbn.getMarginal("X", t);
+					FiniteDiscreteMessage msg1 = (FiniteDiscreteMessage)cdbn.getMarginal("X", t);
 					diff[i] -= msg1.getValue(i);
 					diffs += Math.abs(diff[i]);
 				}
@@ -115,6 +101,6 @@ public class RemoteFragmentTest {
 		}
 		catch(Exception e) {
 			System.err.println("Error " + e.getMessage());
-		}
+		}*/
 	}
 }

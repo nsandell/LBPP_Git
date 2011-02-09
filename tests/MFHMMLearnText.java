@@ -4,11 +4,12 @@ import java.io.File;
 import java.util.Scanner;
 import java.util.Vector;
 import bn.BNException;
-import bn.IDynBayesNet;
-import bn.IDynBayesNode;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.distributions.FlatNoisyOr;
+import bn.dynamic.IDynFDiscNode;
+import bn.dynamic.IDynNet;
+import bn.impl.dynbn.DynamicNetworkFactory;
 import complex.featural.IBPMixture;
 import complex.featural.IBPMixture.IBPMModelOptions;
 import complex.featural.ProposalGenerator;
@@ -24,7 +25,7 @@ public class MFHMMLearnText {
 	
 	public static class YWrapper implements MFHMMController.IFHMMChild
 	{
-		public YWrapper(IDynBayesNode ynd)
+		public YWrapper(IDynFDiscNode ynd)
 		{
 			this.ynd = ynd;
 		}
@@ -34,12 +35,12 @@ public class MFHMMLearnText {
 			return this.ynd.getName();
 		}
 		
-		public IDynBayesNode hook()
+		public IDynFDiscNode hook()
 		{
 			return this.ynd;
 		}
 		
-		IDynBayesNode ynd;
+		IDynFDiscNode ynd;
 	}
 	
 	public static class ParamGen implements MFHMMInitialParamGenerator
@@ -86,14 +87,14 @@ public class MFHMMLearnText {
 			net.setEvidence(child.getName(), 0, o[i]);
 		}*/
 		
-		Integer[][] o = loadData(obs);
-		IDynBayesNet net = bn.impl.BayesNetworkFactory.getDynamicNetwork(o[0].length);
+		int[][] o = loadData(obs);
+		IDynNet net = DynamicNetworkFactory.newDynamicBayesNet(o[0].length);
 		for(int i = 0; i < o.length; i++)
 		{
 			YWrapper child = new YWrapper(net.addDiscreteNode("Y"+i, 2));
 			children.add(child);
-			child.ynd.setDistribution(new FlatNoisyOr(.7));
-			net.setEvidence(child.getName(), 0, o[i]);
+			child.ynd.setAdvanceDistribution(new FlatNoisyOr(.7));
+			child.ynd.setValue(o[i], 0);
 		}
 		
 		MFHMMController cont = new MFHMMController(net,children,new ParamGen(),2);
@@ -112,12 +113,12 @@ public class MFHMMLearnText {
 		mix.learn(opts);
 	}
 	
-	public static Integer[][] loadData(String file) throws Exception
+	public static int[][] loadData(String file) throws Exception
 	{
 		Scanner scan = new Scanner(new File(file));
 		int rows = scan.nextInt();
 		int cols = scan.nextInt();
-		Integer[][] dat = new Integer[rows][cols];
+		int[][] dat = new int[rows][cols];
 		for(int i = 0; i < rows; i++)
 		{
 			for(int j = 0; j < cols; j++)

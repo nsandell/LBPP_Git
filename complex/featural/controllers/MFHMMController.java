@@ -5,10 +5,10 @@ import java.util.Vector;
 
 
 import bn.BNException;
-import bn.IDynBayesNet;
-import bn.IDynBayesNode;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
+import bn.dynamic.IDynNet;
+import bn.dynamic.IDynNode;
 import complex.featural.FMMException;
 import complex.featural.IChildProcess;
 import complex.featural.IParentProcess;
@@ -18,12 +18,12 @@ public class MFHMMController extends ModelController {
 	
 	public static interface IFHMMChild extends IChildProcess
 	{
-		public IDynBayesNode hook();
+		public IDynNode hook();
 	}
 	
 	private static class FHMMX implements IParentProcess
 	{
-		FHMMX(IDynBayesNode xnd,int ID)
+		FHMMX(IDynNode xnd,int ID)
 		{
 			this.xnd = xnd;
 			this.ID = ID;
@@ -33,7 +33,7 @@ public class MFHMMController extends ModelController {
 			return this.xnd.getName();
 		}
 		int ID;
-		IDynBayesNode xnd;
+		IDynNode xnd;
 	}
 	
 	public static interface MFHMMInitialParamGenerator
@@ -42,7 +42,7 @@ public class MFHMMController extends ModelController {
 		public DiscreteCPTUC getInitialPi();
 	}
 	
-	public MFHMMController(IDynBayesNet network, Vector<IFHMMChild> observations, MFHMMInitialParamGenerator paramgen, int Ns) throws BNException
+	public MFHMMController(IDynNet network, Vector<IFHMMChild> observations, MFHMMInitialParamGenerator paramgen, int Ns) throws BNException
 	{
 		super(observations);
 		this.network = network;
@@ -70,7 +70,7 @@ public class MFHMMController extends ModelController {
 			FHMMX newNode = new FHMMX(this.network.addDiscreteNode("X"+id, this.ns),id);
 			this.network.addInterEdge(newNode.xnd, newNode.xnd);
 			newNode.xnd.setInitialDistribution(this.paramgen.getInitialPi());
-			newNode.xnd.setDistribution(this.paramgen.getInitialA());
+			//newNode.xnd.setDistribution(this.paramgen.getInitialA());//TODO FIX THIS
 			
 			return newNode;
 		} catch(BNException e) { throw new FMMException(e.getMessage()); }

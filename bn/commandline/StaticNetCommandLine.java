@@ -9,10 +9,10 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import util.Parser;
 import bn.BNException;
-import bn.IStaticBayesNet;
 import bn.commandline.distributions.CPDCreator;
 import bn.distributions.Distribution;
-import bn.impl.BayesNetworkFactory;
+import bn.impl.staticbn.StaticNetworkFactory;
+import bn.statc.IStaticBayesNet;
 
 public class StaticNetCommandLine
 {
@@ -40,7 +40,6 @@ public class StaticNetCommandLine
 			parser.addHandler(new UniversalCommandHandlers.BNValidate(bn));
 			parser.addHandler(new StaticCommandHandlers.ObservationHandler(bn));
 			parser.addHandler(new UniversalCommandHandlers.EvidenceClearer(bn));
-			parser.addHandler(new UniversalCommandHandlers.NodeEvidenceClearer(bn));
 			parser.addHandler(new UniversalCommandHandlers.NetLLGetter(bn));
 			//parser.addHandler(new UniversalCommandHandlers.DefinitionPrinter(bn));
 			parser.addHandler(new UniversalCommandHandlers.Optimizer(bn));
@@ -61,7 +60,7 @@ public class StaticNetCommandLine
 	{
 		try
 		{
-			IStaticBayesNet bn = BayesNetworkFactory.getStaticNetwork();
+			IStaticBayesNet bn = StaticNetworkFactory.getNetwork();
 			Parser parser = getParser(new BufferedReader(new FileReader(file)), null, System.err, true, true, bn);
 			if(parser==null) return null;
 			parser.go();
@@ -73,7 +72,7 @@ public class StaticNetCommandLine
 
 	public static void interactiveStaticNetwork()
 	{
-		IStaticBayesNet bn = BayesNetworkFactory.getStaticNetwork();
+		IStaticBayesNet bn = StaticNetworkFactory.getNetwork();
 		Parser parser = getParser(	new BufferedReader(new InputStreamReader(System.in)),
 									System.out,System.err,false,true,bn);
 		if(parser==null)

@@ -195,9 +195,10 @@ public class Parser {
 		public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException
 		{
 			Object[] objargs = new Object[args.length];
-			if(parameterTypes.length!=args.length) // Make sure we get appropriate number of arguments.
-				throw new ParserException("Method takes more arguments than specified...");
+			if(parameterTypes.length!=objargs.length) // Make sure we get appropriate number of arguments.
+				throw new ParserException("Method takes a different number of arguments than specified...");
 			int i = 0;
+			int objargsidx = 0;
 			try
 			{
 				// Iterate through the arguments converting them to the appropriate types for the method
@@ -205,19 +206,20 @@ public class Parser {
 				while(i < args.length)
 				{
 					if(String.class.equals(parameterTypes[i]))
-						objargs[i] = args[i]; 
+						objargs[objargsidx] = args[i]; 
 					else if(Integer.class.equals(parameterTypes[i]) || int.class.equals(parameterTypes[i]))
-						objargs[i] = Integer.parseInt(args[i]); 
+						objargs[objargsidx] = Integer.parseInt(args[i]); 
 					else if(Double.class.equals(parameterTypes[i]) || double.class.equals(parameterTypes[i]))
-						objargs[i] = Double.parseDouble(args[i]);
+						objargs[objargsidx] = Double.parseDouble(args[i]);
 					else if(environmentObjects!=null)
 					{
 						EnvObj arg = this.environmentObjects.get(args[i]);
 						if(arg!=null) 
-							objargs[i] = arg;
+							objargs[objargsidx] = arg;
 						else if(arg==null)
 							throw new ParserException("Object '" + args[i] + "' not recognized.");
 					}
+					objargsidx++;
 					i++;
 				}
 				// If this method returns something aside from void, store it and invoke a method for
@@ -239,6 +241,7 @@ public class Parser {
 		}
 	
 		protected Object retObj;
+		
 		private Class<?>[] parameterTypes;
 		private String[] argumentNames;
 		private Object obj;

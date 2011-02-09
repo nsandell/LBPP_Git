@@ -14,6 +14,7 @@ import bn.distributions.Distribution;
 
 public class UniversalCommandHandlers {
 	
+	//TODO Clear this out
 	static class CPDAssigner extends MethodWrapperHandler<Distribution>
 	{
 		CPDAssigner(IBayesNet<?> net,HashMap<String, Distribution> distMap) throws Exception
@@ -70,25 +71,6 @@ public class UniversalCommandHandlers {
 		
 		private static Pattern patt = Pattern.compile("^\\s*clearAllEvidence\\s*$");
 		private static int[] groups = new int[]{};
-	}
-	
-	static class NodeEvidenceClearer extends MethodWrapperHandler<Object>
-	{
-		public NodeEvidenceClearer(IBayesNet<?> net) throws Exception
-		{
-			super(net,IBayesNet.class.getMethod("clearEvidence", new Class<?>[]{String.class}),new String[]{"Node name"},null);
-		}
-		
-		public String name(){return "clearEvidence";}
-		public String description(){return "Clear evidence from a node in the network.  For example," +
-				"clearEvidence(X) removes the observation from node X.";}
-		
-		public int[] getGroups(){return groups;}
-		public Pattern getRegEx(){return patt;}
-		public String getPrompt(){return null;}
-		
-		private static Pattern patt = Pattern.compile("^\\s*clearEvidence\\((.*)\\)\\s*$");
-		private static int[] groups = new int[]{1};
 	}
 	
 	static class BNSaver implements ParserFunction

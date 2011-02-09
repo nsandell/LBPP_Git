@@ -2,10 +2,10 @@ package bn.distributions;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
-import java.util.Vector;
 
 import bn.BNException;
-import bn.messages.DiscreteMessage;
+import bn.interfaces.MessageSet;
+import bn.messages.FiniteDiscreteMessage;
 
 /**
  * Generic distribution interface.  Minimal interface for handling top level
@@ -79,8 +79,8 @@ public interface Distribution
 		 * @return "This"
 		 * @throws BNException If the messages are invalid.
 		 */
-		public DiscreteSufficientStatistic update(DiscreteMessage lambda, Vector<DiscreteMessage> incomingPis) throws BNException;
-		public DiscreteSufficientStatistic update(Integer value, Vector<DiscreteMessage> incomingPis) throws BNException;
+		public DiscreteSufficientStatistic update(FiniteDiscreteMessage lambda, MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException;
+		public DiscreteSufficientStatistic update(Integer value, MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException;
 	}
 	
 	public static class NullDiscreteSufficientStatistic implements DiscreteSufficientStatistic
@@ -97,12 +97,12 @@ public interface Distribution
 				throws BNException {return this;}
 
 		@Override
-		public DiscreteSufficientStatistic update(DiscreteMessage lambda,
-				Vector<DiscreteMessage> incomingPis) throws BNException {return this;}
+		public DiscreteSufficientStatistic update(FiniteDiscreteMessage lambda,
+				MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException {return this;}
 
 		@Override
 		public DiscreteSufficientStatistic update(Integer value,
-				Vector<DiscreteMessage> incomingPis) throws BNException {return this;}
+				MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException {return this;}
 		
 	}
 	

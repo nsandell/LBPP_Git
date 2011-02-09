@@ -15,6 +15,7 @@ import bn.distributions.Distribution.SufficientStatistic;
  * 						  will use.
  */
 public interface IBayesNet<BaseInterface> {
+
 	/**
 	 * Remove a node corresonding to provided name from the network.  
 	 * @param name Name of the node to be removed
@@ -36,15 +37,7 @@ public interface IBayesNet<BaseInterface> {
 	public double getLogLikelihood() throws BNException;
 	
 	public String getDefinition();
-	
-	/**
-	 * Set the conditional distribution for use by a node.
-	 * @param nodeName The name of a node to use.
-	 * @param dist The distribution for the node.
-	 * @throws BNException If the distribution is invalid for the node (e.g., discrete/continuous).
-	 */
-	public void setDistribution(String nodeName, Distribution dist) throws BNException;
-	
+
 	/**
 	 * Get the names of all the nodes in this network.
 	 * @return An iterable over the names.
@@ -112,17 +105,11 @@ public interface IBayesNet<BaseInterface> {
 	}
 	
 	
-	/**
-	 * Get the log likelihood of all of the evidence present in the network.
-	 * @return The log likelihood, 0 if there is no evidence.
-	 * @throws BNException if message passing hasn't been run yet.
-	 */
-	//public double logLikelihood() throws BNException;
-	
 	public void print();
 	public void print(PrintStream ps);
-	
 	public void printDistributionInfo(String name, PrintStream ps) throws BNException;
+	
+	void setDistribution(String name, Distribution dist) throws BNException;
 	
 	/**
 	 * Run belief propagation on this network.
@@ -143,11 +130,4 @@ public interface IBayesNet<BaseInterface> {
 	 * @throws BNException Shouldn't be thrown unless the network is invalid (you should call validate first!)
 	 */
 	public RunResults run() throws BNException;
-	
-	/**
-	 * Clear evidence for a specific node.
-	 * @param node Node to clear evidence for.
-	 * @throws BNException If the node doesn't exist.
-	 */
-	public void clearEvidence(String node) throws BNException;
 }

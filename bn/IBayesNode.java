@@ -1,7 +1,5 @@
 package bn;
 
-import bn.distributions.Distribution;
-
 /**
  * Basic Bayesian node interface.  Methods held by static and dynamic nodes
  * @author Nils F. Sandell
@@ -47,11 +45,4 @@ public interface IBayesNode {
 	 * @throws BNException If the node is not well formed.
 	 */
 	void validate() throws BNException;
-	
-	/**
-	 * Set the conditional distribution for use by a node.
-	 * @param dist The distribution for the node.
-	 * @throws BNException If the distribution is invalid for the node (e.g., discrete/continuous).
-	 */
-	public void setDistribution(Distribution dist) throws BNException;
 }

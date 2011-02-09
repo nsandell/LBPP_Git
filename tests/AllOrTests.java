@@ -1,13 +1,14 @@
 package tests;
 
 import bn.BNException;
-import bn.IDiscreteBayesNode;
-import bn.IStaticBayesNet;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.distributions.FlatNoisyOr;
 import bn.distributions.ScalarNoisyOr;
 import bn.distributions.TrueOr;
+import bn.impl.staticbn.StaticNetworkFactory;
+import bn.statc.IDiscreteBayesNode;
+import bn.statc.IStaticBayesNet;
 
 public class AllOrTests {
 	
@@ -19,7 +20,7 @@ public class AllOrTests {
 			return;
 		}
 	
-		IStaticBayesNet net = bn.impl.BayesNetworkFactory.getStaticNetwork();
+		IStaticBayesNet net = StaticNetworkFactory.getNetwork();
 		IDiscreteBayesNode x1 = net.addDiscreteNode("X1", 2);
 		IDiscreteBayesNode x2 = net.addDiscreteNode("X2", 2);
 		IDiscreteBayesNode x3 = net.addDiscreteNode("X3", 2);

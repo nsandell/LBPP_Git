@@ -1,6 +1,6 @@
 package tests;
-import bn.IStaticBayesNet;
 import bn.commandline.StaticNetCommandLine;
+import bn.statc.IStaticBayesNet;
 
 public class FileSpeedTest {
 	public static void main(String[] args) throws Exception

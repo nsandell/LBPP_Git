@@ -1,46 +1,39 @@
 package bn.messages;
 
 import java.io.Serializable;
+import java.util.Vector;
 
 import bn.BNException;
 
 public abstract class Message implements Serializable {
 
-	abstract Message copy();
+	public abstract Message copy();
 	
-	public static class MessageInterface implements Serializable
+	public static class MessageInterface<MessageType extends Message> implements Serializable
 	{
-		public MessageInterface(Message lambda, Message pi)
+		public MessageInterface(MessageType lambda, MessageType pi)
 		{
 			this.lambda = lambda;
 			this.pi = pi;
 		}
-		
-		public void invalidate() throws BNException
-		{
-			this.lambda.invalidate();
-			this.pi.invalidate();
-		}
-		
 		private static final long serialVersionUID = 50L;
-		public Message lambda, pi;
+		public MessageType lambda, pi;
 	}
 	
-	public void invalidate()
+	public static class MessageInterfaceSet<MessageType extends Message> implements Serializable
 	{
-		this.valid = false;
+		public MessageInterfaceSet(int T)
+		{
+			this.pi_v = new Vector<MessageType>(T);
+			this.lambda_v = new Vector<MessageType>(T);
+		}
+		private static final long serialVersionUID = 50L;
+		public Vector<MessageType> pi_v, lambda_v;
 	}
-	
-	public boolean isValid()
-	{
-		return this.valid;
-	}
-	
+
 	public abstract void setInitial();
 	
-	//public abstract void adopt(Message msg) throws BNException;
-	
-	boolean valid = true;
+	public abstract void adopt(Message msg) throws BNException;
 	
 	private static final long serialVersionUID = 50L;
 }

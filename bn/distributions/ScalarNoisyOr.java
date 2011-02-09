@@ -6,7 +6,8 @@ import java.util.Vector;
 import util.MathUtil;
 import bn.BNException;
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
-import bn.messages.DiscreteMessage;
+import bn.interfaces.MessageSet;
+import bn.messages.FiniteDiscreteMessage;
 
 /**
  * Implements a 'scalar' noisy or CPD.  That is, a noisy or node
@@ -76,7 +77,7 @@ public class ScalarNoisyOr extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public void computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Integer value) throws BNException
+	public void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value) throws BNException
 	{
 		double localProduct = 1;
 		for(int i = 0; i < incoming_pis.size(); i++)
@@ -162,7 +163,7 @@ public class ScalarNoisyOr extends DiscreteFiniteDistribution
 		}
 		
 		@Override
-		public ScalarNoisyOrSuffStat update(DiscreteMessage lambda, Vector<DiscreteMessage> incomingPis) throws BNException
+		public ScalarNoisyOrSuffStat update(FiniteDiscreteMessage lambda, MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException
 		{
 			double[] pn = computePN(incomingPis);
 			double[][] curr = new double[incomingPis.size()+1][2];
@@ -187,7 +188,7 @@ public class ScalarNoisyOr extends DiscreteFiniteDistribution
 		}
 		
 		@Override
-		public ScalarNoisyOrSuffStat update(Integer value, Vector<DiscreteMessage> incomingPis) throws BNException
+		public ScalarNoisyOrSuffStat update(Integer value, MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException
 		{
 			double[] pn = computePN(incomingPis);
 			double[][] curr = new double[incomingPis.size()+1][2];
@@ -212,14 +213,69 @@ public class ScalarNoisyOr extends DiscreteFiniteDistribution
 			this.n++;
 			return this;	
 		}
-	
-		// Compute the probability of number of parents being active from pi messages in quadratic
-		// rather than exponential time.
-		static double[] computePN(Vector<DiscreteMessage> incomingPis)
+		
+		static double[] computePN(MessageSet<FiniteDiscreteMessage> incomingPis)
 		{
 			//Changing this method to treat any number < 1e-8 as 0 for numerical stability issue
 			int L = incomingPis.size();
-			Vector<DiscreteMessage> incPis2 = new Vector<DiscreteMessage>();
+			Vector<FiniteDiscreteMessage> incPis2 = new Vector<FiniteDiscreteMessage>();
+			int numZero = 0;
+			for(int i = 0; i < L; i++)
+			{
+				if(incomingPis.get(i).getValue(0) < 1e-8)
+					numZero++;
+				else
+					incPis2.add(incomingPis.get(i));
+			}
+			if(numZero==L)
+			{
+				double[] ret = new double[L+1];
+				ret[L] = 1-1e-8;
+				return ret;
+			}
+			if(numZero > 0)
+			{
+					double[] tmp = computePN(incPis2);
+					double[] ret = new double[L+1];
+					for(int i = numZero; i < ret.length; i++)
+						ret[i] = tmp[i-numZero];
+					return ret;
+			}
+			double[] dist = new double[L+1];
+			double[] p = new double[L];
+			double eta = 1;
+	
+			// If zero chance of being off this won't work.  We can just compute pn for the
+			// the guys that could be off and shift everything over to the right appropriately.
+			
+			for(int i = 0; i < L; i++)
+			{
+				p[i] = incomingPis.get(i).getValue(1)/incomingPis.get(i).getValue(0);
+				eta*= incomingPis.get(i).getValue(0);
+			}
+			dist[0] = eta;
+			
+			double[] buf = new double[L];
+			for(int i = 0; i < L; i++)
+				buf[i] = 1;
+			
+			for(int i = 0; i < L; i++)
+			{
+				buf[L-1] *= p[L-1-i];
+				for(int j = L-2; j >= i; j--)
+					buf[j] = p[j-i]*buf[j]+buf[j+1];
+				dist[i+1] = buf[i]*eta;
+			}
+			return dist;
+		}
+	
+		// Compute the probability of number of parents being active from pi messages in quadratic
+		// rather than exponential time.
+		static double[] computePN(Vector<FiniteDiscreteMessage> incomingPis)
+		{
+			//Changing this method to treat any number < 1e-8 as 0 for numerical stability issue
+			int L = incomingPis.size();
+			Vector<FiniteDiscreteMessage> incPis2 = new Vector<FiniteDiscreteMessage>();
 			int numZero = 0;
 			for(int i = 0; i < L; i++)
 			{
@@ -288,7 +344,7 @@ public class ScalarNoisyOr extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer value) throws BNException
+	public void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out, MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda, Integer value) throws BNException
 	{
 		double localProd = 1;
 		int numZeros = 0;
@@ -380,8 +436,8 @@ public class ScalarNoisyOr extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis,
-			DiscreteMessage local_lambda, DiscreteMessage marginal,Integer value, int numChildren)
+	public double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis,
+			FiniteDiscreteMessage local_lambda, FiniteDiscreteMessage marginal,Integer value, int numChildren)
 			throws BNException {
 	
 		double E = 0, H1 = 0, H2 = 0;

@@ -5,9 +5,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.HashMap;
 
-import bn.IStaticBayesNet;
 import bn.commandline.StaticNetCommandLine;
-import bn.messages.DiscreteMessage;
+import bn.messages.FiniteDiscreteMessage;
+import bn.statc.IDiscreteBayesNode;
+import bn.statc.IStaticBayesNet;
 
 public class StaticTestCase{
 	public static void main(String[] args) // System.err should not print anything if we're goo
@@ -21,18 +22,24 @@ public class StaticTestCase{
 			for(String keyval : answers.keySet())
 			{
 				for(String node : bn.getNodeNames())
-					bn.clearEvidence(node);
+				{
+					IDiscreteBayesNode nd = (IDiscreteBayesNode)bn.getNode(node);
+					nd.clearValue();
+				}
 				String[] bits = keyval.split("=");
 				String nname = bits[0];
 				int value = Integer.parseInt(bits[1]);
-				bn.addEvidence(nname, value);
+				IDiscreteBayesNode nd = (IDiscreteBayesNode)bn.getNode(nname);
+				nd.setValue(value);
 				bn.run(100, 0);
 				HashMap<String,Double[]> dists = answers.get(keyval);
 				for(String distnode : dists.keySet())
 				{
 					//IDiscreteBayesNode nd = (IDiscreteBayesNode)bn.getNode(distnode);
 					//if(!compareMarg(dists.get(nd.getName()), nd.getMarginal()))
-					if(!compareMarg(dists.get(distnode), (DiscreteMessage)bn.getMarginal(distnode)))
+					
+					IDiscreteBayesNode nd2 = (IDiscreteBayesNode)bn.getNode(distnode);
+					if(!compareMarg(dists.get(distnode), nd2.getMarginal()))
 						throw new Exception("Failed: Node " + distnode + " has difference for case " + keyval + ".");
 				}
 			}
@@ -43,7 +50,7 @@ public class StaticTestCase{
 		}
 	}
 	
-	public static boolean compareMarg(Double[] m1, DiscreteMessage m2)
+	public static boolean compareMarg(Double[] m1, FiniteDiscreteMessage m2)
 	{
 		if(m1.length!=m2.getCardinality())
 			return false;

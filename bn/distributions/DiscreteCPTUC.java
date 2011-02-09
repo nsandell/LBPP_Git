@@ -1,13 +1,13 @@
 package bn.distributions;
 
 import java.io.PrintStream;
-import java.util.Vector;
 
 import util.MathUtil;
 
 import bn.BNException;
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
-import bn.messages.DiscreteMessage;
+import bn.interfaces.MessageSet;
+import bn.messages.FiniteDiscreteMessage;
 
 /**
  * A probability vector - a CPT with non conditioning variables.
@@ -101,9 +101,9 @@ public class DiscreteCPTUC extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public void computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Integer value) throws BNException
+	public void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value) throws BNException
 	{
-		for(int i = 0; i < local_pi.getCardinality(); i++)
+		for(int i = 0; i < this.getCardinality(); i++)
 			local_pi.setValue(i, dist[i]);
 	}
 	
@@ -180,8 +180,8 @@ public class DiscreteCPTUC extends DiscreteFiniteDistribution
 		}
 
 		@Override
-		public DiscreteSufficientStatistic update(DiscreteMessage lambda,
-				Vector<DiscreteMessage> parent_pis) throws BNException {
+		public DiscreteSufficientStatistic update(FiniteDiscreteMessage lambda,
+				MessageSet<FiniteDiscreteMessage> parent_pis) throws BNException {
 			double sum = 0;
 			for(int i = 0; i < expected_data.length; i++)
 			{
@@ -198,7 +198,7 @@ public class DiscreteCPTUC extends DiscreteFiniteDistribution
 		
 		@Override
 		public DiscreteSufficientStatistic update(Integer value,
-				Vector<DiscreteMessage> parent_pis) throws BNException {
+				MessageSet<FiniteDiscreteMessage> parent_pis) throws BNException {
 			this.expected_data[value]++;
 			return this;
 		}
@@ -211,8 +211,8 @@ public class DiscreteCPTUC extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda,
-										DiscreteMessage marginal, Integer value, int numChildren) throws BNException {
+	public double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda,
+										FiniteDiscreteMessage marginal, Integer value, int numChildren) throws BNException {
 		double E = 0, H1 = 0, H2 = 0;
 		if(value!=null)
 			E = -Math.log(this.dist[value]);
@@ -233,7 +233,7 @@ public class DiscreteCPTUC extends DiscreteFiniteDistribution
 	}
 	
 	@Override //Should have no parents so this method has no functionality.
-	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer value) throws BNException{}
+	public void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out, MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda, Integer value) throws BNException{}
 	
 	@Override
 	public String getDefinition() {

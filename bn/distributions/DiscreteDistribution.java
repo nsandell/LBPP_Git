@@ -1,9 +1,8 @@
 package bn.distributions;
 
-import java.util.Vector;
-
 import bn.BNException;
-import bn.messages.DiscreteMessage;
+import bn.interfaces.MessageSet;
+import bn.messages.FiniteDiscreteMessage;
 
 /**
  * Abstract superclass for discrete distributions.
@@ -146,7 +145,7 @@ public abstract class DiscreteDistribution implements Distribution {
 	 * @param value Value of the node
 	 * @throws BNException 
 	 */
-	public abstract void computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, 
+	public abstract void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis, 
 										  Integer value) throws BNException;
 	
 	/**
@@ -158,11 +157,11 @@ public abstract class DiscreteDistribution implements Distribution {
 	 * @param value Value of node if observed, else null
 	 * @throws BNException
 	 */
-	public abstract void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis,
-										DiscreteMessage local_lambda, Integer value) throws BNException;
+	public abstract void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out, MessageSet<FiniteDiscreteMessage> incoming_pis,
+										FiniteDiscreteMessage local_lambda, Integer value) throws BNException;
 	
-	public abstract double computeBethePotential(Vector<DiscreteMessage> incoming_pis,
-									DiscreteMessage local_lambda, DiscreteMessage marginal, Integer value, int numChildren) throws BNException;
+	public abstract double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis,
+									FiniteDiscreteMessage local_lambda, FiniteDiscreteMessage marginal, Integer value, int numChildren) throws BNException;
 	
 	private static final long serialVersionUID = 50L;
 }

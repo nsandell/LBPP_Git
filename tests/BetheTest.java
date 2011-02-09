@@ -1,23 +1,24 @@
 package tests;
 
 import bn.BNException;
-import bn.IStaticBayesNet;
+
 import bn.IBayesNet.RunResults;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.distributions.ScalarNoisyOr;
-import bn.impl.BayesNetworkFactory;
-import bn.messages.DiscreteMessage;
+import bn.impl.staticbn.StaticNetworkFactory;
+import bn.statc.IDiscreteBayesNode;
+import bn.statc.IStaticBayesNet;
 
 public class BetheTest {
 
 	public static void main(String[] args) throws BNException
 	{
-		IStaticBayesNet bn = BayesNetworkFactory.getStaticNetwork();
-		bn.addDiscreteNode("C", 2);
-		bn.addDiscreteNode("S", 2);
-		bn.addDiscreteNode("R", 2);
-		bn.addDiscreteNode("W", 2);
+		IStaticBayesNet bn = StaticNetworkFactory.getNetwork();
+		IDiscreteBayesNode c = bn.addDiscreteNode("C", 2);
+		IDiscreteBayesNode s = bn.addDiscreteNode("S", 2);
+		IDiscreteBayesNode r =  bn.addDiscreteNode("R", 2);
+		IDiscreteBayesNode w =  bn.addDiscreteNode("W", 2);
 		
 		bn.addEdge("C", "R");
 		bn.addEdge("C", "S");
@@ -29,25 +30,25 @@ public class BetheTest {
 		bn.setDistribution("S", new DiscreteCPT(new double[][]{{.5, .5},{.9, .1}},2));
 		bn.setDistribution("R", new DiscreteCPT(new double[][]{{.8, .2},{.2, .8}},2));
 		//bn.setDistribution("W", new DiscreteCPT(new int[]{2,2},2,new double[][]{{1, 0},{.1, .9},{.1, .9},{.01, .99}}));
-		bn.addEvidence("W", 1);
-		bn.addEvidence("C", 1);
+		w.setValue(1);
+		c.setValue(1);
 		bn.setDistribution("W", new ScalarNoisyOr(.9));
 		
 		
 		//Child test
 		
-		bn.addDiscreteNode("Child", 2);
+		IDiscreteBayesNode child = bn.addDiscreteNode("Child", 2);
 		bn.addEdge("W", "Child");
 		bn.setDistribution("Child", new ScalarNoisyOr(.9));
-		bn.addEvidence("Child", 1);
+		child.setValue(1);
 		
 		bn.validate();
 		RunResults rr = bn.run(100, 0);
 		System.out.println(rr.numIts + " : " + rr.error);
-		System.out.println(((DiscreteMessage)bn.getMarginal("C")).getValue(0));
-		System.out.println(((DiscreteMessage)bn.getMarginal("S")).getValue(0));
-		System.out.println(((DiscreteMessage)bn.getMarginal("R")).getValue(0));
-		System.out.println(((DiscreteMessage)bn.getMarginal("W")).getValue(0));
+		System.out.println(c.getMarginal().getValue(0));
+		System.out.println(s.getMarginal().getValue(0));
+		System.out.println(r.getMarginal().getValue(0));
+		System.out.println(w.getMarginal().getValue(0));
 		System.out.println("BE : " + bn.getLogLikelihood());
 		
 		/*IDynBayesNet dbn = BayesNetworkFactory.getDynamicNetwork(2);

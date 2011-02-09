@@ -1,12 +1,10 @@
 package bn.impl;
 
 import java.io.PrintStream;
-
 import bn.BNException;
-import bn.IBayesNode;
-import bn.distributions.Distribution.SufficientStatistic;
 
-interface InternalIBayesNode extends IBayesNode
+//TODO figure out encapsulation
+public interface InternalIBayesNode
 {
 	/**
 	 * Update the belief propagation messages of this node based on the current
@@ -17,46 +15,14 @@ interface InternalIBayesNode extends IBayesNode
 	double updateMessages() throws BNException;
 	
 	/**
-	 * Optimize the parameters of this node.  This will collect the sufficient
-	 * statistics given the current evidence in the network, and then optimize
-	 * the parameters accordingly.
-	 * @return The change of the node in optimizing.
-	 * @throws BNException
-	 */
-	double optimizeParameters() throws BNException;
-	
-	/**
 	 * Print information about the distribution to a stream
 	 * @throws BNException If distribution hasn't been set
 	 */
 	void printDistributionInfo(PrintStream ps) throws BNException;
 	
-	/**
-	 * Optimize the parameters of this node according to a sufficient statistic
-	 * passed in as an argument.
-	 * @param stat The sufficient statistic to optimize according to.
-	 * @return The change of the node in optimizing.
-	 * @throws BNException If the sufficient statistic does not line up with
-	 * the expectations of the node.
-	 */
-	double optimizeParameters(SufficientStatistic stat) throws BNException;
+	public String getName();
 	
-	/**
-	 * Get a sufficient statistic about this node given the evidence currently 
-	 * present in the network.  
-	 * @return The sufficient statistic.
-	 * @throws BNException If the network isn't valid in the region of this node.
-	 */
-	public SufficientStatistic getSufficientStatistic() throws BNException;
-	
-	/**
-	 * Update a sufficient statistic object given the evidence present in the
-	 * network.  
-	 * @param stat The sufficient statistic object to update.
-	 * @throws BNException If the sufficient statistic object is incorrect or
-	 * 	if otherwise unable to extract current statistics.
-	 */
-	public void updateSufficientStatistic(SufficientStatistic stat) throws BNException;
+	public void validate() throws BNException;
 	
 	public void resetMessages();
 	

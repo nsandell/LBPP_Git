@@ -1,16 +1,18 @@
 package bn.impl;
 
 import java.io.PrintStream;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import bn.BNException;
 import bn.IBayesNode;
+import bn.Optimizable;
 import bn.impl.InternalIBayesNode;
 import bn.IBayesNet.RunResults;
 import bn.distributions.Distribution.SufficientStatistic;
 
-abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
-
+public abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
+	
 	protected BayesianNetwork(){}
 	
 	public void validate() throws BNException
@@ -22,7 +24,7 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		{
 			// Depth first search to make sure we've no cycles.
 			if(!marks.contains(node))
-					this.dfs_cycle_detect(marks,ancestors,node);
+				this.dfs_cycle_detect(marks,ancestors,node);
 				
 			// Node should validate its CPT matches its parents, etc.
 			node.validate();
@@ -89,7 +91,7 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		{
 			learnErr = 0;
 			this.run(maxInfIt, infErrConvergence);
-			for(BaseNodeType node : nodes.values())
+			for(Optimizable node : opti_nodes.values())
 			{
 				learnErr = Math.max(node.optimizeParameters(),learnErr);
 			}
@@ -131,6 +133,8 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		if(node!=null)
 		{
 			this.removeNodeI(node);
+			if(this.opti_nodes.containsKey(name))
+				this.opti_nodes.remove(name);
 			this.nodes.remove(name);
 		}
 	}
@@ -145,6 +149,8 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		if(this.nodes.get(node.getName())!=null)
 			throw new BNException("Attempted to add node with name " + node.getName() + " where it already exists.");
 		nodes.put(node.getName(), node);
+		if(node instanceof Optimizable)
+			this.opti_nodes.put(node.getName(), (Optimizable)node);
 	}
 	
 	public Iterable<String> getNodeNames()
@@ -186,6 +192,7 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		return new RunResults(i, ((double)(end_time-start_time))/1000.0, err);
 	}
 	
+	
 	public RunResults run() throws BNException
 	{
 		return this.run(100,0);
@@ -199,11 +206,13 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		node.clearEvidence();
 	}
 	
-	public void collectSufficientStatistics(Iterable<String> nodeNames, HashMap<String,SufficientStatistic> stats) throws BNException
+	public final void collectSufficientStatistics(Iterable<String> nodeNames, HashMap<String,SufficientStatistic> stats) throws BNException
 	{
 		for(String nodename : nodeNames)
 		{
-			BaseNodeType node = this.getNode(nodename);
+			if(!this.opti_nodes.containsKey(nodename))
+				throw new BNException("No optimizable node by name of " + nodename);
+			Optimizable node = this.opti_nodes.get(nodename);
 			SufficientStatistic stat = stats.get(nodename);
 			if(stat==null)
 				stats.put(nodename, node.getSufficientStatistic());
@@ -212,11 +221,13 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		}
 	}
 	
-	public void optimize(Iterable<String> nodeNames, HashMap<String,SufficientStatistic> stats) throws BNException
-	{
+	public final void optimize(Iterable<String> nodeNames, HashMap<String,SufficientStatistic> stats) throws BNException
+	{ 
 		for(String nodename : nodeNames)
 		{
-			BaseNodeType node = nodes.get(nodename);
+			if(!this.opti_nodes.containsKey(nodename))
+				throw new BNException("No optimizable node by name of " + nodename);
+			Optimizable node = opti_nodes.get(nodename);
 			SufficientStatistic stat = stats.get(nodename);
 			if(node==null)
 				throw new BNException("Cannot optimize, node " + nodename + " does not exist.");
@@ -227,7 +238,14 @@ abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 	}
 	
 	
+	protected Iterable<Optimizable> getOptimizableNodes()
+	{
+		return this.opti_nodes.values();
+	}
+	
+	
 	protected abstract void removeNodeI(BaseNodeType node) throws BNException;
 	private Iterable<String> nodeOrder = null;
-	protected HashMap<String, BaseNodeType> nodes = new HashMap<String, BaseNodeType>();
+	private HashMap<String, BaseNodeType> nodes = new HashMap<String, BaseNodeType>();
+	private HashMap<String, Optimizable> opti_nodes = new HashMap<String, Optimizable>();
 }

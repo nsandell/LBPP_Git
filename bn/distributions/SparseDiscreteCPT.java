@@ -5,13 +5,13 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.Vector;
 
 import util.MathUtil;
 
 import bn.BNException;
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
-import bn.messages.DiscreteMessage;
+import bn.interfaces.MessageSet;
+import bn.messages.FiniteDiscreteMessage;
 
 /**
  * Sparse discrete CPT.  The storage is fairly heavy weight (hash tables) so this probably won't
@@ -303,7 +303,7 @@ public class SparseDiscreteCPT extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public void computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Integer value) throws BNException
+	public void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value) throws BNException
 	{
 		for(IndexWrapper indexset : this.entries.keySet())
 		{
@@ -358,7 +358,7 @@ public class SparseDiscreteCPT extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer obsvalue) throws BNException
+	public void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out, MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda, Integer obsvalue) throws BNException
 	{
 		for(IndexWrapper indexW : this.entries.keySet())
 		{
@@ -435,8 +435,8 @@ public class SparseDiscreteCPT extends DiscreteFiniteDistribution
 		}
 		
 		@Override
-		public SparseCPTSuffStat update(DiscreteMessage lambda,
-				Vector<DiscreteMessage> incomingPis)
+		public SparseCPTSuffStat update(FiniteDiscreteMessage lambda,
+				MessageSet<FiniteDiscreteMessage> incomingPis)
 		{
 			HashMap<IndexWrapper, HashMap<Integer, Double>> current = new HashMap<SparseDiscreteCPT.IndexWrapper, HashMap<Integer,Double>>();
 			double sum = 0;
@@ -490,7 +490,7 @@ public class SparseDiscreteCPT extends DiscreteFiniteDistribution
 		
 		@Override
 		public SparseCPTSuffStat update(Integer value,
-				Vector<DiscreteMessage> incomingPis)
+				MessageSet<FiniteDiscreteMessage> incomingPis)
 		{
 			HashMap<IndexWrapper, HashMap<Integer, Double>> current = new HashMap<SparseDiscreteCPT.IndexWrapper, HashMap<Integer,Double>>();
 			double sum = 0;
@@ -573,8 +573,8 @@ public class SparseDiscreteCPT extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis,
-			DiscreteMessage local_lambda, DiscreteMessage local_pi,Integer value, int numChildren)
+	public double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis,
+			FiniteDiscreteMessage local_lambda, FiniteDiscreteMessage local_pi,Integer value, int numChildren)
 			throws BNException {
 		// TODO Auto-generated method stub, sparse CPT bethe energy to be implemented...
 		return 0;

@@ -1,11 +1,11 @@
 package bn.distributions;
 
 import java.io.PrintStream;
-import java.util.Vector;
 
 import bn.BNException;
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
-import bn.messages.DiscreteMessage;
+import bn.interfaces.MessageSet;
+import bn.messages.FiniteDiscreteMessage;
 
 public class FlatNoisyOr extends DiscreteFiniteDistribution {
 	
@@ -95,11 +95,11 @@ public class FlatNoisyOr extends DiscreteFiniteDistribution {
 
 
 	@Override
-	public void computeLocalPi(DiscreteMessage local_pi,
-			Vector<DiscreteMessage> incoming_pis, Integer value)
+	public void computeLocalPi(FiniteDiscreteMessage local_pi,
+			MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value)
 			throws BNException {
 		double pAllP0 = 1;
-		for(DiscreteMessage incPi : incoming_pis)
+		for(FiniteDiscreteMessage incPi : incoming_pis)
 			pAllP0 *= incPi.getValue(0)/(incPi.getValue(0)+incPi.getValue(1));
 		local_pi.setValue(0, pAllP0+(1-pAllP0)*(1-c));
 		local_pi.setValue(1, (1-pAllP0)*c);
@@ -108,8 +108,8 @@ public class FlatNoisyOr extends DiscreteFiniteDistribution {
 
 
 	@Override
-	public void computeLambdas(Vector<DiscreteMessage> lambdas_out,
-			Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda,
+	public void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out,
+			MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda,
 			Integer value) throws BNException {
 		int numZeros = 0;
 		double pAll0 = 1;
@@ -153,8 +153,8 @@ public class FlatNoisyOr extends DiscreteFiniteDistribution {
 	}
 
 	@Override
-	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis,
-			DiscreteMessage local_lambda, DiscreteMessage marginal,
+	public double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis,
+			FiniteDiscreteMessage local_lambda, FiniteDiscreteMessage marginal,
 			Integer value, int numChildren) throws BNException {
 		double E = 0, H1 = 0, H2 = 0;
 

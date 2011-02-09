@@ -1,13 +1,13 @@
 package bn.distributions;
 
 import java.io.PrintStream;
-import java.util.Vector;
 
 import util.MathUtil;
 
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.distributions.SparseDiscreteCPT.Entry;
-import bn.messages.DiscreteMessage;
+import bn.interfaces.MessageSet;
+import bn.messages.FiniteDiscreteMessage;
 import bn.BNException;
 
 /**
@@ -163,7 +163,7 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 	public int[] getConditionDimensions(){return this.dimSizes;}
 	
 	@Override
-	public void computeLocalPi(DiscreteMessage local_pi, Vector<DiscreteMessage> incoming_pis, Integer value) throws BNException
+	public void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value) throws BNException
 	{
 		int[] indices = initialIndices(dimSizes.length);
 		do
@@ -181,7 +181,7 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public void computeLambdas(Vector<DiscreteMessage> lambdas_out, Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda, Integer obsvalue) throws BNException
+	public void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out, MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda, Integer obsvalue) throws BNException
 	{
 		int[] indices = initialIndices(dimSizes.length);
 
@@ -302,8 +302,8 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 		}
 		
 		@Override
-		public DiscreteSufficientStatistic update(DiscreteMessage lambda,
-				Vector<DiscreteMessage> incomingPis) throws BNException
+		public DiscreteSufficientStatistic update(FiniteDiscreteMessage lambda,
+				MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException
 		{
 			int[] indices = initialIndices(this.cpt.dimSizes.length);
 			double sum = 0;
@@ -331,7 +331,7 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 		
 		@Override
 		public DiscreteSufficientStatistic update(Integer value,
-				Vector<DiscreteMessage> incomingPis) throws BNException
+				MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException
 		{
 			int[] indices = initialIndices(this.cpt.dimSizes.length);
 			double sum = 0;
@@ -399,8 +399,8 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis,
-								DiscreteMessage local_lambda, DiscreteMessage marginal, 
+	public double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis,
+								FiniteDiscreteMessage local_lambda, FiniteDiscreteMessage marginal, 
 								Integer value, int numChildren) throws BNException {
 
 		double[][] marginal_family = new double[dimprod][this.getCardinality()];

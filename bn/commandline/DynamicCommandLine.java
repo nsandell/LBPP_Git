@@ -10,10 +10,10 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import util.Parser;
 import bn.BNException;
-import bn.IDynBayesNet;
 import bn.commandline.distributions.CPDCreator;
 import bn.distributions.Distribution;
-import bn.impl.BayesNetworkFactory;
+import bn.dynamic.IDynNet;
+import bn.impl.dynbn.DynamicNetworkFactory;
 
 public class DynamicCommandLine
 {
@@ -22,7 +22,7 @@ public class DynamicCommandLine
 		interactiveDynamicNetwork();
 	}
 	
-	private static Parser getParser(BufferedReader input, PrintStream output, PrintStream error, boolean breakOnExc, boolean printLineOnError, IDynBayesNet bn)
+	private static Parser getParser(BufferedReader input, PrintStream output, PrintStream error, boolean breakOnExc, boolean printLineOnError, IDynNet bn)
 	{
 		try
 		{
@@ -44,7 +44,6 @@ public class DynamicCommandLine
 			parser.addHandler(new DynamicCommandHandlers.MarginalHandler(bn));
 			parser.addHandler(new DynamicCommandHandlers.ObservationHandler(bn));
 			parser.addHandler(new UniversalCommandHandlers.NetLLGetter(bn));
-			//parser.addHandler(new UniversalCommandHandlers.DefinitionPrinter(bn));
 			parser.addHandler(new UniversalCommandHandlers.Optimizer(bn));
 			parser.addHandler(new DynamicCommandHandlers.ParallelOptimizer(bn));
 			parser.addHandler(new UniversalCommandHandlers.NodeDistPrinter(bn));
@@ -52,7 +51,6 @@ public class DynamicCommandLine
 			parser.addHandler(new UniversalCommandHandlers.BNResetter(bn));
 			parser.addHandler(new UniversalCommandHandlers.BNSaver(bn));
 			parser.addHandler(new UniversalCommandHandlers.EvidenceClearer(bn));
-			parser.addHandler(new UniversalCommandHandlers.NodeEvidenceClearer(bn));
 		
 			return parser;
 		}
@@ -62,13 +60,13 @@ public class DynamicCommandLine
 		}
 	}
 
-	public static IDynBayesNet loadNetwork(String file) throws BNException
+	public static IDynNet loadNetwork(String file) throws BNException
 	{
 		try
 		{
 			BufferedReader input = new BufferedReader(new FileReader(file));
 			int T = Integer.parseInt(input.readLine());
-			IDynBayesNet bn = BayesNetworkFactory.getDynamicNetwork(T);
+			IDynNet bn = DynamicNetworkFactory.newDynamicBayesNet(T);
 			Parser parser = getParser(input, null, System.err, true, true, bn);
 			parser.go();
 			return bn;
@@ -97,7 +95,7 @@ public class DynamicCommandLine
 				if(T < 2)
 					System.err.println("Error, number of slices must be at least 2.");
 			}
-			IDynBayesNet bn = BayesNetworkFactory.getDynamicNetwork(T);
+			IDynNet bn = DynamicNetworkFactory.newDynamicBayesNet(T);
 			Parser parser = getParser(input,System.out,System.err, false, true, bn);
 			parser.setPrompt("D>>");
 			parser.go();

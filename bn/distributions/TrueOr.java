@@ -1,11 +1,11 @@
 package bn.distributions;
 
 import java.io.PrintStream;
-import java.util.Vector;
 
 import bn.BNException;
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
-import bn.messages.DiscreteMessage;
+import bn.interfaces.MessageSet;
+import bn.messages.FiniteDiscreteMessage;
 
 public class TrueOr extends DiscreteFiniteDistribution {
 	
@@ -68,26 +68,26 @@ public class TrueOr extends DiscreteFiniteDistribution {
 				throw new BNException("TrueOr node needs only binary parents!");
 	}
 
-	static void computeLocalPiS(DiscreteMessage local_pi,
-			Vector<DiscreteMessage> incoming_pis, Integer value)
+	static void computeLocalPiS(FiniteDiscreteMessage local_pi,
+			MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value)
 			throws BNException {
 		
 		double probability_all0 = 1;
-		for(DiscreteMessage parentPi : incoming_pis)
+		for(FiniteDiscreteMessage parentPi : incoming_pis)
 			probability_all0 *= parentPi.getValue(0)/(parentPi.getValue(0)+parentPi.getValue(1));
 		local_pi.setValue(0, probability_all0);
 		local_pi.setValue(1, 1-probability_all0);
 	}
 	
 	@Override
-	public void computeLocalPi(DiscreteMessage local_pi,
-			Vector<DiscreteMessage> incoming_pis, Integer value)
+	public void computeLocalPi(FiniteDiscreteMessage local_pi,
+			MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value)
 			throws BNException {
 		computeLocalPiS(local_pi, incoming_pis, value);
 	}
 	
-	static void computeLambdasS(Vector<DiscreteMessage> lambdas_out,
-			Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda,
+	static void computeLambdasS(MessageSet<FiniteDiscreteMessage> lambdas_out,
+			MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda,
 			Integer value) throws BNException {
 		
 		double localProd = 1; //like scalar noisy or with c = 1 and q = 0
@@ -130,13 +130,13 @@ public class TrueOr extends DiscreteFiniteDistribution {
 	}
 
 	@Override
-	public void computeLambdas(Vector<DiscreteMessage> lambdas_out,
-			Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda,
+	public void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out,
+			MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda,
 			Integer value) throws BNException {
 			computeLambdasS(lambdas_out, incoming_pis, local_lambda, value);
 	}
 	
-	static double computeH1(Vector<DiscreteMessage> incoming_pis, DiscreteMessage local_lambda)
+	static double computeH1(MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda)
 	{
 		// H1 = -H(X,I | Ex, Ei) = -H(X | I, Ex, Ei) - H(I|Ex,Ei)
 		// = pXNotAll0*(-H(X|Ex)+H(X!=All0|Ex))-H(I|Ex,Ei)
@@ -180,7 +180,7 @@ public class TrueOr extends DiscreteFiniteDistribution {
 		return H1;
 	}
 	
-	static double computeH2(DiscreteMessage marginal, int numChildren)
+	static double computeH2(FiniteDiscreteMessage marginal, int numChildren)
 	{
 		double H2 = 0;
 		double m1 = marginal.getValue(1);
@@ -195,8 +195,8 @@ public class TrueOr extends DiscreteFiniteDistribution {
 	}
 
 	@Override
-	public double computeBethePotential(Vector<DiscreteMessage> incoming_pis,
-			DiscreteMessage local_lambda, DiscreteMessage marginal,
+	public double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis,
+			FiniteDiscreteMessage local_lambda, FiniteDiscreteMessage marginal,
 			Integer value, int numChildren) throws BNException {
 		
 		double H1 = computeH1(incoming_pis,local_lambda);

@@ -12,7 +12,7 @@ import java.util.Vector;
 import util.MathUtil;
 
 import bn.BNException;
-import bn.IDynBayesNet;
+import bn.dynamic.IDynNet;
 
 public abstract class ModelController
 {
@@ -163,6 +163,7 @@ public abstract class ModelController
 	{
 		public LatentBackup(ModelController cont, IParentProcess node)
 		{
+			//TODO what's this why did I do this
 			this.children = (HashSet<IChildProcess>)cont.getChildren(node).clone();
 		}
 		public HashSet<IChildProcess> children;
@@ -217,7 +218,7 @@ public abstract class ModelController
 	protected abstract void connectI(IParentProcess latent, IChildProcess observed) throws FMMException;
 	
 	protected PrintStream logger = null;
-	protected IDynBayesNet network;
+	protected IDynNet network;
 	protected Vector<IParentProcess> latents = new Vector<IParentProcess>();
 	protected Vector<IChildProcess> observables = new Vector<IChildProcess>();
 	private HashMap<IParentProcess, HashSet<IChildProcess>> children = new HashMap<IParentProcess, HashSet<IChildProcess>>();

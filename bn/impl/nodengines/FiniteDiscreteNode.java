@@ -112,6 +112,7 @@ public class FiniteDiscreteNode implements Serializable
 					lambda_prod_local = 0;
 				pi_child.setValue(i, lambda_prod_local*localPi.getValue(i));
 			}
+			pi_child.normalize();
 		}
 	}
 	

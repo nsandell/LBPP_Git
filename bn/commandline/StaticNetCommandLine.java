@@ -45,6 +45,7 @@ public class StaticNetCommandLine
 			parser.addHandler(new UniversalCommandHandlers.Optimizer(bn));
 			parser.addHandler(new UniversalCommandHandlers.NodeDistPrinter(bn));
 			parser.addHandler(new UniversalCommandHandlers.NodeRemover(bn));
+			parser.addHandler(new StaticCommandHandlers.StaticEdgeRemover(bn));
 			parser.addHandler(new UniversalCommandHandlers.BNResetter(bn));
 			parser.addHandler(new UniversalCommandHandlers.BNSaver(bn));
 			

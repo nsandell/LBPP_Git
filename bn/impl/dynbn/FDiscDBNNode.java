@@ -18,6 +18,7 @@ import bn.messages.FiniteDiscreteMessage.FDiscMessageInterfaceSet;
 import bn.messages.Message.MessageInterfaceSet;
 
 import bn.impl.dynbn.DynamicContextManager.DynamicChildManager;
+import bn.impl.dynbn.DynamicContextManager.DynamicMessageIndex;
 import bn.impl.dynbn.DynamicContextManager.DynamicMessageSet;
 import bn.impl.dynbn.DynamicContextManager.DynamicParentManager;
 
@@ -51,28 +52,28 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 		return ret;
 	}
 
-	protected int addInterChildInterface(MessageInterfaceSet<?>  mia) throws BNException
+	protected DynamicMessageIndex addInterChildInterface(MessageInterfaceSet<?>  mia) throws BNException
 	{
 		if(!(mia instanceof FDiscMessageInterfaceSet))
 			throw new BNException("Attempted to add a child interface that is not a finite discrete message set.");
 		FDiscMessageInterfaceSet set = (FDiscMessageInterfaceSet)mia;
 		return this.childrenMessages.newInterChild(set.pi_v,set.lambda_v);
 	}
-	protected int addIntraChildInterface(MessageInterfaceSet<?>  mia) throws BNException
+	protected DynamicMessageIndex addIntraChildInterface(MessageInterfaceSet<?>  mia) throws BNException
 	{
 		if(!(mia instanceof FDiscMessageInterfaceSet))
 			throw new BNException("Attempted to add a child interface that is not a finite discrete message set.");
 		FDiscMessageInterfaceSet set = (FDiscMessageInterfaceSet)mia;
 		return this.childrenMessages.newIntraChild(set.pi_v,set.lambda_v);
 	}
-	protected int addIntraParentInterface(MessageInterfaceSet<?>  mia) throws BNException
+	protected DynamicMessageIndex addIntraParentInterface(MessageInterfaceSet<?>  mia) throws BNException
 	{
 		if(!(mia instanceof FDiscMessageInterfaceSet))
 			throw new BNException("Attempted to add a child interface that is not a finite discrete message set.");
 		FDiscMessageInterfaceSet set = (FDiscMessageInterfaceSet)mia;
 		return this.parentMessages.newIntraParent(set.pi_v,set.lambda_v);
 	}
-	protected int addInterParentInterface(MessageInterfaceSet<?>  mia) throws BNException
+	protected DynamicMessageIndex addInterParentInterface(MessageInterfaceSet<?>  mia) throws BNException
 	{
 		if(!(mia instanceof FDiscMessageInterfaceSet))
 			throw new BNException("Attempted to add a child interface that is not a finite discrete message set.");
@@ -80,19 +81,19 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 		return this.parentMessages.newInterParent(set.pi_v,set.lambda_v);
 	}
 	
-	protected void removeInterChildInterface(int index)
+	protected void removeInterChildInterface(DynamicMessageIndex index)
 	{
 		this.childrenMessages.removeInterChild(index);
 	}
-	protected void removeIntraChildInterface(int index)
+	protected void removeIntraChildInterface(DynamicMessageIndex index)
 	{
 		this.childrenMessages.removeIntraChild(index);
 	}
-	protected void removeInterParentInterface(int index)
+	protected void removeInterParentInterface(DynamicMessageIndex index)
 	{
 		this.parentMessages.removeInterParent(index);
 	}
-	protected void removeIntraParentInterface(int index)
+	protected void removeIntraParentInterface(DynamicMessageIndex index)
 	{
 		this.parentMessages.removeIntraParent(index);
 	}

@@ -12,6 +12,15 @@ import bn.messages.MessageSet;
 
 public class DynamicContextManager
 {
+	
+	public static class DynamicMessageIndex
+	{
+		protected DynamicMessageIndex(int idx)
+		{
+			this.index = idx;
+		}
+		protected int index;
+	}
 
 	public static class DynamicMessageSet<MessageType extends Message> implements MessageSet<MessageType>
 	{
@@ -126,157 +135,210 @@ public class DynamicContextManager
 		private Vector<MessageType> interMessages = new Vector<MessageType>();
 	}
 	
-	public static class DynamicChildManager<MessageType extends Message>
+	public static class DynamicInterfaceManager<MessageType extends Message>
 	{
-		public DynamicChildManager(int T)
+		public DynamicInterfaceManager(int T)
 		{
 			this.T = T;
 			for(int i= 0 ; i < T; i++)
 			{
-				this.incoming_lambdas.add(new DynamicMessageSet<MessageType>());
-				this.outgoing_pis.add(new DynamicMessageSet<MessageType>());
+				this.lambdas.add(new DynamicMessageSet<MessageType>());
+				this.pis.add(new DynamicMessageSet<MessageType>());
 			}
+		}
+
+		public final DynamicMessageSet<MessageType> getLambdas(Integer t)
+		{
+			return this.lambdas.get(t);
+		}
+
+		public final DynamicMessageSet<MessageType> getPis(Integer t)
+		{
+			return this.pis.get(t);
+		}
+
+		public final DynamicMessageIndex newInterInterface(Vector<MessageType> pi, Vector<MessageType> lambda, int t0, int tf) throws BNException
+		{
+			if(pi.size() != this.T-1 || lambda.size() != this.T-1)
+				throw new BNException("Expected length " + (this.T-1) + " array for inter child interface.");
+			for(int i = t0; i < tf; i++)
+			{
+				this.pis.get(i).addInterMessage(pi.get(i));
+				this.lambdas.get(i).addInterMessage(lambda.get(i));
+			}
+			DynamicMessageIndex idx = new DynamicMessageIndex(this.interIndices.size());
+			this.interIndices.add(idx);
+			return idx;
+		}
+		
+		public final void removeInterInterface(DynamicMessageIndex index, int t0, int tf)
+		{
+			for(int t = t0; t < tf; t++)
+			{
+				this.pis.get(t).removeInterMessage(index.index);
+				this.lambdas.get(t).removeInterMessage(index.index);
+			}
+			this.interIndices.remove(index.index);
+			for(int i = index.index; i < this.interIndices.size(); i++)
+				this.interIndices.get(i).index = i;
+		}
+		
+		public final DynamicMessageIndex newIntraInterface(Vector<MessageType> pi, Vector<MessageType> lambda) throws BNException
+		{
+			if(pi.size() != this.T || lambda.size() != this.T)
+				throw new BNException("Expected length " + this.T + " array for intra child interface.");
+			for(int i = 0; i < this.T; i++)
+			{
+				this.pis.get(i).addIntraMessage(pi.get(i));
+				this.lambdas.get(i).addIntraMessage(lambda.get(i));
+			}
+			DynamicMessageIndex idx = new DynamicMessageIndex(this.intraIndices.size());
+			this.intraIndices.add(idx);
+			return idx;
+		}
+
+		public final void removeIntraInterface(DynamicMessageIndex index)
+		{
+			for(int t = 0; t < this.T-1; t++)
+			{
+				this.pis.get(t).removeIntraMessage(index.index);
+				this.lambdas.get(t).removeIntraMessage(index.index);
+			}
+			this.intraIndices.remove(index.index);
+			for(int i = index.index; i < this.intraIndices.size(); i++)
+				this.intraIndices.get(i).index = i;
+		}
+		
+		public final void resetPis()
+		{
+			for(int t = 0; t < T; t++)
+				for(MessageType msg : this.pis.get(t))
+					msg.setInitial();
+		}
+		
+		public final void resetLambdas()
+		{
+			for(int t = 0; t < T; t++)
+				for(MessageType msg : this.lambdas.get(t))
+					msg.setInitial();
+		}
+		
+		public final void clear()
+		{
+			this.interIndices.clear();
+			this.intraIndices.clear();
+			for(int t = 0; t < T; t++)
+			{
+				this.lambdas.get(t).removeAll();
+				this.pis.get(t).removeAll();
+			}
+		}
+		
+		private int T;
+		Vector<DynamicMessageIndex> interIndices = new Vector<DynamicContextManager.DynamicMessageIndex>();
+		Vector<DynamicMessageIndex> intraIndices = new Vector<DynamicContextManager.DynamicMessageIndex>();
+		private ArrayList<DynamicMessageSet<MessageType>> lambdas = new ArrayList<DynamicMessageSet<MessageType>>(T);
+		private ArrayList<DynamicMessageSet<MessageType>> pis = new ArrayList<DynamicMessageSet<MessageType>>(T);
+	}
+	
+	public static class DynamicChildManager<MessageType extends Message>
+	{
+		public DynamicChildManager(int T)
+		{
+			this.manager = new DynamicInterfaceManager<MessageType>(T);
 		}
 
 		public DynamicMessageSet<MessageType> getIncomingLambdas(Integer t)
 		{
-			return this.incoming_lambdas.get(t);
+			return this.manager.getLambdas(t);
 		}
 
 		public DynamicMessageSet<MessageType> getOutgoingPis(Integer t)
 		{
-			return this.outgoing_pis.get(t);
+			return this.manager.getPis(t);
 		}
 
-		public int newIntraChild(Vector<MessageType> out_pi, Vector<MessageType> inc_lambda) throws BNException
+		public DynamicMessageIndex newIntraChild(Vector<MessageType> out_pi, Vector<MessageType> inc_lambda) throws BNException
 		{
-			if(out_pi.size() != this.T || inc_lambda.size() != this.T)
-				throw new BNException("Expected length " + this.T + " array for intra child interface.");
-			for(int i = 0; i < this.T; i++)
-			{
-				this.outgoing_pis.get(i).addIntraMessage(out_pi.get(i));
-				this.incoming_lambdas.get(i).addIntraMessage(inc_lambda.get(i));
-			}
-			return this.incoming_lambdas.get(0).numIntraMessages()-1;
+			return this.manager.newIntraInterface(out_pi, inc_lambda);
 		}
 		
-		public void removeIntraChild(int index)
+		public void removeIntraChild(DynamicMessageIndex index)
 		{
-			for(int t = 0; t < this.T; t++)
-			{
-				this.outgoing_pis.get(t).removeIntraMessage(index);
-				this.incoming_lambdas.get(t).removeIntraMessage(index);
-			}
+			this.manager.removeIntraInterface(index);
 		}
 		
-		public int newInterChild(Vector<MessageType> out_pi, Vector<MessageType> inc_lambda) throws BNException
+		public DynamicMessageIndex newInterChild(Vector<MessageType> out_pi, Vector<MessageType> inc_lambda) throws BNException
 		{
-			if(out_pi.size() != this.T-1 || inc_lambda.size() != this.T-1)
-				throw new BNException("Expected length " + (this.T-1) + " array for inter child interface.");
-			for(int i = 0; i < this.T-1; i++)
-			{
-				this.outgoing_pis.get(i).addInterMessage(out_pi.get(i));
-				this.incoming_lambdas.get(i).addInterMessage(inc_lambda.get(i));
-			}
-			return this.incoming_lambdas.get(0).numInterMessages()-1;
+			return this.manager.newInterInterface(out_pi, inc_lambda, 0, manager.T-1);
 		}
 
-		public void removeInterChild(int index)
+		public void removeInterChild(DynamicMessageIndex index)
 		{
-			for(int t = 0; t < this.T-1; t++)
-			{
-				this.outgoing_pis.get(t).removeInterMessage(index);
-				this.incoming_lambdas.get(t).removeInterMessage(index);
-			}
+			this.manager.removeInterInterface(index, 0, manager.T-1);
 		}
 		
 		public void resetMessages()
 		{
-			for(int t = 0; t < T; t++)
-				for(MessageType msg : this.outgoing_pis.get(t))
-					msg.setInitial();
+			this.manager.resetPis();
+		}
+		
+		public void clear()
+		{
+			this.manager.clear();
 		}
 
-		private int T;
-		private ArrayList<DynamicMessageSet<MessageType>> incoming_lambdas = new ArrayList<DynamicMessageSet<MessageType>>(T);
-		private ArrayList<DynamicMessageSet<MessageType>> outgoing_pis = new ArrayList<DynamicMessageSet<MessageType>>(T);
+		private DynamicInterfaceManager<MessageType> manager;
 	}
 
 	public static class DynamicParentManager<MessageType extends Message> 
 	{
 		public DynamicParentManager(int T)
 		{
-			this.T = T;
-			for(int i= 0 ; i < T; i++)
-			{
-				this.outgoing_lambdas.add(new DynamicMessageSet<MessageType>());
-				this.incoming_pis.add(new DynamicMessageSet<MessageType>());
-			}
+			this.manager = new DynamicInterfaceManager<MessageType>(T);
 		}
 
 		public DynamicMessageSet<MessageType> getOutgoingLambdas(Integer t)
 		{
-			return this.outgoing_lambdas.get(t);
+			return this.manager.getLambdas(t);
 		}
 
 		public DynamicMessageSet<MessageType> getIncomingPis(Integer t)
 		{
-			return this.incoming_pis.get(t);
+			return this.manager.getPis(t);
 		}
 
-		public int newIntraParent(Vector<MessageType> inc_pi, Vector<MessageType> out_lambda) throws BNException
+		public DynamicMessageIndex newIntraParent(Vector<MessageType> inc_pi, Vector<MessageType> out_lambda) throws BNException
 		{
-			if(inc_pi.size() != this.T || out_lambda.size() != this.T)
-				throw new BNException("Expected length " + this.T + " array for intra child interface.");
-			for(int i = 0; i < this.T; i++)
-			{
-				this.incoming_pis.get(i).addIntraMessage(inc_pi.get(i));
-				this.outgoing_lambdas.get(i).addIntraMessage(out_lambda.get(i));
-			}
-			return this.outgoing_lambdas.get(0).numIntraMessages()-1;
+			return this.manager.newIntraInterface(inc_pi, out_lambda);
 		}
 		
-		public void removeIntraParent(int index)
+		public void removeIntraParent(DynamicMessageIndex index)
 		{
-			for(int t = 0; t < this.T; t++)
-			{
-				this.incoming_pis.get(t).removeIntraMessage(index);
-				this.outgoing_lambdas.get(t).removeIntraMessage(index);
-			}
+			this.manager.removeIntraInterface(index);
 		}
 		
-		public int newInterParent(Vector<MessageType> inc_pi, Vector<MessageType> out_lambda) throws BNException
+		public DynamicMessageIndex newInterParent(Vector<MessageType> inc_pi, Vector<MessageType> out_lambda) throws BNException
 		{
-			if(inc_pi.size() != this.T-1 || out_lambda.size() != this.T-1)
-				throw new BNException("Expected length " + this.T + " array for intra child interface.");
-			for(int i = 1; i < this.T; i++)
-			{
-				this.incoming_pis.get(i).addInterMessage(inc_pi.get(i-1));
-				this.outgoing_lambdas.get(i).addInterMessage(out_lambda.get(i-1));
-			}
-			return this.outgoing_lambdas.get(0).numInterMessages()-1;
+			return this.manager.newInterInterface(inc_pi, out_lambda, 1, this.manager.T);
 		}
 
-		public void removeInterParent(int index)
+		public void removeInterParent(DynamicMessageIndex index)
 		{
-			for(int t = 1; t < this.T; t++)
-			{
-				this.incoming_pis.get(t).removeInterMessage(index);
-				this.outgoing_lambdas.get(t).removeInterMessage(index);
-			}
+			this.manager.removeInterInterface(index, 1, this.manager.T);
 		}
 		
 		public void resetMessages()
 		{
-			for(int t = 0; t < T; t++)
-				for(MessageType msg : this.outgoing_lambdas.get(t))
-					msg.setInitial();
+			this.manager.resetLambdas();
+		}
+		
+		public void clear()
+		{
+			this.manager.clear();
 		}
 
-		private int T;
-		private ArrayList<DynamicMessageSet<MessageType>> outgoing_lambdas = new ArrayList<DynamicMessageSet<MessageType>>(T);
-		private ArrayList<DynamicMessageSet<MessageType>> incoming_pis = new ArrayList<DynamicMessageSet<MessageType>>(T);
-	}
-	
+		private DynamicInterfaceManager<MessageType> manager;
+	}	
 }
 

@@ -5,12 +5,12 @@ import java.io.PrintStream;
 
 import java.util.HashMap;
 import java.util.Vector;
-import java.util.Map.Entry;
 
 import bn.BNException;
 import bn.IBayesNode;
 import bn.dynamic.IDBNNode;
 import bn.impl.InternalIBayesNode;
+import bn.impl.dynbn.DynamicContextManager.DynamicMessageIndex;
 import bn.messages.Message.MessageInterfaceSet;
 
 abstract class DBNNode implements InternalIBayesNode, IDBNNode
@@ -60,15 +60,15 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 	
 	protected abstract MessageInterfaceSet<?> newChildInterface(int T);
 	
-	protected abstract int addInterParentInterface(MessageInterfaceSet<?> mia) throws BNException;
-	protected abstract int addIntraParentInterface(MessageInterfaceSet<?> mia) throws BNException;
-	protected abstract int addInterChildInterface(MessageInterfaceSet<?> mia)  throws BNException;
-	protected abstract int addIntraChildInterface(MessageInterfaceSet<?> mia)  throws BNException;
+	protected abstract DynamicMessageIndex addInterParentInterface(MessageInterfaceSet<?> mia) throws BNException;
+	protected abstract DynamicMessageIndex addIntraParentInterface(MessageInterfaceSet<?> mia) throws BNException;
+	protected abstract DynamicMessageIndex addInterChildInterface(MessageInterfaceSet<?> mia)  throws BNException;
+	protected abstract DynamicMessageIndex addIntraChildInterface(MessageInterfaceSet<?> mia)  throws BNException;
 	
-	protected abstract void removeInterParentInterface(int index) throws BNException;
-	protected abstract void removeIntraParentInterface(int index) throws BNException;
-	protected abstract void removeInterChildInterface(int index)  throws BNException;
-	protected abstract void removeIntraChildInterface(int index)  throws BNException;
+	protected abstract void removeInterParentInterface(DynamicMessageIndex index) throws BNException;
+	protected abstract void removeIntraParentInterface(DynamicMessageIndex index) throws BNException;
+	protected abstract void removeInterChildInterface(DynamicMessageIndex index)  throws BNException;
+	protected abstract void removeIntraChildInterface(DynamicMessageIndex index)  throws BNException;
 	
 	/*
 	 * Edge creation methods
@@ -83,9 +83,9 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 		
 		try {
 			MessageInterfaceSet<?> mi = this.newChildInterface(this.bayesNet.getT()-1);
-			int pi = this.addInterChildInterface(mi);
+			DynamicMessageIndex pi = this.addInterChildInterface(mi);
 			try {
-				int ci = child.addInterParentInterface(mi);
+				DynamicMessageIndex ci = child.addInterParentInterface(mi);
 				this.interChildren.put(child, ci);
 				child.interParents.put(this, pi);
 			} catch(BNException e) {
@@ -105,9 +105,9 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 		
 		try {
 			MessageInterfaceSet<?> mi = this.newChildInterface(this.bayesNet.getT());
-			int pi = this.addIntraChildInterface(mi);
+			DynamicMessageIndex pi = this.addIntraChildInterface(mi);
 			try {
-				int ci = child.addIntraParentInterface(mi);
+				DynamicMessageIndex ci = child.addIntraParentInterface(mi);
 				this.intraChildren.put(child, ci);
 				child.intraParents.put(this, pi);
 			} catch(BNException e) {
@@ -128,56 +128,43 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 		if(!this.interChildren.containsKey(child))
 			throw new BNException("Attempted to remove inter-child " + child.name + " from node " + this.name + " where it is not a child.");
 
-		int pi = this.interChildren.remove(child);
-		int ci = child.interParents.remove(this);
+		DynamicMessageIndex pi = this.interChildren.remove(child);
+		DynamicMessageIndex ci = child.interParents.remove(this);
 		
 		this.removeInterChildInterface(pi);
 		child.removeInterParentInterface(ci);
-		
-		for(Entry<DBNNode, Integer> entry : this.interChildren.entrySet())
-			if(entry.getValue() >= pi)
-				entry.setValue(entry.getValue()-1);
-		
-		for(Entry<DBNNode, Integer> entry : child.interParents.entrySet())
-			if(entry.getValue() >= ci)
-				entry.setValue(entry.getValue()-1);
+		child.interParents.remove(this);
 	}
 	public void removeIntraChild(DBNNode child) throws BNException
 	{
 		if(!this.intraChildren.containsKey(child))
 			throw new BNException("Attempted to remove intra-child " + child.name + " from node " + this.name + " where it is not a child.");
 
-		int pi = this.intraChildren.remove(child);
-		int ci = child.intraParents.remove(this);
+		DynamicMessageIndex pi = this.intraChildren.remove(child);
+		DynamicMessageIndex ci = child.intraParents.remove(this);
 		
-		this.removeInterChildInterface(pi);
-		child.removeInterParentInterface(ci);
-		
-		for(Entry<DBNNode, Integer> entry : this.intraChildren.entrySet())
-			if(entry.getValue() >= pi)
-				entry.setValue(entry.getValue()-1);
-		
-		for(Entry<DBNNode, Integer> entry : child.intraParents.entrySet())
-			if(entry.getValue() >= ci)
-				entry.setValue(entry.getValue()-1);
+		this.removeIntraChildInterface(pi);
+		child.removeIntraParentInterface(ci);
+		child.intraParents.remove(this);
 	}
+	
 	public final void removeAllChildren() throws BNException
 	{
-		Vector<DBNNode> childrenCopy = new Vector<DBNNode>(this.interChildren.keySet());
-		for(DBNNode nd : childrenCopy)
-			this.removeInterChild(nd);
-		childrenCopy = new Vector<DBNNode>(this.intraChildren.keySet());
-		for(DBNNode nd : childrenCopy)
-			this.removeIntraChild(nd);
+		Vector<DBNNode> childCopy = new Vector<DBNNode>(this.interChildren.keySet());
+		for(DBNNode child : childCopy)
+			this.removeInterChild(child);
+		childCopy = new Vector<DBNNode>(this.intraChildren.keySet());
+		for(DBNNode child : childCopy)
+			this.removeIntraChild(child);
 	}
 	public final void removeAllParents() throws BNException
 	{
 		Vector<DBNNode> parentCopy = new Vector<DBNNode>(this.interParents.keySet());
-		for(DBNNode nd : parentCopy)
-			nd.removeInterChild(this);
+		for(DBNNode parent : parentCopy)
+			parent.removeInterChild(this);
 		parentCopy = new Vector<DBNNode>(this.intraParents.keySet());
-		for(DBNNode nd : parentCopy)
-			nd.removeIntraChild(this);
+		for(DBNNode parent : parentCopy)
+			parent.removeIntraChild(this);
 	}
 
 	/*
@@ -305,9 +292,9 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 	protected DynamicBayesianNetwork bayesNet;
 	protected String name;
 
-	protected HashMap<DBNNode,Integer> interChildren = new HashMap<DBNNode, Integer>();
-	protected HashMap<DBNNode,Integer> intraChildren = new HashMap<DBNNode, Integer>();
-	protected HashMap<DBNNode,Integer> interParents = new HashMap<DBNNode, Integer>();
-	protected HashMap<DBNNode,Integer> intraParents = new HashMap<DBNNode, Integer>();
+	protected HashMap<DBNNode,DynamicMessageIndex> interChildren = new HashMap<DBNNode, DynamicMessageIndex>();
+	protected HashMap<DBNNode,DynamicMessageIndex> intraChildren = new HashMap<DBNNode, DynamicMessageIndex>();
+	protected HashMap<DBNNode,DynamicMessageIndex> interParents = new HashMap<DBNNode, DynamicMessageIndex>();
+	protected HashMap<DBNNode,DynamicMessageIndex> intraParents = new HashMap<DBNNode, DynamicMessageIndex>();
 	
 }

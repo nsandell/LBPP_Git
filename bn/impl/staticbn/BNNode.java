@@ -1,6 +1,7 @@
 package bn.impl.staticbn;
 
 import java.util.HashMap;
+import java.util.Vector;
 
 import bn.BNException;
 import bn.IBayesNode;
@@ -65,14 +66,16 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
 	
 	public final void removeAllChildren() throws BNException
 	{
-		this.parents.clear();
-		this.removeAllChildrenInterfaces();
+		Vector<BNNode> childrenCopy = new Vector<BNNode>(this.children.keySet());
+		for(BNNode child : childrenCopy)
+			this.removeChild(child);
 	}
 	
 	public final void removeAllParents() throws BNException
 	{
-		this.children.clear();
-		this.removeAllParentInterfaces();
+		Vector<BNNode> parentsCopy = new Vector<BNNode>(this.parents.keySet());
+		for(BNNode parent : parentsCopy)
+			parent.removeChild(this);
 	}
 	
 	protected abstract MessageInterface<?> newChildInterface();
@@ -81,8 +84,6 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
 	protected abstract StaticMessageIndex addChildInterface (MessageInterface<?> mi) throws BNException;
 	protected abstract void removeParentInterface(StaticMessageIndex index) throws BNException;
 	protected abstract void removeChildInterface (StaticMessageIndex index) throws BNException;
-	protected abstract void removeAllChildrenInterfaces();
-	protected abstract void removeAllParentInterfaces();
 
 	public final int numParents()
 	{

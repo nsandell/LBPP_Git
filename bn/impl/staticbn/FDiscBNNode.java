@@ -79,17 +79,6 @@ class FDiscBNNode extends BNNode implements IFDiscBNNode, Optimizable
 		this.childrenInterface.removeChild(index);
 	}
 	
-	@Override
-	protected void removeAllChildrenInterfaces()
-	{
-		this.childrenInterface.clear();
-	}
-	@Override
-	protected void removeAllParentInterfaces()
-	{
-		this.parentInterface.clear();
-	}
-	
 	public Integer getValue()
 	{
 		return this.value;

@@ -14,7 +14,6 @@ import bn.distributions.Distribution;
 
 public class UniversalCommandHandlers {
 	
-	//TODO Clear this out
 	static class CPDAssigner extends MethodWrapperHandler<Distribution>
 	{
 		CPDAssigner(IBayesNet<?> net,HashMap<String, Distribution> distMap) throws Exception
@@ -61,7 +60,6 @@ public class UniversalCommandHandlers {
 			super(net,IBayesNet.class.getMethod("clearAllEvidence", new Class<?>[]{}),new String[]{},null);
 		}
 		
-		//TODO Figure out why sometimes running converges early when evidence changes.
 		public String name(){return "clearAllEvidence";}
 		public String description(){return "Clear all evidence from the network.";}
 		

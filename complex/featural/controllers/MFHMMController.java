@@ -70,7 +70,7 @@ public class MFHMMController extends ModelController {
 			FHMMX newNode = new FHMMX(this.network.addDiscreteNode("X"+id, this.ns),id);
 			this.network.addInterEdge(newNode.xnd, newNode.xnd);
 			newNode.xnd.setInitialDistribution(this.paramgen.getInitialPi());
-			//newNode.xnd.setDistribution(this.paramgen.getInitialA());//TODO FIX THIS
+			newNode.xnd.setAdvanceDistribution(this.paramgen.getInitialA());
 			
 			return newNode;
 		} catch(BNException e) { throw new FMMException(e.getMessage()); }

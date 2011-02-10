@@ -168,7 +168,7 @@ public class TrueOr extends DiscreteFiniteDistribution {
 		else if(ll1==1 && pAll0==1)
 			return Double.NaN;
 
-		H1 = -HX; //TODO Re-do this so this whole part is contingent on ll0 > 0
+		H1 = -HX;
 		if(pAll0 > 0)
 			H1 -= pAll0*Math.log(pAll0);
 		if(ll1 > 0)

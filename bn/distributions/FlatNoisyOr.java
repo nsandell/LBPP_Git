@@ -25,8 +25,7 @@ public class FlatNoisyOr extends DiscreteFiniteDistribution {
 
 	@Override
 	public void printDistribution(PrintStream pr) {
-		// TODO Auto-generated method stub
-		
+		pr.println("Flat Noisy Or: Activation Parameter = " + this.c);
 	}
 
 

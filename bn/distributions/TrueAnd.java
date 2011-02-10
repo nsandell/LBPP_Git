@@ -126,7 +126,7 @@ public class TrueAnd extends DiscreteFiniteDistribution {
 		else if(ll0==1 && p1==1)
 			return Double.NaN;
 
-		H1 = -HX; //TODO Re-do this so this whole part is contingent on ll0 > 0
+		H1 = -HX;
 		if(p1 > 0)
 			H1 -= p1*Math.log(p1);
 		if(ll1 > 0)

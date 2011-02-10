@@ -107,9 +107,9 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 		int[] indices = new int[this.dimSizes.length];
 		for(int i = 0; i < indices.length; i++)
 			indices[i] = 0;
+		int index = 0;
 		do
 		{
-			int index = getIndex(indices,dimSizes);
 			double[] dist = values[index];
 			if(dist.length!=this.getCardinality())
 				throw new BNException("Attempted to initialize CPT with wrong sized dist vector at indices " + indexString(indices));
@@ -122,6 +122,7 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 			}
 			if(Math.abs(sum-1) > 1e-12)
 				throw new BNException("Discrete CPT non-normalized for indices " + indexString(indices));
+			index++;
 		} while((indices = incrementIndices(indices, dimSizes))!=null);
 	}
 
@@ -166,14 +167,15 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 	public void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value) throws BNException
 	{
 		int[] indices = initialIndices(dimSizes.length);
+		int compositeindex = 0;
 		do
 		{
-			int compositeindex = getIndex(indices,dimSizes);
 			double tmp = 1;
 			for(int j = 0; j < indices.length; j++)
 				tmp *= incoming_pis.get(j).getValue(indices[j]);
 			for(int i = 0; i < this.getCardinality(); i++)
 				local_pi.setValue(i, local_pi.getValue(i)+tmp*this.values[compositeindex][i]);
+			compositeindex++;
 		}
 		while((indices = DiscreteDistribution.incrementIndices(indices, dimSizes))!=null);
 		
@@ -307,9 +309,9 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 		{
 			int[] indices = initialIndices(this.cpt.dimSizes.length);
 			double sum = 0;
+			int absIndex = 0;
 			do
 			{
-				int absIndex = getIndex(indices, this.cpt.dimSizes);
 				double current_prod = 1;
 				for(int i = 0; i < indices.length; i++)
 					current_prod *= incomingPis.get(i).getValue(indices[i]);
@@ -319,6 +321,7 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 					this.current[absIndex][x] = jointBit*lambda.getValue(x);
 					sum += this.current[absIndex][x];
 				}
+				absIndex++;
 			}
 			while((indices = incrementIndices(indices, this.cpt.dimSizes))!=null);
 			
@@ -335,14 +338,15 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 		{
 			int[] indices = initialIndices(this.cpt.dimSizes.length);
 			double sum = 0;
+			int absIndex = 0;
 			do
 			{
-				int absIndex = getIndex(indices, this.cpt.dimSizes);
 				double current_prod = 1;
 				for(int i = 0; i < indices.length; i++)
 					current_prod *= incomingPis.get(i).getValue(indices[i]);
 				this.current[absIndex][value] = current_prod*this.cpt.values[absIndex][value];
 				sum += this.current[absIndex][value];
+				absIndex++;
 			}
 			while((indices = incrementIndices(indices, this.cpt.dimSizes))!=null);
 			for(int i = 0; i < this.cpt.dimprod; i++)
@@ -410,6 +414,7 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 		double sum = 0;
 
 		int iMin = 0, iMax = this.getCardinality();
+		int index = 0;
 		if(value!=null)
 		{
 			iMin = value;
@@ -417,7 +422,6 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 		}
 		do
 		{
-			int index = getIndex(indices, this.dimSizes); //TODO check if we can replace all of these with index++'s
 			for(int i = iMin; i < iMax; i++)
 			{
 				double tmp = local_lambda.getValue(i)*this.values[index][i];
@@ -426,6 +430,7 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 				marginal_family[index][i] = tmp;
 				sum += tmp;
 			}
+			index++;
 		} while((indices = incrementIndices(indices, this.dimSizes))!=null);
 
 		for(int idx = 0; idx < dimprod; idx++)
@@ -450,36 +455,29 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 		}
 		return E+H1-H2;
 	}
-	
+
 	@Override
 	public String getDefinition() {
-		try
+		String ret = "CPT("+this.getCardinality();
+		for(int i = 0; i < this.dimSizes.length; i++)
+			ret += "," + this.dimSizes[i];
+		ret += ")\n";
+
+		int[] indices = initialIndices(this.dimSizes.length);
+		int idx = 0;
+		do
 		{
-			String ret = "CPT("+this.getCardinality();
-			for(int i = 0; i < this.dimSizes.length; i++)
-				ret += "," + this.dimSizes[i];
-			ret += ")\n";
+			String conds = "";
+			for(int i = 0; i < indices.length; i++)
+				conds += indices[i] + " ";
 
-			int[] indices = initialIndices(this.dimSizes.length);
-			do
-			{
-				String conds = "";
-				for(int i = 0; i < indices.length; i++)
-					conds += indices[i] + " ";
-				int idx = getIndex(indices, this.dimSizes);
+			for(int i = 0; i < this.getCardinality(); i++)
+				ret += conds + i + " " + values[idx][i] + "\n";
+			idx++;
 
-				for(int i = 0; i < this.getCardinality(); i++)
-					ret += conds + i + " " + values[idx][i] + "\n";
-
-			} while((indices=incrementIndices(indices, this.dimSizes))!=null);
-			ret += "*****\n";
-			return ret;
-			
-		} catch(BNException e)
-		{
-			System.err.println("Error writing file: Problem with CPT output");
-			return "";
-		}
+		} while((indices=incrementIndices(indices, this.dimSizes))!=null);
+		ret += "*****\n";
+		return ret;
 	}
 	
 	public static void setClampedLearn(boolean on)

@@ -6,8 +6,8 @@ import util.MathUtil;
 
 import bn.BNException;
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
-import bn.interfaces.MessageSet;
 import bn.messages.FiniteDiscreteMessage;
+import bn.messages.MessageSet;
 
 /**
  * A probability vector - a CPT with non conditioning variables.

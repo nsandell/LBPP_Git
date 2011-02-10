@@ -1,6 +1,5 @@
-package bn.interfaces;
+package bn.messages;
 
-import bn.messages.Message;
 
 public interface MessageSet<MessageType extends Message> extends Iterable<MessageType>
 {

@@ -3,8 +3,8 @@ package bn.distributions;
 import java.io.PrintStream;
 import java.util.Vector;
 import bn.BNException;
-import bn.interfaces.MessageSet;
 import bn.messages.FiniteDiscreteMessage;
+import bn.messages.MessageSet;
 
 /**
  * This distribution is deterministic - given a set of boolean parents,

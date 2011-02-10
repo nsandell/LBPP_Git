@@ -4,8 +4,8 @@ import java.io.PrintStream;
 
 import bn.BNException;
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
-import bn.interfaces.MessageSet;
 import bn.messages.FiniteDiscreteMessage;
+import bn.messages.MessageSet;
 
 public class FlatNoisyOr extends DiscreteFiniteDistribution {
 	

@@ -1,8 +1,8 @@
 package bn.distributions;
 
 import bn.BNException;
-import bn.interfaces.MessageSet;
 import bn.messages.FiniteDiscreteMessage;
+import bn.messages.MessageSet;
 
 /**
  * Abstract superclass for discrete distributions.

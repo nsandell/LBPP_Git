@@ -6,8 +6,8 @@ import util.MathUtil;
 
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.distributions.SparseDiscreteCPT.Entry;
-import bn.interfaces.MessageSet;
 import bn.messages.FiniteDiscreteMessage;
+import bn.messages.MessageSet;
 import bn.BNException;
 
 /**

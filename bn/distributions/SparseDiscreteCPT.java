@@ -10,8 +10,8 @@ import util.MathUtil;
 
 import bn.BNException;
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
-import bn.interfaces.MessageSet;
 import bn.messages.FiniteDiscreteMessage;
+import bn.messages.MessageSet;
 
 /**
  * Sparse discrete CPT.  The storage is fairly heavy weight (hash tables) so this probably won't

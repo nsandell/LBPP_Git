@@ -5,8 +5,8 @@ import java.io.Serializable;
 import bn.BNException;
 import bn.distributions.DiscreteDistribution;
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
-import bn.interfaces.MessageSet;
 import bn.messages.FiniteDiscreteMessage;
+import bn.messages.MessageSet;
 
 public class FiniteDiscreteNode implements Serializable
 {

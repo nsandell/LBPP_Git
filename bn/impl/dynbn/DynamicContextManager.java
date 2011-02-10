@@ -7,8 +7,8 @@ import java.util.NoSuchElementException;
 import java.util.Vector;
 
 import bn.BNException;
-import bn.interfaces.MessageSet;
 import bn.messages.Message;
+import bn.messages.MessageSet;
 
 public class DynamicContextManager
 {

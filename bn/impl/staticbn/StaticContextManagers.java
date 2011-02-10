@@ -4,8 +4,8 @@ import java.util.Iterator;
 import java.util.Vector;
 
 import bn.BNException;
-import bn.interfaces.MessageSet;
 import bn.messages.Message;
+import bn.messages.MessageSet;
 
 public class StaticContextManagers
 {

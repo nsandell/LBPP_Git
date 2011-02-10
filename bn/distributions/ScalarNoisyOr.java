@@ -6,8 +6,8 @@ import java.util.Vector;
 import util.MathUtil;
 import bn.BNException;
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
-import bn.interfaces.MessageSet;
 import bn.messages.FiniteDiscreteMessage;
+import bn.messages.MessageSet;
 
 /**
  * Implements a 'scalar' noisy or CPD.  That is, a noisy or node

@@ -4,8 +4,8 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 
 import bn.BNException;
-import bn.interfaces.MessageSet;
 import bn.messages.FiniteDiscreteMessage;
+import bn.messages.MessageSet;
 
 /**
  * Generic distribution interface.  Minimal interface for handling top level

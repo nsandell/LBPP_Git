@@ -48,11 +48,11 @@ public class StaticContextManagers
 	
 	public static class StaticMessageIndex
 	{
-		StaticMessageIndex(int index)
+		protected StaticMessageIndex(int index)
 		{
 			this.index = index;
 		}
-		int index;
+		protected int index;
 	}
 	
 	private static class InterfaceManager<MessageType extends Message>

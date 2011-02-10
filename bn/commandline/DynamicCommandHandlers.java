@@ -12,17 +12,17 @@ import bn.BNException;
 import bn.IBayesNet;
 import bn.IBayesNet.RunResults;
 import bn.distributions.Distribution;
-import bn.dynamic.IDynFDiscNode;
-import bn.dynamic.IDynNet;
+import bn.dynamic.IFDiscDBNNode;
+import bn.dynamic.IDynamicBayesNet;
 import bn.messages.FiniteDiscreteMessage;
 
 public class DynamicCommandHandlers
 {
 	static class InterEdgeHandler extends Parser.MethodWrapperHandler<Object>
 	{
-		InterEdgeHandler(IDynNet bn) throws Exception
+		InterEdgeHandler(IDynamicBayesNet bn) throws Exception
 		{
-			super(bn,IDynNet.class.getMethod("addInterEdge", new Class<?>[]{String.class,String.class}),new String[]{"from node","to node"},null);
+			super(bn,IDynamicBayesNet.class.getMethod("addInterEdge", new Class<?>[]{String.class,String.class}),new String[]{"from node","to node"},null);
 		}
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
@@ -37,9 +37,9 @@ public class DynamicCommandHandlers
 	
 	static class InterEdgeRemover extends Parser.MethodWrapperHandler<Object>
 	{
-		InterEdgeRemover(IDynNet bn) throws Exception
+		InterEdgeRemover(IDynamicBayesNet bn) throws Exception
 		{
-			super(bn,IDynNet.class.getMethod("removeInterEdge", new Class<?>[]{String.class,String.class}),new String[]{"from node","to node"},null);
+			super(bn,IDynamicBayesNet.class.getMethod("removeInterEdge", new Class<?>[]{String.class,String.class}),new String[]{"from node","to node"},null);
 		}
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
@@ -53,9 +53,9 @@ public class DynamicCommandHandlers
 
 	static class IntraEdgeHandler extends Parser.MethodWrapperHandler<Object>
 	{
-		IntraEdgeHandler(IDynNet bn) throws Exception
+		IntraEdgeHandler(IDynamicBayesNet bn) throws Exception
 		{
-			super(bn,IDynNet.class.getMethod("addIntraEdge", new Class<?>[]{String.class,String.class}),new String[]{"from node","to node"},null);
+			super(bn,IDynamicBayesNet.class.getMethod("addIntraEdge", new Class<?>[]{String.class,String.class}),new String[]{"from node","to node"},null);
 		}
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
@@ -70,9 +70,9 @@ public class DynamicCommandHandlers
 	
 	static class IntraEdgeRemover extends Parser.MethodWrapperHandler<Object>
 	{
-		IntraEdgeRemover(IDynNet bn) throws Exception
+		IntraEdgeRemover(IDynamicBayesNet bn) throws Exception
 		{
-			super(bn,IDynNet.class.getMethod("removeIntraEdge", new Class<?>[]{String.class,String.class}),new String[]{"from node","to node"},null);
+			super(bn,IDynamicBayesNet.class.getMethod("removeIntraEdge", new Class<?>[]{String.class,String.class}),new String[]{"from node","to node"},null);
 		}
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
@@ -86,9 +86,9 @@ public class DynamicCommandHandlers
 
 	static class DiscreteNodeAdder extends Parser.MethodWrapperHandler<Object>
 	{
-		DiscreteNodeAdder(IDynNet bn) throws Exception
+		DiscreteNodeAdder(IDynamicBayesNet bn) throws Exception
 		{
-			super(bn,IDynNet.class.getMethod("addDiscreteNode", new Class<?>[]{String.class,int.class}),new String[]{"node name","node cardinality"},null);
+			super(bn,IDynamicBayesNet.class.getMethod("addDiscreteNode", new Class<?>[]{String.class,int.class}),new String[]{"node name","node cardinality"},null);
 		}
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
@@ -103,9 +103,9 @@ public class DynamicCommandHandlers
 
 	static class InitialDistSetter  extends Parser.MethodWrapperHandler<Distribution>
 	{
-		InitialDistSetter(IDynNet bn, HashMap<String,Distribution> distMap) throws Exception
+		InitialDistSetter(IDynamicBayesNet bn, HashMap<String,Distribution> distMap) throws Exception
 		{
-			super(bn,IDynNet.class.getMethod("setInitialDistribution", new Class<?>[]{String.class,Distribution.class}),new String[]{"node name","distribution name"},distMap);
+			super(bn,IDynamicBayesNet.class.getMethod("setInitialDistribution", new Class<?>[]{String.class,Distribution.class}),new String[]{"node name","distribution name"},distMap);
 		}
 		public int[] getGroups() {return groups;}
 		public Pattern getRegEx() {return patt;}
@@ -121,9 +121,9 @@ public class DynamicCommandHandlers
 
 	static class ParallelRunner extends Parser.MethodWrapperHandler<Object>
 	{
-		public ParallelRunner(IDynNet bn) throws Exception
+		public ParallelRunner(IDynamicBayesNet bn) throws Exception
 		{
-			super(bn,IDynNet.class.getMethod("run_parallel_block", new Class<?>[]{int.class,double.class}),new String[]{"max iterations","tolerance"},null);
+			super(bn,IDynamicBayesNet.class.getMethod("run_parallel_block", new Class<?>[]{int.class,double.class}),new String[]{"max iterations","tolerance"},null);
 		}
 
 		@Override
@@ -147,7 +147,7 @@ public class DynamicCommandHandlers
 	static class ParallelOptimizer extends MethodWrapperHandler<Object>
 	{
 		public ParallelOptimizer(IBayesNet<?> net) throws Exception {
-			super(net,IDynNet.class.getMethod("optimize_parallel", new Class[]{int.class,double.class,int.class,double.class}),
+			super(net,IDynamicBayesNet.class.getMethod("optimize_parallel", new Class[]{int.class,double.class,int.class,double.class}),
 					new String[]{"maximum EM iterations", "EM convergence criterion",
 				"maximum BP iterations", "BP convergence criterion"},null);
 		}
@@ -177,7 +177,7 @@ public class DynamicCommandHandlers
 	static class MarginalHandler implements Parser.ParserFunction
 	{
 
-		public MarginalHandler(IDynNet net)
+		public MarginalHandler(IDynamicBayesNet net)
 		{
 			this.net = net;
 		}
@@ -210,7 +210,7 @@ public class DynamicCommandHandlers
 
 			try
 			{
-				IDynFDiscNode nd = (IDynFDiscNode) net.getNode(nodeName);
+				IFDiscDBNNode nd = (IFDiscDBNNode) net.getNode(nodeName);
 				if(nd==null)
 					throw new BNException("Coudln't find node " + nodeName);
 				FiniteDiscreteMessage dmsg = nd.getMarginal(0);
@@ -231,12 +231,12 @@ public class DynamicCommandHandlers
 			return null;
 		}
 
-		IDynNet net;
+		IDynamicBayesNet net;
 	}
 
 	static class ObservationHandler implements ParserFunction
 	{
-		public ObservationHandler(IDynNet bn) throws Exception
+		public ObservationHandler(IDynamicBayesNet bn) throws Exception
 		{
 			this.bn = bn;
 		}
@@ -245,7 +245,7 @@ public class DynamicCommandHandlers
 		{
 			try
 			{
-				IDynFDiscNode nd = (IDynFDiscNode)bn.getNode(args[0]);
+				IFDiscDBNNode nd = (IFDiscDBNNode)bn.getNode(args[0]);
 				int t0 = Integer.parseInt(args[1]);
 				args[2] = args[2].trim();
 				String [] obsStr = args[2].split("\\s+");
@@ -270,6 +270,6 @@ public class DynamicCommandHandlers
 		private static int[] groups = new int[]{1,3,4};
 		private static Pattern patt = Pattern.compile("^\\s*(\\w+)(\\((\\d+)\\))?\\s*=(.*)");
 
-		IDynNet bn;
+		IDynamicBayesNet bn;
 	}
 }

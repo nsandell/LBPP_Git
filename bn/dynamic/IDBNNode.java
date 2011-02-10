@@ -9,36 +9,36 @@ import bn.distributions.Distribution;
  * The interface to a node in a Dynamic Bayesian Network
  * @author Nils F. Sandell
  */
-public interface IDynNode extends IBayesNode
+public interface IDBNNode extends IBayesNode
 {
 	/**
 	 * Get an iterator over children in the next slice.
 	 * @return Iterator over those nodes.
 	 */
-	Iterable<? extends IDynNode> getInterChildren();
+	Iterable<? extends IDBNNode> getInterChildren();
 	
 	/**
 	 * Get an iterator over children in the same slice.
 	 * @return Iterator over those nodes.
 	 */
-	Iterable<? extends IDynNode> getIntraChildren();
+	Iterable<? extends IDBNNode> getIntraChildren();
 	
 	/**
 	 * Get an iterator over parents in the previous slice.
 	 * @return Iterator over those nodes.
 	 */
-	Iterable<? extends IDynNode> getInterParents();
+	Iterable<? extends IDBNNode> getInterParents();
 	
 	/**
 	 * Get an iterator over parents in the same slice.
 	 * @return Iterator over those nodes.
 	 */	
-	Iterable<? extends IDynNode> getIntraParents();
+	Iterable<? extends IDBNNode> getIntraParents();
 	
-	boolean hasInterChild(IDynNode child);
-	boolean hasIntraChild(IDynNode child);
-	boolean hasInterParent(IDynNode child);
-	boolean hasIntraParent(IDynNode child);
+	boolean hasInterChild(IDBNNode child);
+	boolean hasIntraChild(IDBNNode child);
+	boolean hasInterParent(IDBNNode child);
+	boolean hasIntraParent(IDBNNode child);
 	
 	public double betheFreeEnergy() throws BNException;
 	

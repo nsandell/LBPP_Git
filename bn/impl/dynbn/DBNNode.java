@@ -9,11 +9,11 @@ import java.util.Map.Entry;
 
 import bn.BNException;
 import bn.IBayesNode;
-import bn.dynamic.IDynNode;
+import bn.dynamic.IDBNNode;
 import bn.impl.InternalIBayesNode;
 import bn.messages.Message.MessageInterfaceSet;
 
-abstract class DBNNode implements InternalIBayesNode, IDynNode
+abstract class DBNNode implements InternalIBayesNode, IDBNNode
 {
 	protected DBNNode(DynamicBayesianNetwork net,String name)
 	{
@@ -184,19 +184,19 @@ abstract class DBNNode implements InternalIBayesNode, IDynNode
 	 * Children/parent edge existence checkers, both internal and external.
 	 */
 	
-	public boolean hasInterChild(IDynNode child)
+	public boolean hasInterChild(IDBNNode child)
 	{
 		return this.interChildren.containsKey(child);
 	}
-	public boolean hasIntraChild(IDynNode child)
+	public boolean hasIntraChild(IDBNNode child)
 	{
 		return this.intraChildren.containsKey(child);
 	}
-	public boolean hasInterParent(IDynNode parent)
+	public boolean hasInterParent(IDBNNode parent)
 	{
 		return this.interParents.containsKey(parent);
 	}
-	public boolean hasIntraParent(IDynNode parent)
+	public boolean hasIntraParent(IDBNNode parent)
 	{
 		return this.intraParents.containsKey(parent);
 	}

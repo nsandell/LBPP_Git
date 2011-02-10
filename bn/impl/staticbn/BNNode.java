@@ -8,14 +8,14 @@ import bn.BNException;
 import bn.IBayesNode;
 import bn.impl.InternalIBayesNode;
 import bn.messages.Message.MessageInterface;
-import bn.statc.IStaticNode;
+import bn.statc.IBNNode;
 
 /**
  * Bayes node root class.  Simply has parents and children so we can
  *  to a BFS or DFS to detect cycles, etc.
  * @author Nils F Sandell
  */
-abstract class BNNode implements InternalIBayesNode, IStaticNode
+abstract class BNNode implements InternalIBayesNode, IBNNode
 {
 	protected BNNode(StaticBayesianNetwork net, String name)
 	{

@@ -35,7 +35,7 @@ public interface IStaticBayesNet extends IBayesNet<IBayesNode>
 	 * @return Interface to the new node.
 	 * @throws BNException If the new node can't be created (e.g. same name already exists)
 	 */
-	public IDiscreteBayesNode addDiscreteNode(String name, int cardinality) throws BNException;
+	public IFDiscBNNode addDiscreteNode(String name, int cardinality) throws BNException;
 	
 	/**
 	 * Check whether an edge exists or not.

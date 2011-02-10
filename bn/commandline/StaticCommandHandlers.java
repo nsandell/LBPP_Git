@@ -10,7 +10,7 @@ import util.Parser.ParserException;
 import util.Parser.ParserFunction;
 import bn.BNException;
 import bn.messages.FiniteDiscreteMessage;
-import bn.statc.IDiscreteBayesNode;
+import bn.statc.IFDiscBNNode;
 import bn.statc.IStaticBayesNet;
 
 class StaticCommandHandlers {
@@ -89,7 +89,7 @@ class StaticCommandHandlers {
 		{
 			try
 			{//TODO This is so hacky we need to move to the new command system
-				IDiscreteBayesNode nd =(IDiscreteBayesNode)net.getNode(args[0]);
+				IFDiscBNNode nd =(IFDiscBNNode)net.getNode(args[0]);
 				FiniteDiscreteMessage msg = nd.getMarginal();
 				for(int i = 0; i < msg.getCardinality(); i++)
 					System.out.println(msg.getValue(i)+" ");
@@ -115,7 +115,7 @@ class StaticCommandHandlers {
 		{
 			try
 			{
-				IDiscreteBayesNode nd =(IDiscreteBayesNode)net.getNode(args[0]);
+				IFDiscBNNode nd =(IFDiscBNNode)net.getNode(args[0]);
 				nd.setValue(Integer.parseInt(args[1]));
 			}	catch(BNException e) {
 				throw new ParserException("Error setting value for node " + args[0] + ": " + e.getMessage());

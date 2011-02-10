@@ -1,8 +1,8 @@
 package bn.impl.dynbn;
 
-import bn.dynamic.IDynNet;
+import bn.dynamic.IDynamicBayesNet;
 
 public class DynamicNetworkFactory {
 	private DynamicNetworkFactory(){}
-	public static IDynNet newDynamicBayesNet(int T){return new DynamicBayesianNetwork(T);}
+	public static IDynamicBayesNet newDynamicBayesNet(int T){return new DynamicBayesianNetwork(T);}
 }

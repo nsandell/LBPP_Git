@@ -2,7 +2,7 @@ package tests;
 
 import bn.impl.staticbn.StaticNetworkFactory;
 import bn.messages.FiniteDiscreteMessage;
-import bn.statc.IDiscreteBayesNode;
+import bn.statc.IFDiscBNNode;
 import bn.statc.IStaticBayesNet;
 import bn.BNException;
 import bn.distributions.DiscreteCPT;
@@ -16,14 +16,14 @@ public class SimplesTest {
 			double[][] cpt_values = {{.9, .1},{.25, .75}};
 			IStaticBayesNet bn = StaticNetworkFactory.getNetwork();
 			//IBayesNode root = bn.addDiscreteNode("root", 2);
-			IDiscreteBayesNode root = bn.addDiscreteNode("root", 2);
+			IFDiscBNNode root = bn.addDiscreteNode("root", 2);
 			bn.setDistribution("root", new DiscreteCPTUC(new double[]{.7, .3}));
-			IDiscreteBayesNode child = bn.addDiscreteNode("child", 2);
+			IFDiscBNNode child = bn.addDiscreteNode("child", 2);
 			bn.setDistribution("child",new DiscreteCPT(new int[]{2}, 2,cpt_values));
 		
 			bn.addEdge("root", "child");
 			
-			IDiscreteBayesNode child2 = bn.addDiscreteNode("child2", 2);
+			IFDiscBNNode child2 = bn.addDiscreteNode("child2", 2);
 			bn.setDistribution("child2", new DiscreteCPT(new int[]{2}, 2,cpt_values));
 			
 			bn.addEdge("child", "child2");

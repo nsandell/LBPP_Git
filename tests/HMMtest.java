@@ -7,9 +7,9 @@ import bn.BNException;
 import bn.IBayesNode;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
-import bn.dynamic.IDynFDiscNode;
-import bn.dynamic.IDynNet;
-import bn.dynamic.IDynNet.ParallelCallback;
+import bn.dynamic.IFDiscDBNNode;
+import bn.dynamic.IDynamicBayesNet;
+import bn.dynamic.IDynamicBayesNet.ParallelCallback;
 import bn.impl.dynbn.DynamicNetworkFactory;
 import bn.messages.FiniteDiscreteMessage;
 
@@ -39,9 +39,9 @@ public class HMMtest {
 				obs[i] = i % 2;
 			}
 			
-			IDynNet dbn = DynamicNetworkFactory.newDynamicBayesNet(length); 
-			IDynFDiscNode y = dbn.addDiscreteNode("y", 2);
-			IDynFDiscNode x = dbn.addDiscreteNode("x", 2);
+			IDynamicBayesNet dbn = DynamicNetworkFactory.newDynamicBayesNet(length); 
+			IFDiscDBNNode y = dbn.addDiscreteNode("y", 2);
+			IFDiscDBNNode x = dbn.addDiscreteNode("x", 2);
 			IBayesNode x2 = dbn.addDiscreteNode("x2", 2);
 			dbn.addIntraEdge(x, y);
 			dbn.addIntraEdge(x2, y);
@@ -96,14 +96,14 @@ public class HMMtest {
 			this.starttime = starttime;
 		}
 
-		public void callback(IDynNet dbn,int numIts, double time, double error)
+		public void callback(IDynamicBayesNet dbn,int numIts, double time, double error)
 		{
 			try
 			{
 				long end = System.currentTimeMillis();
 				for(int i = 0; i < 10; i+=1)
 				{
-					FiniteDiscreteMessage marginal = ((IDynFDiscNode)dbn.getNode("x")).getMarginal(i);
+					FiniteDiscreteMessage marginal = ((IFDiscDBNNode)dbn.getNode("x")).getMarginal(i);
 					System.out.println("X: ["+marginal.getValue(0) +"," + marginal.getValue(1)+"]");
 				}
 				double runtime = ((double)(end-starttime))/1000;
@@ -114,7 +114,7 @@ public class HMMtest {
 			}
 		}
 
-		public void error(IDynNet dbn, String error)
+		public void error(IDynamicBayesNet dbn, String error)
 		{
 			System.out.println("Error: " + error);
 		}

@@ -11,7 +11,7 @@ import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.distributions.Distribution;
 import bn.distributions.Distribution.DiscreteSufficientStatistic;
 import bn.distributions.Distribution.SufficientStatistic;
-import bn.dynamic.IDynFDiscNode;
+import bn.dynamic.IFDiscDBNNode;
 import bn.impl.nodengines.FiniteDiscreteNode;
 import bn.messages.FiniteDiscreteMessage;
 import bn.messages.FiniteDiscreteMessage.FDiscMessageInterfaceSet;
@@ -21,9 +21,9 @@ import bn.impl.dynbn.DynamicContextManager.DynamicChildManager;
 import bn.impl.dynbn.DynamicContextManager.DynamicMessageSet;
 import bn.impl.dynbn.DynamicContextManager.DynamicParentManager;
 
-public class DiscreteDBNNode extends DBNNode implements IDynFDiscNode, Optimizable {
+public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable {
 	
-	public DiscreteDBNNode(DynamicBayesianNetwork net, String name, int cardinality) throws BNException
+	public FDiscDBNNode(DynamicBayesianNetwork net, String name, int cardinality) throws BNException
 	{
 		super(net,name);
 		this.cardinality = cardinality;

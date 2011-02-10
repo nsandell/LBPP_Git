@@ -8,20 +8,20 @@ import bn.BNException;
 import bn.IBayesNode;
 import bn.Optimizable;
 import bn.distributions.Distribution;
-import bn.dynamic.IDynFDiscNode;
-import bn.dynamic.IDynNet;
-import bn.dynamic.IDynNode;
+import bn.dynamic.IFDiscDBNNode;
+import bn.dynamic.IDynamicBayesNet;
+import bn.dynamic.IDBNNode;
 import bn.impl.BayesianNetwork;
 
-class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynNet
+class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynamicBayesNet
 {
 	public DynamicBayesianNetwork(int T){this.T = T;}
 
-	public IDynFDiscNode addDiscreteNode(String name, int cardinality) throws BNException
+	public IFDiscDBNNode addDiscreteNode(String name, int cardinality) throws BNException
 	{
 		if(this.getNode(name)!=null)
 			throw new BNException("Node " + name + " already exists in this DBN.");
-		DiscreteDBNNode nd = new DiscreteDBNNode(this, name, cardinality);
+		FDiscDBNNode nd = new FDiscDBNNode(this, name, cardinality);
 		this.dnodes.put(name, nd);
 		this.addNodeI(nd);
 		return nd;
@@ -97,7 +97,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynNet
 	}
 	
 	@Override
-	public void removeNode(IDynNode node) throws BNException
+	public void removeNode(IDBNNode node) throws BNException
 	{
 		super.removeNode(node.getName());
 	}
@@ -135,7 +135,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynNet
 	
 	static class BlockCallback2 implements ParallelCallback
 	{
-		public void callback(IDynNet net, int numIts, double err, double time) {
+		public void callback(IDynamicBayesNet net, int numIts, double err, double time) {
 			synchronized (blockLock) {
 				this.timeElapsed = time;
 				this.errorD = err;
@@ -144,7 +144,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynNet
 			}
 		}
 
-		public void error(IDynNet net, String error)
+		public void error(IDynamicBayesNet net, String error)
 		{
 			synchronized (blockLock) {
 				this.error = error;

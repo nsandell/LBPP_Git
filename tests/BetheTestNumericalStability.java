@@ -6,7 +6,7 @@ import bn.IBayesNet.RunResults;
 import bn.distributions.DiscreteCPTUC;
 import bn.distributions.ScalarNoisyOr;
 import bn.impl.staticbn.StaticNetworkFactory;
-import bn.statc.IDiscreteBayesNode;
+import bn.statc.IFDiscBNNode;
 import bn.statc.IStaticBayesNet;
 
 public class BetheTestNumericalStability {
@@ -16,7 +16,7 @@ public class BetheTestNumericalStability {
 		for(int N = 6; N < 40; N++)
 		{
 			IStaticBayesNet bn = StaticNetworkFactory.getNetwork();
-			IDiscreteBayesNode child = bn.addDiscreteNode("Child", 2);
+			IFDiscBNNode child = bn.addDiscreteNode("Child", 2);
 			
 			double eps = 1e-7;
 

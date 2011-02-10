@@ -7,7 +7,7 @@ import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.distributions.ScalarNoisyOr;
 import bn.impl.staticbn.StaticNetworkFactory;
-import bn.statc.IDiscreteBayesNode;
+import bn.statc.IFDiscBNNode;
 import bn.statc.IStaticBayesNet;
 
 public class BetheTest {
@@ -15,10 +15,10 @@ public class BetheTest {
 	public static void main(String[] args) throws BNException
 	{
 		IStaticBayesNet bn = StaticNetworkFactory.getNetwork();
-		IDiscreteBayesNode c = bn.addDiscreteNode("C", 2);
-		IDiscreteBayesNode s = bn.addDiscreteNode("S", 2);
-		IDiscreteBayesNode r =  bn.addDiscreteNode("R", 2);
-		IDiscreteBayesNode w =  bn.addDiscreteNode("W", 2);
+		IFDiscBNNode c = bn.addDiscreteNode("C", 2);
+		IFDiscBNNode s = bn.addDiscreteNode("S", 2);
+		IFDiscBNNode r =  bn.addDiscreteNode("R", 2);
+		IFDiscBNNode w =  bn.addDiscreteNode("W", 2);
 		
 		bn.addEdge("C", "R");
 		bn.addEdge("C", "S");
@@ -37,7 +37,7 @@ public class BetheTest {
 		
 		//Child test
 		
-		IDiscreteBayesNode child = bn.addDiscreteNode("Child", 2);
+		IFDiscBNNode child = bn.addDiscreteNode("Child", 2);
 		bn.addEdge("W", "Child");
 		bn.setDistribution("Child", new ScalarNoisyOr(.9));
 		child.setValue(1);

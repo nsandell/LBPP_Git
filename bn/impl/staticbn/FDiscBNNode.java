@@ -13,11 +13,11 @@ import bn.messages.FiniteDiscreteMessage;
 import bn.messages.MessageSet;
 import bn.messages.FiniteDiscreteMessage.FDiscMessageInterface;
 import bn.messages.Message.MessageInterface;
-import bn.statc.IDiscreteBayesNode;
+import bn.statc.IFDiscBNNode;
 
-class DiscreteBNNode extends BNNode implements IDiscreteBayesNode, Optimizable
+class FDiscBNNode extends BNNode implements IFDiscBNNode, Optimizable
 {
-	public DiscreteBNNode(StaticBayesianNetwork bn, String name, int cardinality)
+	public FDiscBNNode(StaticBayesianNetwork bn, String name, int cardinality)
 	{
 		super(bn,name);
 		this.cardinality = cardinality;

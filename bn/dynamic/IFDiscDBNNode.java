@@ -9,7 +9,7 @@ import bn.messages.FiniteDiscreteMessage;
  * @author Nils F. Sandell
  * 
  */
-public interface IDynFDiscNode extends IDynNode {
+public interface IFDiscDBNNode extends IDBNNode {
 	
 	/**
 	 * Set the distribution for the first 'slice' of the network.  This is

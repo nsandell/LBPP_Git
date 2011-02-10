@@ -7,7 +7,7 @@ import bn.distributions.FlatNoisyOr;
 import bn.distributions.ScalarNoisyOr;
 import bn.distributions.TrueOr;
 import bn.impl.staticbn.StaticNetworkFactory;
-import bn.statc.IDiscreteBayesNode;
+import bn.statc.IFDiscBNNode;
 import bn.statc.IStaticBayesNet;
 
 public class AllOrTests {
@@ -21,12 +21,12 @@ public class AllOrTests {
 		}
 	
 		IStaticBayesNet net = StaticNetworkFactory.getNetwork();
-		IDiscreteBayesNode x1 = net.addDiscreteNode("X1", 2);
-		IDiscreteBayesNode x2 = net.addDiscreteNode("X2", 2);
-		IDiscreteBayesNode x3 = net.addDiscreteNode("X3", 2);
-		IDiscreteBayesNode y = net.addDiscreteNode("Y", 2);
-		IDiscreteBayesNode z1 = net.addDiscreteNode("Z1", 2);
-		IDiscreteBayesNode z2 = net.addDiscreteNode("Z2", 2);
+		IFDiscBNNode x1 = net.addDiscreteNode("X1", 2);
+		IFDiscBNNode x2 = net.addDiscreteNode("X2", 2);
+		IFDiscBNNode x3 = net.addDiscreteNode("X3", 2);
+		IFDiscBNNode y = net.addDiscreteNode("Y", 2);
+		IFDiscBNNode z1 = net.addDiscreteNode("Z1", 2);
+		IFDiscBNNode z2 = net.addDiscreteNode("Z2", 2);
 	
 		DiscreteCPTUC pi1 = new DiscreteCPTUC(new double[]{.9, .1});
 		DiscreteCPTUC pi2 = new DiscreteCPTUC(new double[]{.8, .2});

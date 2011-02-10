@@ -7,7 +7,7 @@ import java.util.HashMap;
 
 import bn.commandline.StaticNetCommandLine;
 import bn.messages.FiniteDiscreteMessage;
-import bn.statc.IDiscreteBayesNode;
+import bn.statc.IFDiscBNNode;
 import bn.statc.IStaticBayesNet;
 
 public class StaticTestCase{
@@ -23,13 +23,13 @@ public class StaticTestCase{
 			{
 				for(String node : bn.getNodeNames())
 				{
-					IDiscreteBayesNode nd = (IDiscreteBayesNode)bn.getNode(node);
+					IFDiscBNNode nd = (IFDiscBNNode)bn.getNode(node);
 					nd.clearValue();
 				}
 				String[] bits = keyval.split("=");
 				String nname = bits[0];
 				int value = Integer.parseInt(bits[1]);
-				IDiscreteBayesNode nd = (IDiscreteBayesNode)bn.getNode(nname);
+				IFDiscBNNode nd = (IFDiscBNNode)bn.getNode(nname);
 				nd.setValue(value);
 				bn.run(100, 0);
 				HashMap<String,Double[]> dists = answers.get(keyval);
@@ -38,7 +38,7 @@ public class StaticTestCase{
 					//IDiscreteBayesNode nd = (IDiscreteBayesNode)bn.getNode(distnode);
 					//if(!compareMarg(dists.get(nd.getName()), nd.getMarginal()))
 					
-					IDiscreteBayesNode nd2 = (IDiscreteBayesNode)bn.getNode(distnode);
+					IFDiscBNNode nd2 = (IFDiscBNNode)bn.getNode(distnode);
 					if(!compareMarg(dists.get(distnode), nd2.getMarginal()))
 						throw new Exception("Failed: Node " + distnode + " has difference for case " + keyval + ".");
 				}

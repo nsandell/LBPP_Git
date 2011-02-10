@@ -10,7 +10,7 @@ import bn.distributions.Distribution;
  * Interface for a Dynamic Bayesian Network.
  * @author Nils F. Sandell
  */
-public interface IDynNet extends IBayesNet<IDynNode>
+public interface IDynamicBayesNet extends IBayesNet<IDBNNode>
 {
 	/**
 	 * Add a dependency from a node in time slices t+1 to another node
@@ -107,7 +107,7 @@ public interface IDynNet extends IBayesNet<IDynNode>
 	 * @return Interface to the node.
 	 * @throws BNException If a node of that name already exists.
 	 */
-	IDynFDiscNode addDiscreteNode(String name, int cardinality) throws BNException;
+	IFDiscDBNNode addDiscreteNode(String name, int cardinality) throws BNException;
 	
 	/**
 	 * Get the number of time slices in this network
@@ -168,13 +168,13 @@ public interface IDynNet extends IBayesNet<IDynNode>
 		 * @param err The final error when converged
 		 * @param timeElapsed The time in seconds it took to converge.
 		 */
-		void callback(IDynNet net, int numIts, double err, double timeElapsed);
+		void callback(IDynamicBayesNet net, int numIts, double err, double timeElapsed);
 		
 		/**
 		 * This is called if parallel inference encountered a problem.
 		 * @param net The network which had a problem.
 		 * @param error String reasoning for the error.
 		 */
-		void error(IDynNet net, String error);
+		void error(IDynamicBayesNet net, String error);
 	}
 }

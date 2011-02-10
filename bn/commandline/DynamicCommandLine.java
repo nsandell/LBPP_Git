@@ -12,7 +12,7 @@ import util.Parser;
 import bn.BNException;
 import bn.commandline.distributions.CPDCreator;
 import bn.distributions.Distribution;
-import bn.dynamic.IDynNet;
+import bn.dynamic.IDynamicBayesNet;
 import bn.impl.dynbn.DynamicNetworkFactory;
 
 public class DynamicCommandLine
@@ -22,7 +22,7 @@ public class DynamicCommandLine
 		interactiveDynamicNetwork();
 	}
 	
-	private static Parser getParser(BufferedReader input, PrintStream output, PrintStream error, boolean breakOnExc, boolean printLineOnError, IDynNet bn)
+	private static Parser getParser(BufferedReader input, PrintStream output, PrintStream error, boolean breakOnExc, boolean printLineOnError, IDynamicBayesNet bn)
 	{
 		try
 		{
@@ -60,13 +60,13 @@ public class DynamicCommandLine
 		}
 	}
 
-	public static IDynNet loadNetwork(String file) throws BNException
+	public static IDynamicBayesNet loadNetwork(String file) throws BNException
 	{
 		try
 		{
 			BufferedReader input = new BufferedReader(new FileReader(file));
 			int T = Integer.parseInt(input.readLine());
-			IDynNet bn = DynamicNetworkFactory.newDynamicBayesNet(T);
+			IDynamicBayesNet bn = DynamicNetworkFactory.newDynamicBayesNet(T);
 			Parser parser = getParser(input, null, System.err, true, true, bn);
 			parser.go();
 			return bn;
@@ -95,7 +95,7 @@ public class DynamicCommandLine
 				if(T < 2)
 					System.err.println("Error, number of slices must be at least 2.");
 			}
-			IDynNet bn = DynamicNetworkFactory.newDynamicBayesNet(T);
+			IDynamicBayesNet bn = DynamicNetworkFactory.newDynamicBayesNet(T);
 			Parser parser = getParser(input,System.out,System.err, false, true, bn);
 			parser.setPrompt("D>>");
 			parser.go();

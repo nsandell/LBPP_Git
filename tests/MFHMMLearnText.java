@@ -7,8 +7,8 @@ import bn.BNException;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.distributions.FlatNoisyOr;
-import bn.dynamic.IDynFDiscNode;
-import bn.dynamic.IDynNet;
+import bn.dynamic.IFDiscDBNNode;
+import bn.dynamic.IDynamicBayesNet;
 import bn.impl.dynbn.DynamicNetworkFactory;
 import complex.featural.IBPMixture;
 import complex.featural.IBPMixture.IBPMModelOptions;
@@ -25,7 +25,7 @@ public class MFHMMLearnText {
 	
 	public static class YWrapper implements MFHMMController.IFHMMChild
 	{
-		public YWrapper(IDynFDiscNode ynd)
+		public YWrapper(IFDiscDBNNode ynd)
 		{
 			this.ynd = ynd;
 		}
@@ -35,12 +35,12 @@ public class MFHMMLearnText {
 			return this.ynd.getName();
 		}
 		
-		public IDynFDiscNode hook()
+		public IFDiscDBNNode hook()
 		{
 			return this.ynd;
 		}
 		
-		IDynFDiscNode ynd;
+		IFDiscDBNNode ynd;
 	}
 	
 	public static class ParamGen implements MFHMMInitialParamGenerator
@@ -88,7 +88,7 @@ public class MFHMMLearnText {
 		}*/
 		
 		int[][] o = loadData(obs);
-		IDynNet net = DynamicNetworkFactory.newDynamicBayesNet(o[0].length);
+		IDynamicBayesNet net = DynamicNetworkFactory.newDynamicBayesNet(o[0].length);
 		for(int i = 0; i < o.length; i++)
 		{
 			YWrapper child = new YWrapper(net.addDiscreteNode("Y"+i, 2));

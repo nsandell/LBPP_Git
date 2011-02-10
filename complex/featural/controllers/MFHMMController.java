@@ -7,8 +7,8 @@ import java.util.Vector;
 import bn.BNException;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
-import bn.dynamic.IDynNet;
-import bn.dynamic.IDynNode;
+import bn.dynamic.IDynamicBayesNet;
+import bn.dynamic.IDBNNode;
 import complex.featural.FMMException;
 import complex.featural.IChildProcess;
 import complex.featural.IParentProcess;
@@ -18,12 +18,12 @@ public class MFHMMController extends ModelController {
 	
 	public static interface IFHMMChild extends IChildProcess
 	{
-		public IDynNode hook();
+		public IDBNNode hook();
 	}
 	
 	private static class FHMMX implements IParentProcess
 	{
-		FHMMX(IDynNode xnd,int ID)
+		FHMMX(IDBNNode xnd,int ID)
 		{
 			this.xnd = xnd;
 			this.ID = ID;
@@ -33,7 +33,7 @@ public class MFHMMController extends ModelController {
 			return this.xnd.getName();
 		}
 		int ID;
-		IDynNode xnd;
+		IDBNNode xnd;
 	}
 	
 	public static interface MFHMMInitialParamGenerator
@@ -42,7 +42,7 @@ public class MFHMMController extends ModelController {
 		public DiscreteCPTUC getInitialPi();
 	}
 	
-	public MFHMMController(IDynNet network, Vector<IFHMMChild> observations, MFHMMInitialParamGenerator paramgen, int Ns) throws BNException
+	public MFHMMController(IDynamicBayesNet network, Vector<IFHMMChild> observations, MFHMMInitialParamGenerator paramgen, int Ns) throws BNException
 	{
 		super(observations);
 		this.network = network;

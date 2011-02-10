@@ -4,17 +4,17 @@ package tests;
 import bn.BNException;
 
 
-import bn.dynamic.IDynNet;
-import bn.dynamic.IDynNode;
+import bn.dynamic.IDynamicBayesNet;
+import bn.dynamic.IDBNNode;
 
 public class LLTest {
 	public static void main(String[] args)
 	{
 		try
 		{
-			IDynNet idbn = bn.commandline.DynamicCommandLine.loadNetwork("/Users/nsandell/bpln_dump121510-11-11-44");
+			IDynamicBayesNet idbn = bn.commandline.DynamicCommandLine.loadNetwork("/Users/nsandell/bpln_dump121510-11-11-44");
 			idbn.run(100, 0);
-			IDynNode nd = (IDynNode)idbn.getNode("Y102");
+			IDBNNode nd = (IDBNNode)idbn.getNode("Y102");
 			System.out.println(nd.betheFreeEnergy());
 		} catch(BNException e)
 		{

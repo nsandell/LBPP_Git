@@ -10,7 +10,7 @@ import bn.messages.FiniteDiscreteMessage;
  * @author Nils F. Sandell
  * 
  */
-public interface IDiscreteBayesNode extends IBayesNode
+public interface IFDiscBNNode extends IBayesNode
 {
 	/**
 	 * Get the current integer value of this node.

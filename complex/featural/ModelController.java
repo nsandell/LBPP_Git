@@ -12,7 +12,7 @@ import java.util.Vector;
 import util.MathUtil;
 
 import bn.BNException;
-import bn.dynamic.IDynNet;
+import bn.dynamic.IDynamicBayesNet;
 
 public abstract class ModelController
 {
@@ -218,7 +218,7 @@ public abstract class ModelController
 	protected abstract void connectI(IParentProcess latent, IChildProcess observed) throws FMMException;
 	
 	protected PrintStream logger = null;
-	protected IDynNet network;
+	protected IDynamicBayesNet network;
 	protected Vector<IParentProcess> latents = new Vector<IParentProcess>();
 	protected Vector<IChildProcess> observables = new Vector<IChildProcess>();
 	private HashMap<IParentProcess, HashSet<IChildProcess>> children = new HashMap<IParentProcess, HashSet<IChildProcess>>();

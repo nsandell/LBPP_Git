@@ -4,7 +4,7 @@ import bn.BNException;
 import bn.IBayesNode;
 import bn.distributions.Distribution;
 
-public interface IStaticNode extends IBayesNode {
+public interface IBNNode extends IBayesNode {
 	Distribution getDistribution();
 	void setDistribution(Distribution dist) throws BNException;
 }

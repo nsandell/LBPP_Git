@@ -4,7 +4,7 @@ import bn.BNException;
 import bn.distributions.Distribution;
 import bn.impl.BayesianNetwork;
 import bn.impl.InternalIBayesNode;
-import bn.statc.IDiscreteBayesNode;
+import bn.statc.IFDiscBNNode;
 import bn.statc.IStaticBayesNet;
 
 class StaticBayesianNetwork extends BayesianNetwork<BNNode> implements IStaticBayesNet
@@ -34,11 +34,11 @@ class StaticBayesianNetwork extends BayesianNetwork<BNNode> implements IStaticBa
 		fromN.addChild(toN);
 	}
 
-	public IDiscreteBayesNode addDiscreteNode(String name, int cardinality) throws BNException
+	public IFDiscBNNode addDiscreteNode(String name, int cardinality) throws BNException
 	{
 		if(this.getNode(name)!=null)
 			throw new BNException("Attempted to add nodes with existing name : " + name);
-		DiscreteBNNode nd = new DiscreteBNNode(this, name, cardinality);
+		FDiscBNNode nd = new FDiscBNNode(this, name, cardinality);
 		this.addNodeI(nd);
 		return nd;
 	}

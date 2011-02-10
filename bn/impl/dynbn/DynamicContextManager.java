@@ -163,8 +163,8 @@ public class DynamicContextManager
 				throw new BNException("Expected length " + (this.T-1) + " array for inter child interface.");
 			for(int i = t0; i < tf; i++)
 			{
-				this.pis.get(i).addInterMessage(pi.get(i));
-				this.lambdas.get(i).addInterMessage(lambda.get(i));
+				this.pis.get(i).addInterMessage(pi.get(i-t0));
+				this.lambdas.get(i).addInterMessage(lambda.get(i-t0));
 			}
 			DynamicMessageIndex idx = new DynamicMessageIndex(this.interIndices.size());
 			this.interIndices.add(idx);

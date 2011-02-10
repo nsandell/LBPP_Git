@@ -86,8 +86,8 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 			DynamicMessageIndex pi = this.addInterChildInterface(mi);
 			try {
 				DynamicMessageIndex ci = child.addInterParentInterface(mi);
-				this.interChildren.put(child, ci);
-				child.interParents.put(this, pi);
+				this.interChildren.put(child, pi);
+				child.interParents.put(this, ci);
 			} catch(BNException e) {
 				this.removeInterChildInterface(pi);
 				throw new BNException(e);
@@ -108,8 +108,8 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 			DynamicMessageIndex pi = this.addIntraChildInterface(mi);
 			try {
 				DynamicMessageIndex ci = child.addIntraParentInterface(mi);
-				this.intraChildren.put(child, ci);
-				child.intraParents.put(this, pi);
+				this.intraChildren.put(child, pi);
+				child.intraParents.put(this, ci);
 			} catch(BNException e) {
 				this.removeIntraChildInterface(pi);
 				throw new BNException(e);

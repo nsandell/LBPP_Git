@@ -64,16 +64,7 @@ public class FiniteDiscreteMessage extends Message
 				sum += message_values[i];
 			if(sum==0) return 0;
 			for(int i = 0; i < message_values.length; i++)
-			{
-				if(message_values[i]==sum)
-				{
-					this.vp = new ValuePair(i, sum, this.message_values.length);
-					this.message_values = null;
-					break;
-				}
-				else
-					message_values[i] /= sum;
-			}
+				message_values[i] /= sum;
 			return sum;
 		}
 	}

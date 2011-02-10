@@ -1,6 +1,9 @@
 package bn.impl.staticbn;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.Vector;
 
 import bn.BNException;
@@ -118,6 +121,26 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
 	public final Iterable<? extends IBayesNode> getChildren()
 	{
 		return this.children.keySet();
+	}
+	
+	@Override
+    public String getEdgeDefinition()
+    {
+		Vector<Entry<BNNode,StaticMessageIndex>> orderedEdges = new Vector<Entry<BNNode,StaticMessageIndex>>(this.parents.entrySet());
+		Collections.sort(orderedEdges,new EntComp());
+		String ret = "";
+		for(int i = 0; i < orderedEdges.size(); i++)
+			ret += orderedEdges.get(i).getKey().getName()+"->"+this.getName()+"\n";
+		return ret;
+    }
+
+	private static class EntComp implements Comparator<Entry<BNNode, StaticMessageIndex>>
+	{
+		@Override
+		public int compare(Entry<BNNode, StaticMessageIndex> o1,
+				Entry<BNNode, StaticMessageIndex> o2) {
+			return o1.getValue().compareTo(o2.getValue());
+		}
 	}
 	
 	public abstract double updateMessages() throws BNException;

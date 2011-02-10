@@ -46,12 +46,19 @@ public class StaticContextManagers
 		Vector<MessageType> messages = new Vector<MessageType>();
 	}
 	
-	public static class StaticMessageIndex
+	public static class StaticMessageIndex implements Comparable<StaticMessageIndex>
 	{
 		protected StaticMessageIndex(int index)
 		{
 			this.index = index;
 		}
+	
+		@Override
+		public int compareTo(StaticMessageIndex other)
+		{
+			return this.index-other.index;
+		}
+		
 		protected int index;
 	}
 	

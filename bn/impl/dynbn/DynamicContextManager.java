@@ -13,17 +13,23 @@ import bn.messages.MessageSet;
 public class DynamicContextManager
 {
 	
-	public static class DynamicMessageIndex
+	public static class DynamicMessageIndex implements Comparable<DynamicMessageIndex>
 	{
 		protected DynamicMessageIndex(int idx)
 		{
 			this.index = idx;
 		}
 		protected int index;
+		
+		@Override
+		public int compareTo(DynamicMessageIndex o) {
+			return this.index-o.index;
+		}
 	}
-
+	
 	public static class DynamicMessageSet<MessageType extends Message> implements MessageSet<MessageType>
 	{
+		
 		private class DMSIterator implements Iterator<MessageType>
 		{
 			public DMSIterator(Iterator<MessageType> it1, Iterator<MessageType> it2)
@@ -65,7 +71,8 @@ public class DynamicContextManager
 		@Override
 		public Iterator<MessageType> iterator()
 		{
-			return new DMSIterator(this.intraMessages.iterator(), this.interMessages.iterator());
+			//return new DMSIterator(this.intraMessages.iterator(), this.interMessages.iterator());
+			return new DMSIterator(this.interMessages.iterator(), this.intraMessages.iterator());
 		}
 		
 		@Override
@@ -75,19 +82,19 @@ public class DynamicContextManager
 		
 		@Override
 		public MessageType get(int index) {
-			if(index >= this.intraMessages.size())
-				return this.interMessages.get(index-this.intraMessages.size());
+			if(index >= this.interMessages.size())
+				return this.intraMessages.get(index-this.interMessages.size());
 			else
-				return this.intraMessages.get(index);
+				return this.interMessages.get(index);
 		}
 		
 		@Override
 		public void remove(int index) {
-			if(index >= this.intraMessages.size())
-				this.interMessages.remove(index-this.intraMessages.size());
+			if(index >= this.interMessages.size())
+				this.intraMessages.remove(index-this.interMessages.size());
 			else
-				this.intraMessages.remove(index);
-			this.size = this.interMessages.size() + this.intraMessages.size();
+				this.interMessages.remove(index);
+			this.size = this.intraMessages.size() + this.interMessages.size();
 		}
 		
 		@Override

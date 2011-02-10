@@ -66,6 +66,8 @@ public class FiniteDiscreteNode implements Serializable
 		for(FiniteDiscreteMessage lambda : outgoingLambdas)
 			lambda.empty();
 		cpt.computeLambdas(outgoingLambdas, incomingPis, localLambda, value);
+		for(FiniteDiscreteMessage lambda : outgoingLambdas)
+			lambda.normalize();
 	}
 
 	public static void updatePis(MessageSet<FiniteDiscreteMessage> incomingLambdaMessages, MessageSet<FiniteDiscreteMessage> outgoingPiMessages, FiniteDiscreteMessage localPi,int cardinality, Integer observation) throws BNException

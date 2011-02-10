@@ -3,7 +3,10 @@ package bn.impl.dynbn;
 import java.io.PrintStream;
 
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Map.Entry;
 import java.util.Vector;
 
 import bn.BNException;
@@ -42,15 +45,32 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 		return this.intraChildren.size()+this.interChildren.size();
 	}
 
-
 	public String getEdgeDefinition()
 	{
 		String ret = "";
-		for(DBNNode child : this.intraChildren.keySet())
+		Vector<Entry<DBNNode,DynamicMessageIndex>> edgeVec = new Vector<Entry<DBNNode,DynamicMessageIndex>>(this.interParents.entrySet());
+		Collections.sort(edgeVec,new EdgeComparer());
+		for(int i = 0; i < edgeVec.size(); i++)
+			ret += edgeVec.get(i).getKey().getName()+"=>"+this.getName()+"\n";
+		
+		edgeVec = new Vector<Entry<DBNNode,DynamicMessageIndex>>(this.intraParents.entrySet());
+		Collections.sort(edgeVec,new EdgeComparer());
+		for(int i = 0; i < edgeVec.size(); i++)
+			ret += edgeVec.get(i).getKey().getName()+"->"+this.getName()+"\n";
+		/*for(DBNNode child : this.intraChildren.keySet())
 			ret += this.getName()+"->"+child.getName()+"\n";
 		for(DBNNode child : this.interChildren.keySet())
-			ret += this.getName()+"=>"+child.getName()+"\n";
+			ret += this.getName()+"=>"+child.getName()+"\n";*/
 		return ret;
+	}
+	
+	private static class EdgeComparer implements Comparator<Entry<DBNNode, DynamicMessageIndex>>
+	{
+		@Override
+		public int compare(Entry<DBNNode, DynamicMessageIndex> o1,
+				Entry<DBNNode, DynamicMessageIndex> o2) {
+			return o1.getValue().compareTo(o2.getValue());
+		}
 	}
 	
 	/*

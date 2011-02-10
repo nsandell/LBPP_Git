@@ -184,14 +184,7 @@ class FDiscBNNode extends BNNode implements IFDiscBNNode, Optimizable
             return ret;
     }
 
-    @Override
-    public String getEdgeDefinition()
-    {
-            String ret = "";
-            for(BNNode child : this.children.keySet())
-                    ret += this.getName()+"->"+child.getName()+"\n";
-            return ret;
-    }
+
    
     @Override
     public void printDistributionInfo(PrintStream ps)

@@ -1,12 +1,11 @@
 package bn.impl.staticbn;
 
 import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Vector;
 
 import bn.BNException;
 import bn.IBayesNode;
 import bn.impl.InternalIBayesNode;
+import bn.impl.staticbn.StaticContextManagers.StaticMessageIndex;
 import bn.messages.Message.MessageInterface;
 import bn.statc.IBNNode;
 
@@ -37,10 +36,10 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
 		try
 		{
 			MessageInterface<?> mi = this.newChildInterface();
-			int pi = this.addChildInterface(mi);
+			StaticMessageIndex pi = this.addChildInterface(mi);
 			try
 			{
-				int ci = child.addParentInterface(mi);
+				StaticMessageIndex ci = child.addParentInterface(mi);
 				this.children.put(child, pi);
 				child.parents.put(this,  ci);
 			} catch(BNException e) {
@@ -57,43 +56,33 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
 		if(!this.children.containsKey(child))
 			return;
 
-		Integer child_idx = this.children.remove(child);
-		Integer rent_idx = child.parents.remove(this);
+		StaticMessageIndex child_idx = this.children.remove(child);
+		StaticMessageIndex rent_idx = child.parents.remove(this);
 
 		child.removeParentInterface(rent_idx);
 		this.removeChildInterface(child_idx);
-		
-		for(Entry<BNNode,Integer> entry : children.entrySet())
-			if(entry.getValue() > child_idx)
-				entry.setValue(entry.getValue()-1);
-		
-		for(Entry<BNNode,Integer> entry : child.parents.entrySet())
-			if(entry.getValue() > rent_idx)
-				entry.setValue(entry.getValue()-1);
 	}
 	
 	public final void removeAllChildren() throws BNException
 	{
-		Vector<BNNode> children = new Vector<BNNode>(this.children.keySet());
-		for(BNNode child : children)
-		{
-			this.removeChild(child);
-		}
+		this.parents.clear();
+		this.removeAllChildrenInterfaces();
 	}
 	
 	public final void removeAllParents() throws BNException
 	{
-		Vector<BNNode> parentCopy = new Vector<BNNode>(this.parents.keySet());
-		for(BNNode parent : parentCopy)
-			parent.removeChild(this);
+		this.children.clear();
+		this.removeAllParentInterfaces();
 	}
 	
 	protected abstract MessageInterface<?> newChildInterface();
 
-	protected abstract int addParentInterface(MessageInterface<?> mi) throws BNException;
-	protected abstract int addChildInterface (MessageInterface<?> mi) throws BNException;
-	protected abstract void removeParentInterface(int index) throws BNException;
-	protected abstract void removeChildInterface (int index) throws BNException;
+	protected abstract StaticMessageIndex addParentInterface(MessageInterface<?> mi) throws BNException;
+	protected abstract StaticMessageIndex addChildInterface (MessageInterface<?> mi) throws BNException;
+	protected abstract void removeParentInterface(StaticMessageIndex index) throws BNException;
+	protected abstract void removeChildInterface (StaticMessageIndex index) throws BNException;
+	protected abstract void removeAllChildrenInterfaces();
+	protected abstract void removeAllParentInterfaces();
 
 	public final int numParents()
 	{
@@ -138,6 +127,6 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
 	protected StaticBayesianNetwork bnet;
 	private String name;
 	
-	protected HashMap<BNNode,Integer> parents = new HashMap<BNNode,Integer>();
-	protected HashMap<BNNode,Integer> children = new HashMap<BNNode, Integer>();
+	protected HashMap<BNNode, StaticMessageIndex> parents = new HashMap<BNNode, StaticMessageIndex>();
+	protected HashMap<BNNode, StaticMessageIndex> children = new HashMap<BNNode, StaticMessageIndex>();
 }

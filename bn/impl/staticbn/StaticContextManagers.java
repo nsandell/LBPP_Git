@@ -10,7 +10,7 @@ import bn.messages.MessageSet;
 public class StaticContextManagers
 {
 	
-	public static class StaticMessageSet<MessageType extends Message> implements MessageSet<MessageType>
+	private static class StaticMessageSet<MessageType extends Message> implements MessageSet<MessageType>
 	{
 
 		@Override
@@ -45,76 +45,138 @@ public class StaticContextManagers
 		
 		Vector<MessageType> messages = new Vector<MessageType>();
 	}
+	
+	public static class StaticMessageIndex
+	{
+		StaticMessageIndex(int index)
+		{
+			this.index = index;
+		}
+		int index;
+	}
+	
+	private static class InterfaceManager<MessageType extends Message>
+	{
+		public MessageSet<MessageType> getPis()
+		{
+			return this.pis;
+		}
+
+		public MessageSet<MessageType> getLambdas()
+		{
+			return this.lambdas;
+		}
+		
+		public StaticMessageIndex newIntf(MessageType pi, MessageType lambda) 
+		{
+			this.pis.add(pi);
+			this.lambdas.add(lambda);
+			StaticMessageIndex idx = new StaticMessageIndex(this.pis.size()-1);
+			this.messageIndices.add(idx);
+			return idx;
+		}
+		
+		public void removeIntf(StaticMessageIndex index) throws BNException
+		{
+			if(index.index>=this.pis.size())
+				throw new BNException("Attempted to remove nonexistant parent..");
+			this.pis.remove(index.index);
+			this.lambdas.remove(index.index);
+			for(StaticMessageIndex idx : this.messageIndices)
+				if(idx.index > index.index)
+					idx.index--;
+		}	
+		
+		public void clear()
+		{
+			this.messageIndices.clear();
+			this.lambdas.removeAll();
+			this.pis.removeAll();
+		}
+		
+		public void resetLambdas()
+		{
+			for(MessageType msg : this.lambdas)
+				msg.setInitial();
+		}
+
+		public void resetPis()
+		{
+			for(MessageType msg : this.pis)
+				msg.setInitial();
+		}
+		
+		private Vector<StaticMessageIndex> messageIndices = new Vector<StaticMessageIndex>();
+		private StaticMessageSet<MessageType> pis = new StaticMessageSet<MessageType>();
+		private StaticMessageSet<MessageType> lambdas = new StaticMessageSet<MessageType>();
+	}
 
 	public static class StaticParentManager<MessageType extends Message>
 	{
 		public MessageSet<MessageType> getIncomingPis()
 		{
-			return this.incoming_pis;
+			return this.intfMgr.getPis();
 		}
 
 		public MessageSet<MessageType> getOutgoingLambdas()
 		{
-			return this.outgoing_lambdas;
+			return this.intfMgr.getLambdas();
 		}
 		
-		public int newParent(MessageType inc_pi, MessageType outgoing_lambda) 
+		public StaticMessageIndex newParent(MessageType inc_pi, MessageType outgoing_lambda) 
 		{
-			this.incoming_pis.add(inc_pi);
-			this.outgoing_lambdas.add(outgoing_lambda);
-			return this.incoming_pis.size()-1;
+			return this.intfMgr.newIntf(inc_pi, outgoing_lambda);
 		}
 		
-		public void removeParent(int index) throws BNException
+		public void removeParent(StaticMessageIndex index) throws BNException
 		{
-			if(index>=this.incoming_pis.size())
-				throw new BNException("Attempted to remove nonexistant parent..");
-			this.incoming_pis.remove(index);
-			this.outgoing_lambdas.remove(index);
+			this.intfMgr.removeIntf(index);
 		}
 		
 		public void resetMessages()
 		{
-			for(MessageType msg : this.outgoing_lambdas)
-				msg.setInitial();
+			this.intfMgr.resetLambdas();
 		}
 		
-		private StaticMessageSet<MessageType> incoming_pis = new StaticMessageSet<MessageType>();
-		private StaticMessageSet<MessageType> outgoing_lambdas = new StaticMessageSet<MessageType>();
+		public void clear()
+		{
+			this.intfMgr.clear();
+		}
+	
+		private InterfaceManager<MessageType> intfMgr = new InterfaceManager<MessageType>();
 	}
 	
 	public static class StaticChildManager<MessageType extends Message>
 	{
-		public MessageSet<MessageType> getIncomingLambdas() {
-			return this.incoming_lambdas;
+		public MessageSet<MessageType> getIncomingLambdas()
+		{
+			return this.intfMgr.getLambdas();
 		}
 		
 		public MessageSet<MessageType> getOutgoingPis()
 		{
-			return this.outgoing_pis;
+			return this.intfMgr.getPis();
 		}	
 		
-		public int newChild(MessageType out_pi, MessageType lambda)
+		public StaticMessageIndex newChild(MessageType out_pi, MessageType lambda)
 		{
-			this.outgoing_pis.add(out_pi);
-			this.incoming_lambdas.add(lambda);
-			return this.outgoing_pis.size()-1;
+			return this.intfMgr.newIntf(out_pi, lambda);
 		}
 
-		public void removeChild(int index) throws BNException {
-			if(index >= this.outgoing_pis.size())
-				throw new BNException("Attempted to remove non-existant child interface.");
-			this.outgoing_pis.remove(index);
-			this.incoming_lambdas.remove(index);
+		public void removeChild(StaticMessageIndex index) throws BNException {
+			this.intfMgr.removeIntf(index);
 		}
 		
 		public void resetMessages()
 		{
-			for(MessageType msg : this.outgoing_pis)
-				msg.setInitial();
+			this.intfMgr.resetPis();
+		}
+		
+		public void clear()
+		{
+			this.intfMgr.clear();
 		}
 
-		private StaticMessageSet<MessageType> incoming_lambdas = new StaticMessageSet<MessageType>();
-		private StaticMessageSet<MessageType> outgoing_pis = new StaticMessageSet<MessageType>();
+		private InterfaceManager<MessageType> intfMgr = new InterfaceManager<MessageType>();
 	}
 }

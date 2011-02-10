@@ -9,6 +9,7 @@ import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.distributions.Distribution.DiscreteSufficientStatistic;
 import bn.distributions.Distribution.SufficientStatistic;
 import bn.impl.nodengines.FiniteDiscreteNode;
+import bn.impl.staticbn.StaticContextManagers.StaticMessageIndex;
 import bn.messages.FiniteDiscreteMessage;
 import bn.messages.MessageSet;
 import bn.messages.FiniteDiscreteMessage.FDiscMessageInterface;
@@ -51,7 +52,7 @@ class FDiscBNNode extends BNNode implements IFDiscBNNode, Optimizable
 	}
 	
 	@Override
-	protected int addParentInterface(MessageInterface<?> mi)
+	protected StaticMessageIndex addParentInterface(MessageInterface<?> mi)
 			throws BNException {
 		if(!(mi instanceof FDiscMessageInterface))
 			throw new BNException("Attempted to add invalid interface...");
@@ -60,7 +61,7 @@ class FDiscBNNode extends BNNode implements IFDiscBNNode, Optimizable
 	}
 
 	@Override
-	protected int addChildInterface(MessageInterface<?> mi) 
+	protected StaticMessageIndex addChildInterface(MessageInterface<?> mi) 
 			throws BNException {
 		if(!(mi.lambda instanceof FiniteDiscreteMessage) || !(mi.pi instanceof FiniteDiscreteMessage))
 			throw new BNException("Attempted to add invalid interface...");
@@ -69,13 +70,24 @@ class FDiscBNNode extends BNNode implements IFDiscBNNode, Optimizable
 	}
 
 	@Override
-	protected void removeParentInterface(int index) throws BNException {
+	protected void removeParentInterface(StaticMessageIndex index) throws BNException {
 		this.parentInterface.removeParent(index);
 	}
 
 	@Override
-	protected void removeChildInterface(int index) throws BNException {
+	protected void removeChildInterface(StaticMessageIndex index) throws BNException {
 		this.childrenInterface.removeChild(index);
+	}
+	
+	@Override
+	protected void removeAllChildrenInterfaces()
+	{
+		this.childrenInterface.clear();
+	}
+	@Override
+	protected void removeAllParentInterfaces()
+	{
+		this.parentInterface.clear();
 	}
 	
 	public Integer getValue()

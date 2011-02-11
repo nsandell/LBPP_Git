@@ -31,10 +31,12 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 		
 		this.localLambda = new ArrayList<FiniteDiscreteMessage>(net.T);
 		this.localPi = new ArrayList<FiniteDiscreteMessage>(net.T);
+		this.marginal = new ArrayList<FiniteDiscreteMessage>(net.T);
 		for(int i = 0; i < net.T; i++)
 		{
 			this.localLambda.add(FiniteDiscreteMessage.normalMessage(cardinality));
 			this.localPi.add(FiniteDiscreteMessage.normalMessage(cardinality));
+			this.marginal.add(FiniteDiscreteMessage.normalMessage(cardinality));
 		}
 		
 		this.childrenMessages = new DynamicChildManager<FiniteDiscreteMessage>(net.T);
@@ -115,7 +117,11 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 		dimensions = new int[msgSet.size()];
 		for(int i = 0; i < msgSet.size(); i++)
 			dimensions[i] = msgSet.get(i).getCardinality();
-		this.advanceDist.validateDimensionality(dimensions, cardinality);
+		try {
+			this.advanceDist.validateDimensionality(dimensions, cardinality);
+		} catch(BNException e) {
+			throw new BNException("Error validating node : " + this.name + " : " + e.toString(),e);
+		}
 	}
 	
 	@Override
@@ -129,7 +135,7 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 	public double updateMessages(int t) throws BNException
 	{
 		return FiniteDiscreteNode.updateMessages((t==0 && this.initialDist!=null) ? this.initialDist : this.advanceDist, 
-				this.localLambda.get(t), this.localPi.get(t),
+				this.localLambda.get(t), this.localPi.get(t), this.marginal.get(t),
 				this.parentMessages.getIncomingPis(t),this.childrenMessages.getOutgoingPis(t),
 				this.childrenMessages.getIncomingLambdas(t),this.parentMessages.getOutgoingLambdas(t),
 				this.values==null ? null : this.values[t],this.cardinality);
@@ -146,11 +152,9 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 	
 	private double betheFreeEnergy(int i) throws BNException
 	{
-		FiniteDiscreteMessage marg = localLambda.get(i).multiply(localPi.get(i));
-		marg.normalize();
 		DiscreteFiniteDistribution dist = (i==0 && this.initialDist!=null) ? this.initialDist : this.advanceDist;
 		return dist.computeBethePotential(this.parentMessages.getIncomingPis(i), localLambda.get(i), 
-				marg, values==null ? null : values[i], this.childrenMessages.getIncomingLambdas(i).size()); 
+				this.marginal.get(i), values==null ? null : values[i], this.childrenMessages.getIncomingLambdas(i).size()); 
 	}
 	
 	public void clearEvidence()
@@ -217,11 +221,7 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 	}
 	public FiniteDiscreteMessage getMarginal(int t) throws BNException
 	{
-		if(t < 0 || t >= this.bayesNet.T)
-			throw new BNException("Attempted to get marginal from finite discrete node with value outside of its range.");
-		FiniteDiscreteMessage ret = this.localLambda.get(t).multiply(this.localPi.get(t));
-		ret.normalize();
-		return (FiniteDiscreteMessage)ret;
+		return this.marginal.get(t);
 	}
 	
 	public String getNodeDefinition()
@@ -378,7 +378,7 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 	
 	DiscreteFiniteDistribution initialDist = null, advanceDist = null;
 
-	ArrayList<FiniteDiscreteMessage> localLambda, localPi;
+	ArrayList<FiniteDiscreteMessage> localLambda, localPi, marginal;
 	Integer[] values = null;
 	DynamicContextManager.DynamicChildManager<FiniteDiscreteMessage> childrenMessages;
 	DynamicContextManager.DynamicParentManager<FiniteDiscreteMessage> parentMessages;

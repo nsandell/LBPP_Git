@@ -253,7 +253,6 @@ public class FiniteDiscreteMessage extends Message
 		}			
 	}
 	
-	
 	public void adopt(Message msg) throws BNException
 	{
 		if(!(msg instanceof FiniteDiscreteMessage))

@@ -37,16 +37,16 @@ public abstract class ModelController
 		try {
 			this.network.run_parallel_block(max_it, conv);
 			double ll = this.network.getLogLikelihood();
-			if(Double.isNaN(ll))
+			if(Double.isNaN(ll) || ll > 0)
 			{
 				this.network.resetMessages();
 				this.network.run_parallel_block(max_it,conv);
-				if(Double.isNaN(ll))
+				ll = this.network.getLogLikelihood();
+				if(Double.isNaN(ll) || ll > 0)
 				{
 					this.network.print(System.err);
-					this.network.resetMessages();
-					return Double.NEGATIVE_INFINITY;
-					//throw new FMMException("Model returns NaN log likelihood!");
+					this.network.getLogLikelihood();
+					throw new FMMException("Model returns NaN/Greater than 0 log likelihood!");
 				}
 			}
 			return ll;
@@ -61,7 +61,7 @@ public abstract class ModelController
 			this.network.optimize_parallel(max_learn_it, learn_conv, max_run_it, run_conv);
 			return this.run(max_run_it,run_conv);
 		} catch(BNException e) {
-			throw new FMMException("Error running the model : " + e.toString());
+			throw new FMMException("Error optimizing the model : " + e.toString());
 		}
 	}
 
@@ -163,23 +163,39 @@ public abstract class ModelController
 	{
 		public LatentBackup(ModelController cont, IParentProcess node)
 		{
-			//TODO what's this why did I do this
-			this.children = (HashSet<IChildProcess>)cont.getChildren(node).clone();
+			this.children =  new HashSet<IChildProcess>(cont.getChildren(node));
 		}
 		public HashSet<IChildProcess> children;
 	}
 	
 	public Vector<IParentProcess> getLatentNodes(){return this.latents;}
 	public Vector<IChildProcess> getObservedNodes(){return this.observables;}
+	
+	public void saveBest(String mainDir) throws FMMException
+	{
+		if(mainDir==null)
+			return;
+	
+		String dir = mainDir+"/maxll/";
+		if(!(new File(dir).exists()))
+			if(!((new File(dir)).mkdir()))
+				throw new FMMException("Could not create directory" + dir);
+		
+		new File(dir+"model.lbp").delete();
+		new File(dir+"info.txt").delete();
+		
+		saveInfo(dir);
+	}
 
 	public void saveInfo(String directory) throws FMMException
 	{
 		if(directory==null)
 			return;
 		
-		if(!((new File(directory)).mkdir()))
-			throw new FMMException("Could not create directory " + directory);
-		
+		if(!(new File(directory).exists()))
+			if(!((new File(directory)).mkdir()))
+				throw new FMMException("Could not create directory " + directory);
+
 		try
 		{
 			this.network.print(new PrintStream(directory+"/model.lbp"));

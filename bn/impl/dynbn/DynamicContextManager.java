@@ -206,7 +206,7 @@ public class DynamicContextManager
 
 		public final void removeIntraInterface(DynamicMessageIndex index)
 		{
-			for(int t = 0; t < this.T-1; t++)
+			for(int t = 0; t < this.T; t++)
 			{
 				this.pis.get(t).removeIntraMessage(index.index);
 				this.lambdas.get(t).removeIntraMessage(index.index);

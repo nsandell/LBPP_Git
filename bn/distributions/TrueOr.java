@@ -61,8 +61,7 @@ public class TrueOr extends DiscreteFiniteDistribution {
 	@Override
 	protected void validateConditionDimensions(int[] dimensions)
 			throws BNException {
-		if(dimensions.length==0)
-			throw new BNException("Or node has no parents!");
+		//TODO Just allowed or node to not have any parents.. make sure this doesn't fuck things up.
 		for(int i = 0; i < dimensions.length; i++)
 			if(dimensions[i]!=2)
 				throw new BNException("TrueOr node needs only binary parents!");
@@ -71,6 +70,8 @@ public class TrueOr extends DiscreteFiniteDistribution {
 	static void computeLocalPiS(FiniteDiscreteMessage local_pi,
 			MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value)
 			throws BNException {
+		if(incoming_pis.size()==0)
+			local_pi.setDelta(0, 1.0);
 		
 		double probability_all0 = 1;
 		for(FiniteDiscreteMessage parentPi : incoming_pis)
@@ -89,6 +90,8 @@ public class TrueOr extends DiscreteFiniteDistribution {
 	static void computeLambdasS(MessageSet<FiniteDiscreteMessage> lambdas_out,
 			MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda,
 			Integer value) throws BNException {
+		if(incoming_pis.size()==0)
+			return;
 		
 		double localProd = 1; //like scalar noisy or with c = 1 and q = 0
 		int numZeros = 0;

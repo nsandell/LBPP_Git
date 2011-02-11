@@ -11,12 +11,10 @@ import bn.messages.MessageSet;
 public class FiniteDiscreteNode implements Serializable
 {
 	
-	public static double updateMessages(DiscreteFiniteDistribution cpt, FiniteDiscreteMessage localLambda, FiniteDiscreteMessage localPi,
+	public static double updateMessages(DiscreteFiniteDistribution cpt, FiniteDiscreteMessage localLambda, FiniteDiscreteMessage localPi, FiniteDiscreteMessage marginal,
 			MessageSet<FiniteDiscreteMessage> incPis, MessageSet<FiniteDiscreteMessage> outPis,
 			MessageSet<FiniteDiscreteMessage> incLambdas, MessageSet<FiniteDiscreteMessage> outLambdas, Integer value, int cardinality) throws BNException
 	{
-		FiniteDiscreteMessage oldMarginal = localLambda.multiply(localPi);
-		oldMarginal.normalize();
 
 		if(value==null)
 			FiniteDiscreteNode.updateLocalLambda(localLambda,incLambdas,cardinality);
@@ -31,8 +29,10 @@ public class FiniteDiscreteNode implements Serializable
 		newmarg.normalize();
 
 		double maxChange = 0;
-		for(int i = 0; i < oldMarginal.getCardinality(); i++)
-			maxChange = Math.max(maxChange,Math.abs(oldMarginal.getValue(i)-newmarg.getValue(i)));
+		for(int i = 0; i < marginal.getCardinality(); i++)
+			maxChange = Math.max(maxChange,Math.abs(marginal.getValue(i)-newmarg.getValue(i)));
+		
+		marginal.adopt(newmarg);
 		return maxChange;
 	}
 	

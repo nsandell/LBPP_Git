@@ -24,6 +24,7 @@ class FDiscBNNode extends BNNode implements IFDiscBNNode, Optimizable
 		this.cardinality = cardinality;
 		this.localLambda = FiniteDiscreteMessage.normalMessage(cardinality);
 		this.localPi = FiniteDiscreteMessage.normalMessage(cardinality);
+		this.marginal = FiniteDiscreteMessage.normalMessage(cardinality);
 	}
 	
 	@Override
@@ -35,7 +36,7 @@ class FDiscBNNode extends BNNode implements IFDiscBNNode, Optimizable
 	@Override
 	public double updateMessages() throws BNException
 	{
-		return FiniteDiscreteNode.updateMessages(this.cpt, this.localLambda, this.localPi,
+		return FiniteDiscreteNode.updateMessages(this.cpt, this.localLambda, this.localPi,this.marginal,
 				this.parentInterface.getIncomingPis(),this.childrenInterface.getOutgoingPis(),
 				this.childrenInterface.getIncomingLambdas(),this.parentInterface.getOutgoingLambdas(),
 				this.value,this.cardinality);
@@ -166,10 +167,8 @@ class FDiscBNNode extends BNNode implements IFDiscBNNode, Optimizable
     @Override
 	public double betheFreeEnergy() throws BNException
 	{
-		FiniteDiscreteMessage marg = this.localLambda.multiply(this.localPi);
-		marg.normalize();
 		return this.cpt.computeBethePotential(this.parentInterface.getIncomingPis(),
-				this.localLambda, marg,this.value,this.numChildren());
+				this.localLambda, this.marginal ,this.value,this.numChildren());
 	}
 	
     @Override
@@ -198,6 +197,7 @@ class FDiscBNNode extends BNNode implements IFDiscBNNode, Optimizable
 	Integer value;
 	FiniteDiscreteMessage localLambda;
 	FiniteDiscreteMessage localPi;
+	FiniteDiscreteMessage marginal;
 	
 	private StaticContextManagers.StaticChildManager<FiniteDiscreteMessage> childrenInterface = new StaticContextManagers.StaticChildManager<FiniteDiscreteMessage>();
 	private StaticContextManagers.StaticParentManager<FiniteDiscreteMessage> parentInterface = new StaticContextManagers.StaticParentManager<FiniteDiscreteMessage>();

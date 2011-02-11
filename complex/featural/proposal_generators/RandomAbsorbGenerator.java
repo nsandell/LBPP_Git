@@ -24,6 +24,8 @@ public class RandomAbsorbGenerator implements ProposalGenerator
 	public Proposal generate(ModelController cont)
 	{
 		int N = cont.getLatentNodes().size();
+		if(N < 2)
+			return null;
 		
 		LatentPair pair = cont.randomLatentPair();
 		

@@ -26,6 +26,8 @@ public class RandomSplitGenerator implements ProposalGenerator
 	public Proposal generate(ModelController cont)
 	{
 		int N = cont.getLatentNodes().size();
+		if(N < 1)
+			return null;
 		IParentProcess lat = cont.randomLatent();
 		HashSet<IChildProcess> children = cont.getChildren(lat);
 		HashSet<IChildProcess> splits = new HashSet<IChildProcess>();

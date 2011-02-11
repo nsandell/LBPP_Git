@@ -24,7 +24,7 @@ public class IBPMixture {
 		
 		this.accepted_genprops = new int[generators.length];
 		this.generators = generators;
-		this.generator_probs = p;
+		this.generator_probs = p_gens;
 		this.main_probs = p;
 	}
 	
@@ -84,9 +84,6 @@ public class IBPMixture {
 		//int N = opts.initialAssignments.length;  	// The number of obsevation sequences
 		int M = opts.initialAssignments[0].length;	// The number of latent processes
 		
-		double bestLL = Double.NEGATIVE_INFINITY;
-		
-		
 		Vector<IChildProcess> obs = cont.getObservedNodes();
 		Vector<IParentProcess> lats = cont.getLatentNodes();
 	
@@ -105,8 +102,9 @@ public class IBPMixture {
 		cont.validate();
 		
 		double ll = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont,opts);
+		double bestLL = ll;
 		
-		cont.log("Learning run started: Initial Log Likelihood = " + ll);
+		cont.log("Learning run started: Initial Log Likelihood = " + ll + "   (" + this.structureLL(cont, opts) + " structural).");
 		
 		for(int iteration = 0; iteration < opts.maxIterations; iteration++)
 		{
@@ -137,7 +135,7 @@ public class IBPMixture {
 				else
 					act.undo(cont);
 			}
-			else if(choice==1)
+			else if(choice==1 && lats.size() > 0)
 			{
 				choice = MathUtil.rand.nextInt(lats.size());
 				IParentProcess vsn = lats.get(choice);
@@ -194,7 +192,7 @@ public class IBPMixture {
 		{
 			System.out.println("\t"+this.generators[i].name()+ " : " + this.accepted_genprops[i]);
 		}
-		System.out.println("Final LL : " + ll);
+		System.out.println("Final LL : " + ll + "   (" + this.structureLL(cont, opts) + " structural).");
 
 		for(int i = 0; i < obs.size(); i++)
 		{
@@ -213,8 +211,6 @@ public class IBPMixture {
 	{
 		if(!cont.getChildren(latent).contains(observed))
 			throw new FMMException("Attempted to disconnect a latent node from an observed that was not its child!");
-		if(cont.getParents(observed).size()==1)
-			return ll;
 		cont.log("Attempting to disconnect observation " + observed.getName() + " from latent sequence " + latent.getName());
 		cont.disconnect(latent, observed);
 		double newLL = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont,opts);

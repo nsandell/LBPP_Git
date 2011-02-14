@@ -14,22 +14,64 @@ public abstract class DiscreteDistribution implements Distribution {
 	{
 		public DiscreteFiniteDistribution(int cardinality){this.cardinality = cardinality;}
 		
-		@Override
 		public void validateDimensionality(int[] dimensions, int cardinality) throws BNException
 		{
 			if(this.cardinality!=cardinality)
 				throw new BNException("Failure to validate - finite discrete distribution has incorrect dimensionality for the support variable!");
 			this.validateConditionDimensions(dimensions);
 		}
-		protected abstract void validateConditionDimensions(int[] dimensions) throws BNException;
 		
 		@Override
 		public abstract DiscreteFiniteDistribution copy() throws BNException;
 		
+		
+		@Override
+		public abstract DiscreteSufficientStatistic getSufficientStatisticObj();
+
+		/**
+		 * Compute a local pi message for a node with this CPD as well as node likelhood 
+		 * (if observed) given incoming pi messages, the local pi  messages of parents, 
+		 * and the observed value (if observed).
+		 * @param local_pi Local pi object to take result
+		 * @param incoming_pis Pi messages from parents.
+		 * @param value Value of the node
+		 * @throws BNException 
+		 */
+		public abstract void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis, 
+				Integer value) throws BNException;
+
+		/**
+		 * Compute outgoing lambda messages for a node with this as its CPD given the incoming pi messages, and
+		 * the local lambda message, and (optionally) the value of the node.
+		 * @param lambdas_out Message vector for storing the output outgoing lamdba messages
+		 * @param incoming_pis Pi messages from parents.
+		 * @param local_lambda Local lambda message
+		 * @param value Value of node if observed, else null
+		 * @throws BNException
+		 */
+		public abstract void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out, MessageSet<FiniteDiscreteMessage> incoming_pis,
+				FiniteDiscreteMessage local_lambda, Integer value) throws BNException;
+
+		public abstract double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis,
+				FiniteDiscreteMessage local_lambda, FiniteDiscreteMessage marginal, Integer value, int numChildren) throws BNException;
+		
 		public int getCardinality(){return this.cardinality;}
 		private int cardinality;
 	}
-
+	
+	public static abstract class InfiniteDiscreteDistribution extends DiscreteDistribution
+	{
+		@Override
+		public abstract InfDiscDistSufficientStat getSufficientStatisticObj();
+		public abstract void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out, MessageSet<FiniteDiscreteMessage> incoming_pis, int value) throws BNException;
+		public abstract double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis, int value);
+	}
+	
+	public static abstract class InfDiscDistSufficientStat implements SufficientStatistic
+	{
+		public abstract InfDiscDistSufficientStat update(MessageSet<FiniteDiscreteMessage> incPis, int value) throws BNException;
+	}
+	
 	/**
 	 * Only constructor - all discrete distributions must be over some set cardinality.
 	 * @param cardinality The cardinality this distribution is over.
@@ -44,8 +86,6 @@ public abstract class DiscreteDistribution implements Distribution {
 	 */
 	public abstract int sample(ValueSet<Integer> parentVals) throws BNException;
 	
-	@Override
-	public abstract DiscreteSufficientStatistic getSufficientStatisticObj();
 	
 	@Override
 	public abstract DiscreteDistribution copy() throws BNException;
@@ -67,7 +107,7 @@ public abstract class DiscreteDistribution implements Distribution {
 	 * @param cardinality Dimension of the support node.
 	 * @throws BNException If this node cannot handle the given dimension vector.
 	 */
-	public abstract void validateDimensionality(int[] dimensions, int cardinality) throws BNException;
+	public abstract void validateConditionDimensions(int[] dimensions) throws BNException;
 
 	/**
 	 * Static helper function, converts a set of conditioning variable values into
@@ -86,6 +126,29 @@ public abstract class DiscreteDistribution implements Distribution {
 			if(indices[i] >= dimSizes[i] || indices[i] < 0)
 				throw new BNException("Out of bounds indices set " + indexString(indices) + " size = " + indexString(dimSizes));
 			index += indices[i]*cinc;
+			cinc *= dimSizes[i];
+		}
+		return index;
+	}
+	
+	/**
+	 * Static helper function, converts a set of conditioning variable values into
+	 * a product index.
+	 * @param indices Set of conditioning variable values
+	 * @param dimSizes The dimensions of the conditioning variables.
+	 * @return A product index.
+	 * @throws BNException If the indices are invalid given the dimensions
+	 */
+	public final static int getIndex(ValueSet<Integer> indices, int[] dimSizes) throws BNException
+	{
+		int cinc = 1;
+		int index = 0;
+		for(int i = 0; i < indices.length(); i++)
+		{
+			int v = indices.getValue(i);
+			if(v >= dimSizes[i] || v < 0)
+				throw new BNException("Out of bounds indices set  size = " + indexString(dimSizes));
+			index += v*cinc;
 			cinc *= dimSizes[i];
 		}
 		return index;
@@ -139,32 +202,51 @@ public abstract class DiscreteDistribution implements Distribution {
 		return ret;
 	}
 	
+
 	/**
-	 * Compute a local pi message for a node with this CPD as well as node likelhood 
-	 * (if observed) given incoming pi messages, the local pi  messages of parents, 
-	 * and the observed value (if observed).
-	 * @param local_pi Local pi object to take result
-	 * @param incoming_pis Pi messages from parents.
-	 * @param value Value of the node
-	 * @throws BNException 
+	 * A discrete sufficent statistic object, which should be able to update based on discrete
+	 * messages about the node it models.
+	 * @author Nils F. Sandell
 	 */
-	public abstract void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis, 
-										  Integer value) throws BNException;
+	public static interface DiscreteSufficientStatistic extends SufficientStatistic
+	{
+		@Override // Same as inherited method, but narrows scope of return type.
+		public DiscreteSufficientStatistic update(SufficientStatistic stat) throws BNException;
+		
+		/**
+		 * Update this sufficient statistic given  discrete messages describing the state of this variable
+		 * @param lambda Local lambda message a node with this CPD
+		 * @param pi Local pi message for a node with this CPD (matching lambda)
+		 * @param incomingPis Incoming pi messages for a node with this CPD (matching lambda)
+		 * @return "This"
+		 * @throws BNException If the messages are invalid.
+		 */
+		public DiscreteSufficientStatistic update(FiniteDiscreteMessage lambda, MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException;
+		public DiscreteSufficientStatistic update(Integer value, MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException;
+	}
 	
-	/**
-	 * Compute outgoing lambda messages for a node with this as its CPD given the incoming pi messages, and
-	 * the local lambda message, and (optionally) the value of the node.
-	 * @param lambdas_out Message vector for storing the output outgoing lamdba messages
-	 * @param incoming_pis Pi messages from parents.
-	 * @param local_lambda Local lambda message
-	 * @param value Value of node if observed, else null
-	 * @throws BNException
-	 */
-	public abstract void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out, MessageSet<FiniteDiscreteMessage> incoming_pis,
-										FiniteDiscreteMessage local_lambda, Integer value) throws BNException;
-	
-	public abstract double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis,
-									FiniteDiscreteMessage local_lambda, FiniteDiscreteMessage marginal, Integer value, int numChildren) throws BNException;
+	public static class NullDiscreteSufficientStatistic implements DiscreteSufficientStatistic
+	{
+		private NullDiscreteSufficientStatistic(){}
+		private static NullDiscreteSufficientStatistic singleton = new NullDiscreteSufficientStatistic();
+		public static NullDiscreteSufficientStatistic instance(){return singleton;}
+
+		@Override
+		public void reset() {}
+
+		@Override
+		public DiscreteSufficientStatistic update(SufficientStatistic stat)
+				throws BNException {return this;}
+
+		@Override
+		public DiscreteSufficientStatistic update(FiniteDiscreteMessage lambda,
+				MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException {return this;}
+
+		@Override
+		public DiscreteSufficientStatistic update(Integer value,
+				MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException {return this;}
+		
+	}
 	
 	private static final long serialVersionUID = 50L;
 }

@@ -86,7 +86,7 @@ public class DiscreteCPTUC extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	protected void validateConditionDimensions(int[] dims) throws BNException
+	public void validateConditionDimensions(int[] dims) throws BNException
 	{
 		if(dims.length!=0)
 			throw new BNException("Probability vector should not have conditions..");

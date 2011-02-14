@@ -66,14 +66,13 @@ public class CountDistribution extends DiscreteDistribution
 	}
 
 	@Override
-	public void validateDimensionality(int[] dimensions, int cardinality)
+	public void validateConditionDimensions(int[] dimensions)
 			throws BNException {
 		for(int dim : dimensions)
 			if(dim!=2)
 				throw new BNException("Parent of a count distribution not of size 2!");
 	}
 
-	@Override //TODO verify this...
 	public void computeLocalPi(FiniteDiscreteMessage local_pi,
 			MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value)
 			throws BNException {
@@ -137,19 +136,4 @@ public class CountDistribution extends DiscreteDistribution
 		return; 
 	}
 
-	@Override
-	public void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out,
-			MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda,
-			Integer value) throws BNException {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis,
-			FiniteDiscreteMessage local_lambda, FiniteDiscreteMessage marginal,
-			Integer value, int numChildren) throws BNException {
-		// TODO Auto-generated method stub
-		return 0;
-	}
 }

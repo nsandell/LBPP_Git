@@ -42,7 +42,7 @@ public class TrueOr extends DiscreteFiniteDistribution {
 
 	@Override
 	public DiscreteSufficientStatistic getSufficientStatisticObj() {
-		return Distribution.NullDiscreteSufficientStatistic.instance();
+		return NullDiscreteSufficientStatistic.instance();
 	}
 
 	@Override
@@ -59,7 +59,7 @@ public class TrueOr extends DiscreteFiniteDistribution {
 	}
 
 	@Override
-	protected void validateConditionDimensions(int[] dimensions)
+	public void validateConditionDimensions(int[] dimensions)
 			throws BNException {
 		//TODO Just allowed or node to not have any parents.. make sure this doesn't fuck things up.
 		for(int i = 0; i < dimensions.length; i++)

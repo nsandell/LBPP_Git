@@ -4,8 +4,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 
 import bn.BNException;
-import bn.messages.FiniteDiscreteMessage;
-import bn.messages.MessageSet;
 
 /**
  * Generic distribution interface.  Minimal interface for handling top level
@@ -61,50 +59,6 @@ public interface Distribution
 		public SufficientStatistic update(SufficientStatistic stat) throws BNException;
 	}
 	
-	/**
-	 * A discrete sufficent statistic object, which should be able to update based on discrete
-	 * messages about the node it models.
-	 * @author Nils F. Sandell
-	 */
-	public static interface DiscreteSufficientStatistic extends SufficientStatistic
-	{
-		@Override // Same as inherited method, but narrows scope of return type.
-		public DiscreteSufficientStatistic update(SufficientStatistic stat) throws BNException;
-		
-		/**
-		 * Update this sufficient statistic given  discrete messages describing the state of this variable
-		 * @param lambda Local lambda message a node with this CPD
-		 * @param pi Local pi message for a node with this CPD (matching lambda)
-		 * @param incomingPis Incoming pi messages for a node with this CPD (matching lambda)
-		 * @return "This"
-		 * @throws BNException If the messages are invalid.
-		 */
-		public DiscreteSufficientStatistic update(FiniteDiscreteMessage lambda, MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException;
-		public DiscreteSufficientStatistic update(Integer value, MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException;
-	}
-	
-	public static class NullDiscreteSufficientStatistic implements DiscreteSufficientStatistic
-	{
-		private NullDiscreteSufficientStatistic(){}
-		private static NullDiscreteSufficientStatistic singleton = new NullDiscreteSufficientStatistic();
-		public static NullDiscreteSufficientStatistic instance(){return singleton;}
-
-		@Override
-		public void reset() {}
-
-		@Override
-		public DiscreteSufficientStatistic update(SufficientStatistic stat)
-				throws BNException {return this;}
-
-		@Override
-		public DiscreteSufficientStatistic update(FiniteDiscreteMessage lambda,
-				MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException {return this;}
-
-		@Override
-		public DiscreteSufficientStatistic update(Integer value,
-				MessageSet<FiniteDiscreteMessage> incomingPis) throws BNException {return this;}
-		
-	}
 	
 	/**
 	 * An index wrapper function such that we can pass discrete CPDs parent values either through

@@ -142,14 +142,6 @@ public class MathUtil
 		return maxv+Math.log(innersum);
 	}
 	
-	public static double logPoissPDF(double lambda, int k)
-	{
-		double v = k*Math.log(lambda)-lambda;
-		for(int i = 2; i <= k;  i++)
-			v -= Math.log(i);
-		return v;
-	}
-	
 	public static int discreteSample(double[] p)
 	{
 		double choice = rand.nextDouble();
@@ -163,15 +155,6 @@ public class MathUtil
 		
 		return i;
 	}
-	
-	/*
-	public static Matrix normalVector(int len)
-	{
-		Matrix ret = new Matrix(len, 1);
-		for(int i =0; i < len; i++)
-			ret.set(i, 0, rand.nextGaussian());
-		return ret;
-	}*/
 	
 	public static Random rand = new Random();
 }

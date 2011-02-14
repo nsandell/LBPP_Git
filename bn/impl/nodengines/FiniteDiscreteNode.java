@@ -3,7 +3,6 @@ package bn.impl.nodengines;
 import java.io.Serializable;
 
 import bn.BNException;
-import bn.distributions.DiscreteDistribution;
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.messages.FiniteDiscreteMessage;
 import bn.messages.MessageSet;
@@ -53,7 +52,7 @@ public class FiniteDiscreteNode implements Serializable
 		local_lambda.setDelta(observation, 1.0);
 	}
 
-	public static void updateLocalPi(DiscreteDistribution cpt, FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incomingPiMessages, Integer value) throws BNException
+	public static void updateLocalPi(DiscreteFiniteDistribution cpt, FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incomingPiMessages, Integer value) throws BNException
 	{
 		for(int i = 0; i < local_pi.getCardinality(); i++)
 			local_pi.setValue(i, 0);
@@ -61,7 +60,7 @@ public class FiniteDiscreteNode implements Serializable
 	}
 	
 	
-	public static void updateLambdas(DiscreteDistribution cpt, MessageSet<FiniteDiscreteMessage> outgoingLambdas, MessageSet<FiniteDiscreteMessage> incomingPis , FiniteDiscreteMessage localLambda, Integer value) throws BNException
+	public static void updateLambdas(DiscreteFiniteDistribution cpt, MessageSet<FiniteDiscreteMessage> outgoingLambdas, MessageSet<FiniteDiscreteMessage> incomingPis , FiniteDiscreteMessage localLambda, Integer value) throws BNException
 	{
 		for(FiniteDiscreteMessage lambda : outgoingLambdas)
 			lambda.empty();

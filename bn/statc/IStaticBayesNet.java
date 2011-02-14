@@ -37,6 +37,8 @@ public interface IStaticBayesNet extends IBayesNet<IBayesNode>
 	 */
 	public IFDiscBNNode addDiscreteNode(String name, int cardinality) throws BNException;
 	
+	public IInfDiscEvBNNode addDiscEvidenceNode(String name, int value) throws BNException;
+	
 	/**
 	 * Check whether an edge exists or not.
 	 * @param from Parent node

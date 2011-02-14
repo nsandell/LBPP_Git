@@ -2,6 +2,7 @@ package bn.impl.dynbn;
 
 import java.io.PrintStream;
 
+
 import java.util.ArrayList;
 
 import bn.BNException;
@@ -9,7 +10,7 @@ import bn.Optimizable;
 import bn.distributions.DiscreteDistribution;
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.distributions.Distribution;
-import bn.distributions.Distribution.DiscreteSufficientStatistic;
+import bn.distributions.DiscreteDistribution.DiscreteSufficientStatistic;
 import bn.distributions.Distribution.SufficientStatistic;
 import bn.dynamic.IFDiscDBNNode;
 import bn.impl.nodengines.FiniteDiscreteNode;

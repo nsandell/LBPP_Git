@@ -4,10 +4,13 @@ import java.io.PrintStream;
 
 import bn.BNException;
 import bn.Optimizable;
-import bn.distributions.DiscreteDistribution;
+import bn.distributions.DiscreteDistribution.InfiniteDiscreteDistribution;
 import bn.distributions.Distribution;
 import bn.distributions.Distribution.SufficientStatistic;
 import bn.impl.staticbn.StaticContextManagers.StaticMessageIndex;
+import bn.messages.FiniteDiscreteMessage;
+import bn.messages.MessageSet;
+import bn.messages.FiniteDiscreteMessage.FDiscMessageInterface;
 import bn.messages.Message.MessageInterface;
 import bn.statc.IInfDiscEvBNNode;
 
@@ -17,137 +20,124 @@ public class InfDiscEvBNNode extends BNNode implements IInfDiscEvBNNode, Optimiz
 	public InfDiscEvBNNode(StaticBayesianNetwork net, String name, int value)
 	{
 		super(net,name);
+		this.value = value;
 	}
 
 	@Override
 	public void printDistributionInfo(PrintStream ps) throws BNException {
-		// TODO Auto-generated method stub
-		
+		this.dist.printDistribution(ps);
 	}
 
 	@Override
-	public void resetMessages() {
-		// TODO Auto-generated method stub
-		
+	public void resetMessages() 
+	{
+		this.parentMsgs.resetMessages();
 	}
 
 	@Override
 	public double betheFreeEnergy() throws BNException {
-		// TODO Auto-generated method stub
-		return 0;
+		return this.dist.computeBethePotential(this.parentMsgs.getIncomingPis(), this.value);
 	}
 
 	@Override
 	public String getNodeDefinition() {
-		// TODO Auto-generated method stub
-		return null;
+		return this.getName()+":InfDiscEv()\n";
 	}
 
 	@Override
-	public String getEdgeDefinition() {
-		// TODO Auto-generated method stub
-		return null;
-	}
+	public void clearEvidence() {}
 
 	@Override
-	public void clearEvidence() {
-		// TODO Auto-generated method stub
-		
-	}
-
-	@Override
-	public Distribution getDistribution() {
-		// TODO Auto-generated method stub
-		return null;
+	public InfiniteDiscreteDistribution getDistribution() {
+		return this.dist;
 	}
 
 	@Override
 	public void setDistribution(Distribution dist) throws BNException {
-		// TODO Auto-generated method stub
-		
+		if(dist instanceof InfiniteDiscreteDistribution)
+			this.dist = (InfiniteDiscreteDistribution)dist;
+		else throw new BNException("Exepected infinite distribution for infinite discrete evidence node.");
+	}
+	
+	public void setDistribution(InfiniteDiscreteDistribution dist)
+	{
+		this.dist = dist;
 	}
 
 	@Override
 	public SufficientStatistic getSufficientStatistic() throws BNException {
-		// TODO Auto-generated method stub
-		return null;
+		return dist.getSufficientStatisticObj();
 	}
 
 	@Override
 	public double optimizeParameters(SufficientStatistic stat)
 			throws BNException {
-		// TODO Auto-generated method stub
-		return 0;
+		return dist.optimize(stat);
 	}
 
 	@Override
 	public double optimizeParameters() throws BNException {
-		// TODO Auto-generated method stub
-		return 0;
+		return dist.optimize(dist.getSufficientStatisticObj());
 	}
 
 	@Override
-	public Integer getValue() throws BNException {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public void setDistribution(DiscreteDistribution dist) throws BNException {
-		// TODO Auto-generated method stub
-		
+	public int getValue() throws BNException {
+		return this.value;
 	}
 
 	@Override
 	public void setValue(int o) throws BNException {
-		// TODO Auto-generated method stub
-		
+		this.value = o;
 	}
 
 	@Override
-	protected MessageInterface<?> newChildInterface() {
-		// TODO Auto-generated method stub
-		return null;
+	protected MessageInterface<?> newChildInterface() throws BNException {
+		throw new BNException("Infinite discrete evidence nodes do not support children.");
 	}
 
 	@Override
 	protected StaticMessageIndex addParentInterface(MessageInterface<?> mi)
 			throws BNException {
-		// TODO Auto-generated method stub
-		return null;
+		if(mi instanceof FiniteDiscreteMessage.FDiscMessageInterface)
+			throw new BNException("Infinite discrete evidence nodes only support finite discrete parents.");
+		FDiscMessageInterface dmi = (FDiscMessageInterface)mi;
+		return this.parentMsgs.newParent(dmi.pi, dmi.lambda);
 	}
 
 	@Override
 	protected StaticMessageIndex addChildInterface(MessageInterface<?> mi)
 			throws BNException {
-		// TODO Auto-generated method stub
-		return null;
+		throw new BNException("Infinite discrete evidence nodes do not support children.");
 	}
 
 	@Override
 	protected void removeParentInterface(StaticMessageIndex index)
 			throws BNException {
-		// TODO Auto-generated method stub
-		
+		this.parentMsgs.removeParent(index);
 	}
 
 	@Override
 	protected void removeChildInterface(StaticMessageIndex index)
 			throws BNException {
-		// TODO Auto-generated method stub
-		
+		throw new BNException("Infinite discrete evidence nodes do not support children.");
 	}
 
 	@Override
 	public double updateMessages() throws BNException {
-		// TODO Auto-generated method stub
+		this.dist.computeLambdas(this.parentMsgs.getOutgoingLambdas(), this.parentMsgs.getIncomingPis(), this.value);
 		return 0;
 	}
 
 	@Override
 	public void validate() throws BNException {
-		// TODO Auto-generated method stub
-		
+		MessageSet<FiniteDiscreteMessage> pis = this.parentMsgs.getIncomingPis();
+		int[] parentDims = new int[pis.size()];
+		for(int i = 0; i < parentDims.length; i++)
+			parentDims[i] = pis.get(i).getCardinality();
+		this.dist.validateConditionDimensions(parentDims);
 	}
 
+	private StaticContextManagers.StaticParentManager<FiniteDiscreteMessage> parentMsgs = new StaticContextManagers.StaticParentManager<FiniteDiscreteMessage>();
+	private InfiniteDiscreteDistribution dist;
+	private int value;
 }

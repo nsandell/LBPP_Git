@@ -81,7 +81,7 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
 			parent.removeChild(this);
 	}
 	
-	protected abstract MessageInterface<?> newChildInterface();
+	protected abstract MessageInterface<?> newChildInterface() throws BNException;
 
 	protected abstract StaticMessageIndex addParentInterface(MessageInterface<?> mi) throws BNException;
 	protected abstract StaticMessageIndex addChildInterface (MessageInterface<?> mi) throws BNException;

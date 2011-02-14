@@ -1,9 +1,5 @@
 package bn.impl.dynbn;
 
-
-import java.util.HashMap;
-
-
 import bn.BNException;
 import bn.IBayesNode;
 import bn.Optimizable;
@@ -11,6 +7,7 @@ import bn.distributions.Distribution;
 import bn.dynamic.IFDiscDBNNode;
 import bn.dynamic.IDynamicBayesNet;
 import bn.dynamic.IDBNNode;
+import bn.dynamic.IInfDiscEvDBNNode;
 import bn.impl.BayesianNetwork;
 
 class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynamicBayesNet
@@ -22,7 +19,15 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynami
 		if(this.getNode(name)!=null)
 			throw new BNException("Node " + name + " already exists in this DBN.");
 		FDiscDBNNode nd = new FDiscDBNNode(this, name, cardinality);
-		this.dnodes.put(name, nd);
+		this.addNodeI(nd);
+		return nd;
+	}
+	
+	public IInfDiscEvDBNNode addDiscreteEvidenceNode(String name, int[] values) throws BNException
+	{
+		if(this.getNode(name)!=null)
+			throw new BNException("Node " + name + " already exists in this DBN.");
+		InfDiscEvDBNNode nd = new InfDiscEvDBNNode(this, name, values);
 		this.addNodeI(nd);
 		return nd;
 	}
@@ -87,13 +92,35 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynami
 		}
 		return new RunResults(i, ((double)(System.currentTimeMillis()-startTime))/1000.0, learnErr);
 	}
+	
+	public RunResults optimize_parallel(int maxLearnIt, double learnErrConvergence, int maxInfIt, double infErrConvergence,Iterable<String> nodes) throws BNException
+	{
+		long startTime = System.currentTimeMillis();
+		int i = 0;
+		double learnErr = 0;
+		while(i < maxLearnIt)
+		{
+			learnErr = 0;
+			this.run_parallel_block(maxInfIt, infErrConvergence);
+			for(String nodename : nodes)
+			{
+				if(this.getNode(nodename) instanceof Optimizable)
+					learnErr = Math.max(((Optimizable)this.getNode(nodename)).optimizeParameters(),learnErr);
+				else
+					throw new BNException("Node " + nodename + " does not exist or is not optimizable.");
+			}
+			if(learnErr < learnErrConvergence)
+				break;
+			i++;
+		}
+		return new RunResults(i, ((double)(System.currentTimeMillis()-startTime))/1000.0, learnErr);
+	}
 
 	@Override
 	protected void removeNodeI(DBNNode node) throws BNException
 	{
 		node.removeAllChildren();
 		node.removeAllParents();
-		this.dnodes.remove(node.getName());
 	}
 	
 	@Override
@@ -395,5 +422,4 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynami
 	
 	protected int T;
 	protected static int availableProcs = Runtime.getRuntime().availableProcessors();
-	HashMap<String, DBNNode> dnodes = new HashMap<String, DBNNode>();
 }

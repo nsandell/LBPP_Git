@@ -78,7 +78,7 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 	 *  to be implemented by specific node types.
 	 */
 	
-	protected abstract MessageInterfaceSet<?> newChildInterface(int T);
+	protected abstract MessageInterfaceSet<?> newChildInterface(int T) throws BNException;
 	
 	protected abstract DynamicMessageIndex addInterParentInterface(MessageInterfaceSet<?> mia) throws BNException;
 	protected abstract DynamicMessageIndex addIntraParentInterface(MessageInterfaceSet<?> mia) throws BNException;

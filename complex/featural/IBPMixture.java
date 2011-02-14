@@ -182,7 +182,7 @@ public class IBPMixture {
 				if(ll > bestLL)
 				{
 					bestLL = ll;
-					cont.saveInfo(opts.savePath + "/iteration"+iteration);
+					cont.saveInfo(opts.savePath + "/iteration"+iteration,ll);
 				}
 			}
 		}

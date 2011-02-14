@@ -171,7 +171,7 @@ public abstract class ModelController
 	public Vector<IParentProcess> getLatentNodes(){return this.latents;}
 	public Vector<IChildProcess> getObservedNodes(){return this.observables;}
 	
-	public void saveBest(String mainDir) throws FMMException
+	public void saveBest(String mainDir,double ll) throws FMMException
 	{
 		if(mainDir==null)
 			return;
@@ -184,10 +184,10 @@ public abstract class ModelController
 		new File(dir+"model.lbp").delete();
 		new File(dir+"info.txt").delete();
 		
-		saveInfo(dir);
+		saveInfo(dir,ll);
 	}
 
-	public void saveInfo(String directory) throws FMMException
+	public void saveInfo(String directory,double ll) throws FMMException
 	{
 		if(directory==null)
 			return;
@@ -200,7 +200,7 @@ public abstract class ModelController
 		{
 			this.network.print(new PrintStream(directory+"/model.lbp"));
 			PrintStream info = new PrintStream(directory+"/info.txt");
-			info.println("Log Likelihood : " + this.network.getLogLikelihood());
+			info.println("Log Likelihood : " + ll);
 			info.println();
 			info.println();
 			for(int i = 0; i < latents.size(); i++)
@@ -221,8 +221,6 @@ public abstract class ModelController
 				info.println();
 			}		
 		} catch(FileNotFoundException e) {
-			throw new FMMException(e.toString());
-		} catch(BNException e) {
 			throw new FMMException(e.toString());
 		}
 	}

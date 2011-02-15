@@ -281,6 +281,7 @@ public class FiniteDiscreteMessage extends Message
 				if(dmsg.vp.cardinality!=this.message_values.length)
 					throw new BNException("Attempted to adopt message of differing cardinality.");
 				this.vp = new ValuePair(dmsg.vp.index, dmsg.vp.value, dmsg.vp.cardinality);
+				this.message_values = null;
 			}
 			else
 			{

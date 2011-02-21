@@ -7,4 +7,6 @@ import bn.distributions.Distribution;
 public interface IBNNode extends IBayesNode {
 	Distribution getDistribution();
 	void setDistribution(Distribution dist) throws BNException;
+	
+	public double conditionalLL();
 }

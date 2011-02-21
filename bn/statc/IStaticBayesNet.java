@@ -2,7 +2,6 @@ package bn.statc;
 
 import bn.BNException;
 import bn.IBayesNet;
-import bn.IBayesNode;
 import bn.distributions.Distribution;
 
 /**
@@ -10,7 +9,7 @@ import bn.distributions.Distribution;
  * @author Nils F. Sandell
  *
  */
-public interface IStaticBayesNet extends IBayesNet<IBayesNode>
+public interface IStaticBayesNet extends IBayesNet<IBNNode>
 {
 	/**
 	 * Add edge from one node to another.

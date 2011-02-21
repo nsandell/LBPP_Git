@@ -141,19 +141,17 @@ public class MathUtil
 			innersum += Math.exp(vals[i]-maxv);
 		return maxv+Math.log(innersum);
 	}
-	
 	public static int discreteSample(double[] p)
 	{
 		double choice = rand.nextDouble();
 
 		int i = 0;
-		while(choice > p[i])
+		while(i < p.length && choice > p[i])
 		{
 			choice -= p[i];
 			i++;
 		}
-		
-		return i;
+		return i < p.length ? i : p.length-1;
 	}
 	
 	public static Random rand = new Random();

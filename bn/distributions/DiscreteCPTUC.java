@@ -213,7 +213,7 @@ public class DiscreteCPTUC extends DiscreteFiniteDistribution
 	@Override
 	public double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda,
 										FiniteDiscreteMessage marginal, Integer value, int numChildren) throws BNException {
-		double E = 0, H1 = 0, H2 = 0;
+		double E = 0, H2 = 0;
 		if(value!=null)
 			E = -Math.log(this.dist[value]);
 		if(numChildren==0)
@@ -229,7 +229,7 @@ public class DiscreteCPTUC extends DiscreteFiniteDistribution
 			}
 			H2*=(numChildren-1);
 		}
-		return E+H1-H2;
+		return E-H2;
 	}
 	
 	@Override //Should have no parents so this method has no functionality.

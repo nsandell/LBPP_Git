@@ -33,6 +33,19 @@ public class InfDiscEvBNNode extends BNNode implements IInfDiscEvBNNode, Optimiz
 	{
 		this.parentMsgs.resetMessages();
 	}
+	
+    public double conditionalLL()
+    {
+    	double PE = 0;
+    	for(FiniteDiscreteMessage pi : this.parentMsgs.getIncomingPis())
+    	{
+    		for(int i = 0; i < pi.getCardinality(); i++)
+    			if(pi.getValue(i) > 0 && pi.getValue(i) < 1)
+    				PE -= pi.getValue(i)*Math.log(pi.getValue(i));
+    	}
+    	double BE = this.dist.computeBethePotential(this.parentMsgs.getIncomingPis(), this.value);
+    	return BE+PE;
+    }
 
 	@Override
 	public double betheFreeEnergy() throws BNException {

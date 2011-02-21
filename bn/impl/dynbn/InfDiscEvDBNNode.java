@@ -264,8 +264,15 @@ public class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode, Opti
 	{
 		return this.optimizeParameters(this.getSufficientStatistic());
 	}
+	
+	@Override
+	public double conditionalLL(int t) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 
 	private DynamicContextManager.DynamicParentManager<FiniteDiscreteMessage> parentMessages;
 	private InfiniteDiscreteDistribution init, advance;
 	private int[] values;
+
 }

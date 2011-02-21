@@ -4,6 +4,7 @@ import bn.BNException;
 import bn.distributions.Distribution;
 import bn.impl.BayesianNetwork;
 import bn.impl.InternalIBayesNode;
+import bn.statc.IBNNode;
 import bn.statc.IFDiscBNNode;
 import bn.statc.IInfDiscEvBNNode;
 import bn.statc.IStaticBayesNet;
@@ -59,6 +60,12 @@ class StaticBayesianNetwork extends BayesianNetwork<BNNode> implements IStaticBa
 		node.removeAllChildren();
 		for(BNNode parent : node.getParentsI())
 			parent.removeChild(node);
+	}
+
+	@Override
+	public void removeNode(IBNNode node) throws BNException
+	{
+		super.removeNode(node);
 	}
 
 	public void removeEdge(InternalIBayesNode from, InternalIBayesNode to) throws BNException

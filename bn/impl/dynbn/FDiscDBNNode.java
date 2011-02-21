@@ -377,6 +377,14 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 			return this.advanceDist.optimize(tss.advanceStat);
 	}
 	
+	@Override
+	public double conditionalLL(int t)
+	{
+		if(this.values==null || this.values[t]==null)
+			return 0.0;
+		return Math.log(this.localPi.get(t).getValue(this.values[t]));
+	}
+	
 	DiscreteFiniteDistribution initialDist = null, advanceDist = null;
 
 	ArrayList<FiniteDiscreteMessage> localLambda, localPi, marginal;

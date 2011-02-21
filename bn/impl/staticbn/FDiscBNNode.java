@@ -184,7 +184,12 @@ class FDiscBNNode extends BNNode implements IFDiscBNNode, Optimizable
             return ret;
     }
 
-
+    public double conditionalLL()
+    {
+    	if(this.value==null)
+    		return 0;
+    	return Math.log(this.localPi.getValue(this.value));
+    }
    
     @Override
     public void printDistributionInfo(PrintStream ps)

@@ -133,7 +133,7 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
 			ret += orderedEdges.get(i).getKey().getName()+"->"+this.getName()+"\n";
 		return ret;
     }
-
+	
 	private static class EntComp implements Comparator<Entry<BNNode, StaticMessageIndex>>
 	{
 		@Override

@@ -40,6 +40,7 @@ public interface IDBNNode extends IBayesNode
 	boolean hasInterParent(IDBNNode child);
 	boolean hasIntraParent(IDBNNode child);
 	
+	public double conditionalLL(int t);
 	public double betheFreeEnergy() throws BNException;
 	
 	public void setInitialDistribution(Distribution dist) throws BNException;

@@ -92,7 +92,7 @@ class StaticCommandHandlers {
 				IFDiscBNNode nd =(IFDiscBNNode)net.getNode(args[0]);
 				FiniteDiscreteMessage msg = nd.getMarginal();
 				for(int i = 0; i < msg.getCardinality(); i++)
-					System.out.println(msg.getValue(i)+" ");
+					str.println(msg.getValue(i)+" ");
 			} catch(BNException e) {
 				throw new ParserException("Error printing marginal : " + e.getMessage());
 			}
@@ -101,6 +101,36 @@ class StaticCommandHandlers {
 		
 		private IStaticBayesNet net;
 		private static Pattern patt = Pattern.compile("^\\s*query\\((\\w+)\\)\\s*$");
+		private static int[] groups = new int[]{1};
+	}
+	
+	static class ConditionalLL implements ParserFunction
+	{
+		public ConditionalLL(IStaticBayesNet net)
+		{
+			this.net = net;
+		}
+		
+		public String name(){return "cll";}
+		public String description(){return "Request the conditional log likehihood of an observed node, e.g. cll(X)";}
+
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+		public void finish() throws ParserException {}
+		public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException
+		{
+			try
+			{
+				str.println(net.getNode(args[0]).conditionalLL());
+			} catch(BNException e) {
+				throw new ParserException("Error printing marginal : " + e.getMessage());
+			}
+			return null;
+		}
+		
+		private IStaticBayesNet net;
+		private static Pattern patt = Pattern.compile("^\\s*cll\\((\\w+)\\)\\s*$");
 		private static int[] groups = new int[]{1};
 	}
 	

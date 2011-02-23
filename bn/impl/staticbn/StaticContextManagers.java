@@ -59,6 +59,11 @@ public class StaticContextManagers
 			return this.index-other.index;
 		}
 		
+		public int getIndex()
+		{
+			return this.index;
+		}
+		
 		protected int index;
 	}
 	
@@ -86,13 +91,27 @@ public class StaticContextManagers
 		public void removeIntf(StaticMessageIndex index) throws BNException
 		{
 			if(index.index>=this.pis.size())
-				throw new BNException("Attempted to remove nonexistant parent..");
+				throw new BNException("Attempted to remove nonexistant interface..");
 			this.pis.remove(index.index);
 			this.lambdas.remove(index.index);
 			for(StaticMessageIndex idx : this.messageIndices)
 				if(idx.index > index.index)
 					idx.index--;
 		}	
+		
+		public MessageType getLambda(StaticMessageIndex index) throws BNException
+		{
+			if(index.index>=this.lambdas.size())
+				throw new BNException("Attempted to get nonexistant lambda message..");
+			return this.lambdas.get(index.index);
+		}
+		
+		public MessageType getPi(StaticMessageIndex index) throws BNException
+		{
+			if(index.index>=this.pis.size())
+				throw new BNException("Attempted to get nonexistant lambda message..");
+			return this.pis.get(index.index);
+		}
 		
 		public void clear()
 		{
@@ -135,6 +154,16 @@ public class StaticContextManagers
 			return this.intfMgr.newIntf(inc_pi, outgoing_lambda);
 		}
 		
+		public MessageType getOutgoingLambda(StaticMessageIndex idx) throws BNException
+		{
+			return this.intfMgr.getLambda(idx);
+		}
+		
+		public MessageType getIncomingPi(StaticMessageIndex idx) throws BNException
+		{
+			return this.intfMgr.getPi(idx);
+		}
+		
 		public void removeParent(StaticMessageIndex index) throws BNException
 		{
 			this.intfMgr.removeIntf(index);
@@ -168,6 +197,16 @@ public class StaticContextManagers
 		public StaticMessageIndex newChild(MessageType out_pi, MessageType lambda)
 		{
 			return this.intfMgr.newIntf(out_pi, lambda);
+		}
+		
+		public MessageType getIncomingLambda(StaticMessageIndex idx) throws BNException
+		{
+			return this.intfMgr.getLambda(idx);
+		}
+		
+		public MessageType getOutgoingPi(StaticMessageIndex idx) throws BNException
+		{
+			return this.intfMgr.getPi(idx);
 		}
 
 		public void removeChild(StaticMessageIndex index) throws BNException {

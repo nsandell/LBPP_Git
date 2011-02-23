@@ -35,6 +35,18 @@ class StaticBayesianNetwork extends BayesianNetwork<BNNode> implements IStaticBa
 	{
 		fromN.addChild(toN);
 	}
+	
+	public void run(String name) throws BNException
+	{
+		BNNode nd = this.getNode(name);
+		if(nd==null)
+			throw new BNException("Attempted to update nonexistant specific node " + name);
+		nd.updateMessages();
+		for(BNNode parent : nd.getParentsI())
+			parent.updateOutgoingInterface(nd);
+		for(BNNode child : nd.getChildrenI())
+			child.updateOutgoingInterface(nd);
+	}
 
 	public IFDiscBNNode addDiscreteNode(String name, int cardinality) throws BNException
 	{

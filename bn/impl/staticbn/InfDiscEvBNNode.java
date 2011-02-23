@@ -16,7 +16,6 @@ import bn.statc.IInfDiscEvBNNode;
 
 public class InfDiscEvBNNode extends BNNode implements IInfDiscEvBNNode, Optimizable
 {
-	
 	public InfDiscEvBNNode(StaticBayesianNetwork net, String name, int value)
 	{
 		super(net,name);
@@ -149,8 +148,18 @@ public class InfDiscEvBNNode extends BNNode implements IInfDiscEvBNNode, Optimiz
 			parentDims[i] = pis.get(i).getCardinality();
 		this.dist.validateConditionDimensions(parentDims);
 	}
+	
+	@Override
+	public void updateOutgoingLambda(StaticMessageIndex idx) throws BNException
+	{
+		dist.computeLambda(this.parentMsgs.getOutgoingLambdas(), idx.getIndex(), this.parentMsgs.getIncomingPis(), this.value);
+	}
 
+	@Override
+	public void updateOutgoingPi(StaticMessageIndex idx) throws BNException {}
+	
 	private StaticContextManagers.StaticParentManager<FiniteDiscreteMessage> parentMsgs = new StaticContextManagers.StaticParentManager<FiniteDiscreteMessage>();
 	private InfiniteDiscreteDistribution dist;
 	private int value;
+
 }

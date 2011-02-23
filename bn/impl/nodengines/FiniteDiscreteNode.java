@@ -30,10 +30,11 @@ public class FiniteDiscreteNode implements Serializable
 		double maxChange = 0;
 		for(int i = 0; i < marginal.getCardinality(); i++)
 			maxChange = Math.max(maxChange,Math.abs(marginal.getValue(i)-newmarg.getValue(i)));
-		
+
 		marginal.adopt(newmarg);
 		return maxChange;
 	}
+	
 	
 	public static void updateLocalLambda(FiniteDiscreteMessage local_lambda, MessageSet<FiniteDiscreteMessage> incomingLambdaMessages, int cardinality)
 	{
@@ -59,7 +60,6 @@ public class FiniteDiscreteNode implements Serializable
 		cpt.computeLocalPi(local_pi, incomingPiMessages, value);	
 	}
 	
-	
 	public static void updateLambdas(DiscreteFiniteDistribution cpt, MessageSet<FiniteDiscreteMessage> outgoingLambdas, MessageSet<FiniteDiscreteMessage> incomingPis , FiniteDiscreteMessage localLambda, Integer value) throws BNException
 	{
 		for(FiniteDiscreteMessage lambda : outgoingLambdas)
@@ -68,7 +68,45 @@ public class FiniteDiscreteNode implements Serializable
 		for(FiniteDiscreteMessage lambda : outgoingLambdas)
 			lambda.normalize();
 	}
-
+	
+	public static void updateOutgoingLambda(DiscreteFiniteDistribution cpt, MessageSet<FiniteDiscreteMessage> outgoingLambdas, FiniteDiscreteMessage updateLamdba, MessageSet<FiniteDiscreteMessage> incomingPis , FiniteDiscreteMessage localLambda, Integer value) throws BNException
+	{
+		updateLamdba.empty();
+		cpt.computeLambda(outgoingLambdas, updateLamdba, incomingPis, localLambda, value);
+		updateLamdba.normalize();
+	}
+	
+	public static void updateOutgoingPi(MessageSet<FiniteDiscreteMessage> incomingLambdaMessages, MessageSet<FiniteDiscreteMessage> outgoingPiMessages, FiniteDiscreteMessage updatePi, FiniteDiscreteMessage localPi,int cardinality, Integer observation) throws BNException
+	{
+		int imin = 0; int imax = cardinality;
+		if(observation!=null){imin = observation; imax = observation+1;}
+		
+		double[] lambda_prods = new double[imax-imin];
+		for(int i = imin; i < imax; i++)
+			lambda_prods[i] = 1;
+		
+		
+		for(int i = imin; i < imax; i++)
+		{
+			for(int j = 0; j < incomingLambdaMessages.size(); j++)
+			{
+				if(outgoingPiMessages.get(j)==updatePi)
+					continue;
+			 	
+				lambda_prods[i-imin] *= incomingLambdaMessages.get(j).getValue(i);
+				if(lambda_prods[i-imin]==0)
+					break;
+			}
+		}
+		
+		FiniteDiscreteMessage pi_child = updatePi;
+		
+		pi_child.empty();
+		for(int i = imin; i < imax; i++)
+			pi_child.setValue(i, lambda_prods[i]*localPi.getValue(i));
+		pi_child.normalize();
+	}
+	
 	public static void updatePis(MessageSet<FiniteDiscreteMessage> incomingLambdaMessages, MessageSet<FiniteDiscreteMessage> outgoingPiMessages, FiniteDiscreteMessage localPi,int cardinality, Integer observation) throws BNException
 	{
 		int imin = 0; int imax = cardinality;

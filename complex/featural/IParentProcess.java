@@ -1,5 +1,7 @@
 package complex.featural;
 
-public interface IParentProcess {
+import complex.metrics.FinDiscMarginalDivergence.FinDiscMarginalHolder;
+
+public interface IParentProcess extends FinDiscMarginalHolder {
 	String getName();
 }

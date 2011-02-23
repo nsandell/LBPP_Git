@@ -225,6 +225,11 @@ public abstract class ModelController
 		}
 	}
 	
+	public int getT()
+	{
+		return this.network.getT();
+	}
+	
 	protected abstract void killLatentModelI(IParentProcess node) throws FMMException;
 	protected abstract IParentProcess newLatentModelI() throws FMMException;
 	

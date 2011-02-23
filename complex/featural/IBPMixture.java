@@ -1,6 +1,8 @@
 package complex.featural;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Vector;
 
 import complex.featural.ProposalAction.UniqueParentAddAction;
@@ -69,7 +71,7 @@ public class IBPMixture {
 		public double mll = Double.NEGATIVE_INFINITY;
 	
 		public int max_run_it = 30, max_learn_it = 5;
-		public double run_conv = 1e-6, learn_conv = 1e-5;
+		public double run_conv = 1e-6, learn_conv = 1e-6;
 		
 		public ModelController controller;
 		public boolean optimizeParameters = false;		// Optimize parameters at each time step
@@ -78,8 +80,33 @@ public class IBPMixture {
 		public int maxIterations = Integer.MAX_VALUE;   // maximum possible number of iterations
 	}
 	
+	private static class ShutdownThread extends Thread
+	{
+		
+		public void run() {
+			System.out.println("Learning process manually terminated..");
+			mix.keepGoing = false;
+			try {
+				mix.workThr.join();
+			} catch( InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+		
+		public ShutdownThread(IBPMixture mix)
+		{
+			this.mix = mix;
+		}
+		IBPMixture mix;
+	}
+	
+	private volatile Thread workThr;
+	private volatile boolean keepGoing = true;
 	public void learn(IBPMModelOptions opts) throws FMMException
 	{
+		this.keepGoing = true;
+		this.workThr = Thread.currentThread();
+		Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
 		ModelController cont = opts.controller;
 		//int N = opts.initialAssignments.length;  	// The number of obsevation sequences
 		int M = opts.initialAssignments[0].length;	// The number of latent processes
@@ -103,10 +130,11 @@ public class IBPMixture {
 		
 		double ll = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont,opts);
 		double bestLL = ll;
+		cont.saveInfo(opts.savePath + "/initial_iteration",ll);
 		
 		cont.log("Learning run started: Initial Log Likelihood = " + ll + "   (" + this.structureLL(cont, opts) + " structural).");
 		
-		for(int iteration = 0; iteration < opts.maxIterations; iteration++)
+		for(int iteration = 0; iteration < opts.maxIterations && keepGoing; iteration++)
 		{
 			int choice = MathUtil.discreteSample(this.main_probs);
 			if(choice==0)
@@ -157,16 +185,19 @@ public class IBPMixture {
 				choice = MathUtil.discreteSample(this.generator_probs);
 				Proposal proposal = generators[choice].generate(cont);
 				
-				this.accepted_genprops[choice]++;
 				
 				if(proposal==null)
 					continue;
 				
 				proposal.action().perform(cont);
-				double newLL = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont,opts);
+				double newSLL = structureLL(cont,opts);
+				double newLL = cont.run(opts.max_run_it,opts.run_conv) + newSLL;
 				
 				if(accept(newLL,proposal.forwardP(),ll,proposal.backwardP(),cont))
+				{
+					this.accepted_genprops[choice]++;
 					ll = newLL;
+				}
 				else
 					proposal.action().undo(cont);
 			}
@@ -246,9 +277,71 @@ public class IBPMixture {
 			cont.log("Proposal rejected.");
 		return ret;
 	}
+
+	double cachedLNF = 0;
+	double cachedAHN = 0;
+	double cachedAHN_alpha = -1;
+	int cachedAHN_id = -1;
 	
 	private double structureLL(ModelController cont, IBPMModelOptions opts)
 	{
+		int N = cont.observables.size();
+		int K = cont.latents.size();
+		
+		if(cont.observables.size()!=cachedAHN_id || opts.alpha!=cachedAHN_alpha)
+		{
+			cachedLNF = 0;
+			cachedAHN_alpha = opts.alpha;
+			cachedAHN_id = cont.observables.size();
+			cachedAHN = 0;
+			
+			for(double i = 1; i <= N; i++)
+				cachedAHN += 1.0/i;
+			for(int i = 2; i <= N; i++)
+				cachedLNF += Math.log(i);
+			cachedAHN *= cachedAHN_alpha;
+		}
+		
+		double lladj = K*Math.log(opts.alpha);
+		
+		HashMap<HashSet<IChildProcess>, Integer> KNs = new HashMap<HashSet<IChildProcess>, Integer>();
+		for(int i = 0; i < K; i++)
+		{
+			HashSet<IChildProcess> set = cont.getChildren(cont.getLatentNodes().get(i));
+			boolean dupe = false;
+			for(HashSet<IChildProcess> otherSet : KNs.keySet())
+			{
+				if(otherSet.containsAll(set) && set.containsAll(otherSet))
+				{
+					KNs.put(otherSet, KNs.get(otherSet)+1);
+					dupe = true;
+					break;
+				}
+			}
+			if(!dupe)
+				KNs.put(set, 1);
+		}
+		for(Map.Entry<HashSet<IChildProcess>, Integer> ent : KNs.entrySet())
+			lladj -= (ent.getValue() > 1 ? Math.log(ent.getValue()) : 0);
+		
+		lladj -= cachedAHN;
+		lladj -= K*cachedLNF;
+		
+		for(int i = 0; i < K; i++)
+		{
+			int mk = cont.getChildren(cont.latents.get(i)).size();
+			
+			for(int j = 2; j <= cont.observables.size()-mk; j++)
+				lladj += Math.log(j);
+			for(int j = 2; j <= mk-1; j++)
+				lladj += Math.log(j);
+		}
+		if(lladj > 0)
+		{
+			this.structureLL(cont, opts);
+		}
+		return lladj;
+		/*
 		double lladj = -opts.alpha*cont.latents.size()*Math.log(opts.alpha);
 		for(int i = 1; i <= cont.latents.size(); i++)
 			lladj -= Math.log(i);
@@ -256,7 +349,7 @@ public class IBPMixture {
 		{
 			if(cont.getChildren(parent).size() > 1)
 			{
-				for(int i = 1; i < cont.getChildren(parent).size(); i++)
+				for(int i = 1; i <= cont.getChildren(parent).size(); i++)
 					lladj += Math.log(i);
 				for(int i = 1; i <= cont.observables.size()-cont.getChildren(parent).size(); i++)
 					lladj += Math.log(i);
@@ -264,9 +357,7 @@ public class IBPMixture {
 					lladj -= Math.log(i);
 			}
 		}
-		if(lladj > 0)
-			System.err.println("Whaaa");
-		return lladj;
+		return lladj;*/
 	}
 	
 	private ProposalGenerator[] generators;

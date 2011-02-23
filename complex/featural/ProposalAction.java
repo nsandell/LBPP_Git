@@ -26,7 +26,10 @@ public abstract class ProposalAction
 		{
 			this.newFeature = cont.newLatentModel();
 			for(IChildProcess child : this.movers)
+			{
+				cont.disconnect(latentFeature, child);
 				cont.connect(this.newFeature,child);
+			}
 		}
 
 		public void undo(ModelController cont) throws FMMException
@@ -128,6 +131,29 @@ public abstract class ProposalAction
 
 		private IParentProcess latent;
 		private Collection<IChildProcess> disconnects;
+	}
+	
+	public static class MultiUniqueParentAddAction extends ProposalAction
+	{
+		public MultiUniqueParentAddAction(Collection<IChildProcess> cps)
+		{
+			this.cps = cps;
+		}
+
+		@Override
+		public void perform(ModelController cont) throws FMMException {
+			this.uniqParent = cont.newLatentModel();
+			for(IChildProcess cp : this.cps)
+				cont.connect(uniqParent,cp);
+		}
+
+		@Override
+		public void undo(ModelController cont) throws FMMException {
+			cont.killLatentModel(this.uniqParent);
+		}
+		
+		IParentProcess uniqParent;
+		Collection<IChildProcess> cps;
 	}
 	
 	public static class UniqueParentAddAction extends ProposalAction

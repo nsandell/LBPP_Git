@@ -1,53 +1,73 @@
 package complex.metrics;
 
+import java.util.Vector;
+
 import util.MathUtil;
 
 public class Coherence
 {
 	public static interface DisagreementMeasure
 	{
-		public double[] getDisagreement();
+		public double getDisagreement(int t);
 	}
 	
 	//TODO A more apropos name than coherence?
-	public static double coherence(DisagreementMeasure[] measures, int T)
+	public static double coherence(Vector<? extends DisagreementMeasure> measures, int T)
 	{
 		double coherence = 0;
-		double[] maxes = new double[measures.length];
+		double[] maxes = new double[measures.size()];
 		
 		for(int t = 0; t < T; t++)
-			for(int idx = 0; idx < measures.length; idx++)
-				maxes[idx] = Math.max(maxes[idx], measures[idx].getDisagreement()[t]);
+			for(int idx = 0; idx < measures.size(); idx++)
+				maxes[idx] = Math.max(maxes[idx], measures.get(idx).getDisagreement(t));
 		
 		for(int t = 0; t < T; t++)
 		{
 			double mean = 0;
-			for(int idx = 0; idx < measures.length; idx++)
-				mean += measures[idx].getDisagreement()[t]/maxes[idx];
-			mean /= measures.length;
-			for(int idx = 0; idx < measures.length; idx++)
-				coherence += Math.pow(measures[idx].getDisagreement()[t]/maxes[idx]-mean,2);
+			for(int idx = 0; idx < measures.size(); idx++)
+				mean += measures.get(idx).getDisagreement(t)/maxes[idx];
+			mean /= measures.size();
+			for(int idx = 0; idx < measures.size(); idx++)
+				coherence += Math.pow(measures.get(idx).getDisagreement(t)/maxes[idx]-mean,2);
 		}
 		
 		return coherence;
 	}
 	
-	public static boolean[] partition(DisagreementMeasure[] measures, int T)
+	public static boolean[] partition(Vector<? extends DisagreementMeasure> measures, int T)
 	{
-		double[][] normalized = new double[measures.length][T];
+		double[][] normalized = new double[measures.size()][T];
 		double[] centroid1 = new double[T];
 		double[] centroid2 = new double[T];
-		for(int i = 0; i < measures.length; i++)
+		for(int i = 0; i < measures.size(); i++)
 		{
 			double max = 0;
 			for(int t = 0; t < T; t++)
-				max = Math.max(max, measures[i].getDisagreement()[t]);
+				max = Math.max(max, measures.get(i).getDisagreement(t));
 			for(int t = 0; t < T; t++)
-				normalized[i][t] = measures[i].getDisagreement()[t]/max;
+				normalized[i][t] = measures.get(i).getDisagreement(t)/max;
 		}
 		
-		boolean[] membership = randSeed(measures.length);
-		getCentroids(membership,normalized,centroid1,centroid2);
+		int seed1 = MathUtil.rand.nextInt(measures.size());
+		int seed2 = MathUtil.rand.nextInt(measures.size()-1);
+		if(seed2 > seed1) seed2++;
+		boolean same = true;
+		
+		for(int t = 0; t < T; t++)
+		{
+			centroid1[t] = normalized[seed1][t];
+			centroid2[t] = normalized[seed2][t];
+			if(centroid1[t]!=centroid2[t])
+				same = false;
+		}
+		if(same)
+		{
+			for(int t = 0; t < T; t++)
+				centroid1[t] = centroid1[t] + MathUtil.rand.nextDouble()/10;
+		}
+		
+		boolean[] membership = randSeed(measures.size());
+		//getCentroids(membership,normalized,centroid1,centroid2);
 		boolean changed = true;
 		while(changed)
 		{
@@ -59,6 +79,7 @@ public class Coherence
 					changed = true;
 				membership[i] = assignment;
 			}
+			getCentroids(membership,normalized,centroid1,centroid2);
 		}
 		return membership;
 	}

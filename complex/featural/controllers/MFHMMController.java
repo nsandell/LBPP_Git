@@ -9,6 +9,8 @@ import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.dynamic.IDynamicBayesNet;
 import bn.dynamic.IDBNNode;
+import bn.dynamic.IFDiscDBNNode;
+import bn.messages.FiniteDiscreteMessage;
 import complex.featural.FMMException;
 import complex.featural.IChildProcess;
 import complex.featural.IParentProcess;
@@ -23,7 +25,7 @@ public class MFHMMController extends ModelController {
 	
 	private static class FHMMX implements IParentProcess
 	{
-		FHMMX(IDBNNode xnd,int ID)
+		FHMMX(IFDiscDBNNode xnd,int ID)
 		{
 			this.xnd = xnd;
 			this.ID = ID;
@@ -32,8 +34,17 @@ public class MFHMMController extends ModelController {
 		{
 			return this.xnd.getName();
 		}
+		public FiniteDiscreteMessage marginal(int t)
+		{
+			try {
+				return this.xnd.getMarginal(t);
+			} catch(BNException e) {
+				System.err.println("Error : " + e.toString());
+				return null;
+			}
+		}
 		int ID;
-		IDBNNode xnd;
+		IFDiscDBNNode xnd;
 	}
 	
 	public static interface MFHMMInitialParamGenerator

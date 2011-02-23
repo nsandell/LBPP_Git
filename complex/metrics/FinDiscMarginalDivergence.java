@@ -16,7 +16,7 @@ public class FinDiscMarginalDivergence {
 		
 		for(int i = 0; i < T; i++)
 		{
-			for(int j = 0; j < T; j++)
+			for(int j = 0; j < o1.marginal(0).getCardinality(); j++)
 			{
 				double p1 = o1.marginal(i).getValue(j);
 				double p2 = o2.marginal(i).getValue(j);

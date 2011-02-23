@@ -1,6 +1,7 @@
 package bn;
 
 import java.io.PrintStream;
+import java.util.Collection;
 import java.util.HashMap;
 
 import bn.distributions.Distribution;
@@ -73,6 +74,8 @@ public interface IBayesNet<BaseInterface> {
 	 */
 	public void optimize(Iterable<String> nodenames, HashMap<String,SufficientStatistic> stats) throws BNException; // Update the parameters of 'this' network using the stats in the hashmap
 	
+	public void optimize(String nodeName) throws BNException;
+	
 	/**
 	 * Run expectation maximization on this network.
 	 * @param learnIt Will perform at most this many EM iterations.
@@ -121,6 +124,9 @@ public interface IBayesNet<BaseInterface> {
 	 * @throws BNException Shouldn't be thrown unless the network is invalid.(you should call validate first!)
 	 */
 	public RunResults run(int maxit, double convergence) throws BNException;
+	
+	RunResults run(int maxit, double convergence, Collection<String> nodeNames) throws BNException;
+	void run(String nodeName) throws BNException;
 	
 	
 	/**

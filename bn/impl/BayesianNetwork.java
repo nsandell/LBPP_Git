@@ -240,6 +240,14 @@ public abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		}
 	}
 	
+	public final void optimize(String nodeName) throws BNException
+	{
+		Optimizable nd = this.opti_nodes.get(nodeName);
+		if(nd==null)
+			throw new BNException("Attempted to optimize non-existant (or non-optimizable) node " + nodeName);
+		nd.optimizeParameters();
+	}
+	
 	public final void optimize(Iterable<String> nodeNames, HashMap<String,SufficientStatistic> stats) throws BNException
 	{ 
 		for(String nodename : nodeNames)

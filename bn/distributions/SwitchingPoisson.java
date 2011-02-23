@@ -214,11 +214,34 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 			for(int j= 0; j < indices.length; j++)
 			{
 				double local_pi_product = pi_product;
-				if(local_pi_product > 0 && zeroParent==-1)
+				if(local_pi_product > 0 && zeroParent!=j)
 					local_pi_product /= incoming_pis.get(j).getValue(indices[j]);
 
 				lambdas_out.get(j).setValue(indices[j], lambdas_out.get(j).getValue(indices[j]) + p*local_pi_product);
 			}
+			absindex++;
+		}
+		while((indices = DiscreteDistribution.incrementIndices(indices, this.parentDims))!=null);
+	}
+	
+	@Override
+	public void computeLambda(MessageSet<FiniteDiscreteMessage> lambdas_out, int updateIdx,
+			MessageSet<FiniteDiscreteMessage> incoming_pis, int obsvalue)
+			throws BNException {
+		int[] indices = initialIndices(this.parentDims.length);
+		int absindex = 0;
+		do
+		{
+			double pi_product = 1;
+			for(int i = 0; i < indices.length; i++)
+			{
+				if(i==updateIdx)
+					continue;
+				pi_product *= incoming_pis.get(i).getValue(indices[i]);
+			}
+			poiss.setMean(this.means[absindex]);
+			double p = poiss.pdf(obsvalue);
+			lambdas_out.get(updateIdx).setValue(indices[updateIdx], lambdas_out.get(updateIdx).getValue(indices[updateIdx]) + p*pi_product);
 			absindex++;
 		}
 		while((indices = DiscreteDistribution.incrementIndices(indices, this.parentDims))!=null);

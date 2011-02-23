@@ -398,6 +398,61 @@ public class SparseDiscreteCPT extends DiscreteFiniteDistribution
 					for(int j = 0; j < indexW.indices.length; j++)
 					{
 						double local_pi_product = pi_product;
+						if(local_pi_product > 0 && zeroParent!=j)
+							local_pi_product /= incoming_pis.get(j).getValue(indexW.indices[j]);
+
+						lambdas_out.get(j).setValue(indexW.indices[j], lambdas_out.get(j).getValue(indexW.indices[j]) + p*local_pi_product*local_lambda.getValue(obsvalue));
+					}				
+				}
+			}
+		}
+	}
+	
+	@Override
+	public void computeLambda(MessageSet<FiniteDiscreteMessage> lambdas_out, int updateIdx, MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda, Integer obsvalue) throws BNException
+	{
+		for(IndexWrapper indexW : this.entries.keySet())
+		{
+			double pi_product = 1;
+			int zeroParent = -1;
+			for(int i = 0; i < indexW.indices.length; i++)
+			{
+				double value = incoming_pis.get(i).getValue(indexW.indices[i]);
+				if(value==0 && zeroParent==-1)
+					zeroParent = i;
+				else if(value==0){pi_product = 0;break;}
+				else
+					pi_product *= value;
+			}
+
+			if(obsvalue==null)
+			{
+				for(Integer i : this.entries.get(indexW).keySet())
+				{
+					double p = this.entries.get(indexW).get(i);
+
+					for(int j = 0; j < indexW.indices.length; j++)
+					{
+						if(j!=updateIdx)
+							continue;
+						double local_pi_product = pi_product;
+						if(local_pi_product > 0 && zeroParent==-1)
+							local_pi_product /= incoming_pis.get(j).getValue(indexW.indices[j]);
+
+						lambdas_out.get(j).setValue(indexW.indices[j], lambdas_out.get(j).getValue(indexW.indices[j]) + p*local_pi_product*local_lambda.getValue(i));
+					}
+				}
+			}
+			else
+			{
+				Double p = this.entries.get(indexW).get(obsvalue);
+				if(p!=null)
+				{
+					for(int j = 0; j < indexW.indices.length; j++)
+					{
+						if(j!=updateIdx)
+							continue;
+						double local_pi_product = pi_product;
 						if(local_pi_product > 0 && zeroParent==-1)
 							local_pi_product /= incoming_pis.get(j).getValue(indexW.indices[j]);
 

@@ -10,6 +10,8 @@ import bn.messages.MessageSet;
  */
 public abstract class DiscreteDistribution implements Distribution {
 	
+	//TODO Probably should split out bethe energy case by having a value or not having a value.
+	
 	public static abstract class DiscreteFiniteDistribution extends DiscreteDistribution
 	{
 		public DiscreteFiniteDistribution(int cardinality){this.cardinality = cardinality;}
@@ -51,6 +53,9 @@ public abstract class DiscreteDistribution implements Distribution {
 		 */
 		public abstract void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out, MessageSet<FiniteDiscreteMessage> incoming_pis,
 				FiniteDiscreteMessage local_lambda, Integer value) throws BNException;
+		
+		public abstract void computeLambda(MessageSet<FiniteDiscreteMessage> lambdas_out, int updateIdx, MessageSet<FiniteDiscreteMessage> incoming_pis,
+				FiniteDiscreteMessage local_lambda, Integer value) throws BNException;
 
 		public abstract double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis,
 				FiniteDiscreteMessage local_lambda, FiniteDiscreteMessage marginal, Integer value, int numChildren) throws BNException;
@@ -64,6 +69,7 @@ public abstract class DiscreteDistribution implements Distribution {
 		@Override
 		public abstract InfDiscDistSufficientStat getSufficientStatisticObj();
 		public abstract void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out, MessageSet<FiniteDiscreteMessage> incoming_pis, int value) throws BNException;
+		public abstract void computeLambda(MessageSet<FiniteDiscreteMessage> lambdas_out, int lambdaIndex, MessageSet<FiniteDiscreteMessage> incoming_pis, int value) throws BNException;
 		public abstract double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis, int value);
 	}
 	

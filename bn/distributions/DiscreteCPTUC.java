@@ -234,6 +234,9 @@ public class DiscreteCPTUC extends DiscreteFiniteDistribution
 	
 	@Override //Should have no parents so this method has no functionality.
 	public void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out, MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda, Integer value) throws BNException{}
+
+	@Override
+	public void computeLambda(MessageSet<FiniteDiscreteMessage> lambdas_out, int updateIndex, MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda, Integer value) throws BNException{}
 	
 	@Override
 	public String getDefinition() {

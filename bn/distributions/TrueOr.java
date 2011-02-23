@@ -131,6 +131,40 @@ public class TrueOr extends DiscreteFiniteDistribution {
 			}
 		}
 	}
+	
+	static void computeLambdaS(MessageSet<FiniteDiscreteMessage> lambdas_out, int updateIdx,
+			MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda,
+			Integer value) throws BNException {
+		if(incoming_pis.size()==0)
+			return;
+		
+		double localProd = 1; //like scalar noisy or with c = 1 and q = 0
+		for(int i = 0; i < lambdas_out.size(); i++)
+		{
+			double tmp = (1-incoming_pis.get(i).getValue(1)/(incoming_pis.get(i).getValue(0)+incoming_pis.get(i).getValue(1)));
+			localProd *= tmp;
+		}
+		double ll1 = local_lambda.getValue(1);
+		localProd *= (ll1-local_lambda.getValue(0));
+
+		if(localProd==0)
+		{
+			lambdas_out.get(updateIdx).setValue(0, ll1);
+			lambdas_out.get(updateIdx).setValue(1, ll1);
+		}
+		else
+		{
+			lambdas_out.get(updateIdx).setValue(0, ll1 - localProd);
+			lambdas_out.get(updateIdx).setValue(1, ll1);
+		}
+	}
+
+	@Override
+	public void computeLambda(MessageSet<FiniteDiscreteMessage> lambdas_out, int updateIdx,
+			MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda,
+			Integer value) throws BNException {
+			computeLambdaS(lambdas_out, updateIdx, incoming_pis, local_lambda, value);
+	}
 
 	@Override
 	public void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out,

@@ -226,12 +226,46 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 					for(int j= 0; j < indices.length; j++)
 					{
 						double local_pi_product = pi_product;
-						if(local_pi_product > 0 && zeroParent==-1)
+						if(local_pi_product > 0 && zeroParent!=j)
 							local_pi_product /= incoming_pis.get(j).getValue(indices[j]);
 						
 						lambdas_out.get(j).setValue(indices[j], lambdas_out.get(j).getValue(indices[j]) + p*local_pi_product*local_lambda.getValue(obsvalue));
 					}
 				}
+			}
+		}
+		while((indices = DiscreteDistribution.incrementIndices(indices, this.dimSizes))!=null);
+	}
+	
+	@Override
+	public void computeLambda(MessageSet<FiniteDiscreteMessage> lambdas_out, int updateIdx, MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda, Integer obsvalue) throws BNException
+	{
+		if(updateIdx >= lambdas_out.size()) 
+			throw new BNException("Attempted to update lambda message that does not exist!");
+		int[] indices = initialIndices(dimSizes.length);
+
+		do
+		{
+			double pi_product = 1;
+			for(int i = 0; i < indices.length; i++)
+			{
+				if(i==updateIdx)
+					continue;
+				pi_product *= incoming_pis.get(i).getValue(indices[i]);
+			}
+
+			if(obsvalue==null)
+			{
+				for(int i = 0; i < this.getCardinality(); i++)
+				{
+					double p = this.evaluate(indices, i);
+					lambdas_out.get(updateIdx).setValue(indices[updateIdx], lambdas_out.get(updateIdx).getValue(indices[updateIdx]) + p*pi_product*local_lambda.getValue(i));
+				}
+			}
+			else
+			{
+				double p = this.evaluate(indices, obsvalue);
+				lambdas_out.get(updateIdx).setValue(indices[updateIdx], lambdas_out.get(updateIdx).getValue(indices[updateIdx]) + p*pi_product*local_lambda.getValue(obsvalue));
 			}
 		}
 		while((indices = DiscreteDistribution.incrementIndices(indices, this.dimSizes))!=null);

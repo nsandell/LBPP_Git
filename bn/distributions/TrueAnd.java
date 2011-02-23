@@ -94,6 +94,13 @@ public class TrueAnd extends DiscreteFiniteDistribution {
 			computeLambdasS(lambdas_out, incoming_pis, local_lambda, value);
 	}
 	
+	@Override
+	public void computeLambda(MessageSet<FiniteDiscreteMessage> lambdas_out, int updateIdx,
+			MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda,
+			Integer value) throws BNException {
+		//TODO Implement!
+	}
+	
 	static double computeH1(MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda)
 	{
 		// H1 = -H(X,I | Ex, Ei) = -H(X | I, Ex, Ei) - H(I|Ex,Ei)

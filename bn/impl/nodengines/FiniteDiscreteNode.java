@@ -69,89 +69,94 @@ public class FiniteDiscreteNode implements Serializable
 			lambda.normalize();
 	}
 	
-	public static void updateOutgoingLambda(DiscreteFiniteDistribution cpt, MessageSet<FiniteDiscreteMessage> outgoingLambdas, FiniteDiscreteMessage updateLamdba, MessageSet<FiniteDiscreteMessage> incomingPis , FiniteDiscreteMessage localLambda, Integer value) throws BNException
+	public static void updateOutgoingLambda(DiscreteFiniteDistribution cpt, MessageSet<FiniteDiscreteMessage> outgoingLambdas, int index, MessageSet<FiniteDiscreteMessage> incomingPis , FiniteDiscreteMessage localLambda, Integer value) throws BNException
 	{
-		updateLamdba.empty();
-		cpt.computeLambda(outgoingLambdas, updateLamdba, incomingPis, localLambda, value);
-		updateLamdba.normalize();
+		outgoingLambdas.get(index).empty();
+		cpt.computeLambda(outgoingLambdas, index, incomingPis, localLambda, value);
+		outgoingLambdas.get(index).normalize();
 	}
 	
-	public static void updateOutgoingPi(MessageSet<FiniteDiscreteMessage> incomingLambdaMessages, MessageSet<FiniteDiscreteMessage> outgoingPiMessages, FiniteDiscreteMessage updatePi, FiniteDiscreteMessage localPi,int cardinality, Integer observation) throws BNException
+	public static void updateOutgoingPi(MessageSet<FiniteDiscreteMessage> incomingLambdaMessages, MessageSet<FiniteDiscreteMessage> outgoingPiMessages, int updateIndex, FiniteDiscreteMessage localPi,int cardinality, Integer observation) throws BNException
 	{
-		int imin = 0; int imax = cardinality;
-		if(observation!=null){imin = observation; imax = observation+1;}
+		if(observation!=null)
+		{
+			outgoingPiMessages.get(updateIndex).setDelta(observation, 1.0);
+			return;
+		}
 		
-		double[] lambda_prods = new double[imax-imin];
-		for(int i = imin; i < imax; i++)
+		double[] lambda_prods = new double[cardinality];
+		for(int i = 0; i < cardinality; i++)
 			lambda_prods[i] = 1;
 		
-		
-		for(int i = imin; i < imax; i++)
+		for(int i = 0; i < cardinality; i++)
 		{
 			for(int j = 0; j < incomingLambdaMessages.size(); j++)
 			{
-				if(outgoingPiMessages.get(j)==updatePi)
+				if(j==updateIndex)
 					continue;
 			 	
-				lambda_prods[i-imin] *= incomingLambdaMessages.get(j).getValue(i);
-				if(lambda_prods[i-imin]==0)
+				lambda_prods[i] *= incomingLambdaMessages.get(j).getValue(i);
+				if(lambda_prods[i]==0)
 					break;
 			}
 		}
 		
-		FiniteDiscreteMessage pi_child = updatePi;
+		FiniteDiscreteMessage pi_child = outgoingPiMessages.get(updateIndex);
 		
 		pi_child.empty();
-		for(int i = imin; i < imax; i++)
+		for(int i = 0; i < cardinality; i++)
 			pi_child.setValue(i, lambda_prods[i]*localPi.getValue(i));
 		pi_child.normalize();
 	}
 	
 	public static void updatePis(MessageSet<FiniteDiscreteMessage> incomingLambdaMessages, MessageSet<FiniteDiscreteMessage> outgoingPiMessages, FiniteDiscreteMessage localPi,int cardinality, Integer observation) throws BNException
 	{
-		int imin = 0; int imax = cardinality;
-		if(observation!=null){imin = observation; imax = observation+1;}
-		
-		Integer[] zeroNodes = new Integer[imax-imin];
-		double[] lambda_prods = new double[imax-imin];
-		for(int i = imin; i < imax; i++)
+		if(observation!=null)
+			for(FiniteDiscreteMessage outpi : outgoingPiMessages)
+				outpi.setDelta(observation, 1.0);
+		else
 		{
-			zeroNodes[i-imin] = null;
-			lambda_prods[i-imin] = 1;
-		}
-		
-		for(int i = imin; i < imax; i++)
-		{
+			Integer[] zeroNodes = new Integer[cardinality];
+			double[] lambda_prods = new double[cardinality];
+			for(int i = 0; i < cardinality; i++)
+			{
+				zeroNodes[i] = null;
+				lambda_prods[i] = 1;
+			}
+
+			for(int i = 0; i < cardinality; i++)
+			{
+				for(int j = 0; j < incomingLambdaMessages.size(); j++)
+				{
+					FiniteDiscreteMessage dm = incomingLambdaMessages.get(j);
+					if(dm.getValue(i)!=0)	
+						lambda_prods[i] *= dm.getValue(i);
+					else if(zeroNodes[i]==null)
+						zeroNodes[i] = j;
+					else
+					{
+						lambda_prods[i] = 0;
+						break;
+					}
+				}
+			}	
+
 			for(int j = 0; j < incomingLambdaMessages.size(); j++)
 			{
-				FiniteDiscreteMessage dm = incomingLambdaMessages.get(j);
-				if(dm.getValue(i)!=0)	
-					lambda_prods[i-imin] *= dm.getValue(i);
-				else if(zeroNodes[i-imin]==null)
-					zeroNodes[i-imin] = j;
-				else
+				FiniteDiscreteMessage from_child = incomingLambdaMessages.get(j);
+				FiniteDiscreteMessage pi_child = outgoingPiMessages.get(j);
+				pi_child.empty();
+				for(int i = 0; i < cardinality; i++)
 				{
-					lambda_prods[i-imin] = 0;
-					break;
+					double lambda_prod_local = lambda_prods[i];
+					if(lambda_prod_local > 0 && zeroNodes[i]==null)
+						lambda_prod_local /= from_child.getValue(i);
+					else if(lambda_prod_local > 0 && zeroNodes[i]!=j)
+						lambda_prod_local = 0;
+					pi_child.setValue(i, lambda_prod_local*localPi.getValue(i));
 				}
-			}
-		}	
-
-		for(int j = 0; j < incomingLambdaMessages.size(); j++)
-		{
-			FiniteDiscreteMessage from_child = incomingLambdaMessages.get(j);
-			FiniteDiscreteMessage pi_child = outgoingPiMessages.get(j);
-			pi_child.empty();
-			for(int i = imin; i < imax; i++)
-			{
-				double lambda_prod_local = lambda_prods[i-imin];
-				if(lambda_prod_local > 0 && zeroNodes[i-imin]==null)
-					lambda_prod_local /= from_child.getValue(i);
-				else if(lambda_prod_local > 0 && zeroNodes[i-imin]!=j)
-					lambda_prod_local = 0;
-				pi_child.setValue(i, lambda_prod_local*localPi.getValue(i));
-			}
-			pi_child.normalize();
+				pi_child.normalize();
+			}		
 		}
 	}
 	

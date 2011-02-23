@@ -1,7 +1,7 @@
 package complex.featural.proposal_generators;
 
-import complex.featural.ModelController;
-import complex.featural.ModelController.LatentPair;
+import complex.featural.FeaturalModelController;
+import complex.featural.FeaturalModelController.LatentPair;
 import complex.featural.ProposalGenerator;
 import complex.featural.ProposalAction.MergeAction;
 
@@ -19,7 +19,7 @@ public class RandomMergeGenerator implements ProposalGenerator
 		return "Random merges";
 	}
 	
-	public Proposal generate(ModelController cont)
+	public Proposal generate(FeaturalModelController cont)
 	{
 		int N = cont.getLatentNodes().size();
 		if(N < 2)

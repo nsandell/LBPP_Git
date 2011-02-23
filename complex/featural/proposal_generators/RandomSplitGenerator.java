@@ -5,7 +5,7 @@ import java.util.HashSet;
 import util.MathUtil;
 import complex.featural.IChildProcess;
 import complex.featural.IParentProcess;
-import complex.featural.ModelController;
+import complex.featural.FeaturalModelController;
 import complex.featural.ProposalGenerator;
 import complex.featural.ProposalAction.SplitAction;
 
@@ -23,7 +23,7 @@ public class RandomSplitGenerator implements ProposalGenerator
 		return "Random splits";
 	}
 	
-	public Proposal generate(ModelController cont)
+	public Proposal generate(FeaturalModelController cont)
 	{
 		int N = cont.getLatentNodes().size();
 		if(N < 1)

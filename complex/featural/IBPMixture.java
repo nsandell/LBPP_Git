@@ -1,9 +1,12 @@
 package complex.featural;
 
 import java.util.HashMap;
+
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Vector;
+
+import complex.CMException;
 
 import complex.featural.ProposalAction.UniqueParentAddAction;
 import complex.featural.ProposalGenerator.Proposal;
@@ -12,17 +15,17 @@ import util.MathUtil;
 
 public class IBPMixture {
 	
-	public IBPMixture(ProposalGenerator[] generators, double[] p_gens, double[] p) throws FMMException
+	public IBPMixture(ProposalGenerator[] generators, double[] p_gens, double[] p) throws CMException
 	{
 		if(generators.length!=p_gens.length)
-			throw new FMMException("Provided different number of generators from generator probabilities");
+			throw new CMException("Provided different number of generators from generator probabilities");
 		double sum = 0;
 		for(double dub : p_gens)
 			sum+=dub;
 		if(Math.abs(sum-1) > 1e-12)
-			throw new FMMException("Provided generator probability distribution not summing to one!");
+			throw new CMException("Provided generator probability distribution not summing to one!");
 		if(Math.abs(p[0]+p[1]+p[2]-1) > 1e-12)
-			throw new FMMException("Provided move vs verticle vs horizontal distribution not summing to one!");
+			throw new CMException("Provided move vs verticle vs horizontal distribution not summing to one!");
 		
 		this.accepted_genprops = new int[generators.length];
 		this.generators = generators;
@@ -32,7 +35,7 @@ public class IBPMixture {
 	
 	public static class IBPMModelOptions
 	{
-		public IBPMModelOptions(ModelController controller, boolean[][] initAssign)
+		public IBPMModelOptions(FeaturalModelController controller, boolean[][] initAssign)
 		{
 			this.controller = controller;
 			this.initialAssignments = initAssign;
@@ -73,7 +76,7 @@ public class IBPMixture {
 		public int max_run_it = 30, max_learn_it = 5;
 		public double run_conv = 1e-6, learn_conv = 1e-6;
 		
-		public ModelController controller;
+		public FeaturalModelController controller;
 		public boolean optimizeParameters = false;		// Optimize parameters at each time step
 		public double alpha = 1;						// Indian Buffet
 		public boolean[][] initialAssignments;			// Feature matrix initialization
@@ -102,12 +105,12 @@ public class IBPMixture {
 	
 	private volatile Thread workThr;
 	private volatile boolean keepGoing = true;
-	public void learn(IBPMModelOptions opts) throws FMMException
+	public void learn(IBPMModelOptions opts) throws CMException
 	{
 		this.keepGoing = true;
 		this.workThr = Thread.currentThread();
 		Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
-		ModelController cont = opts.controller;
+		FeaturalModelController cont = opts.controller;
 		//int N = opts.initialAssignments.length;  	// The number of obsevation sequences
 		int M = opts.initialAssignments[0].length;	// The number of latent processes
 		
@@ -238,10 +241,10 @@ public class IBPMixture {
 		}
 	}
 	
-	private double attemptDisconnect(IParentProcess latent, IChildProcess observed, ModelController cont, IBPMModelOptions opts, double ll) throws FMMException
+	private double attemptDisconnect(IParentProcess latent, IChildProcess observed, FeaturalModelController cont, IBPMModelOptions opts, double ll) throws CMException
 	{
 		if(!cont.getChildren(latent).contains(observed))
-			throw new FMMException("Attempted to disconnect a latent node from an observed that was not its child!");
+			throw new CMException("Attempted to disconnect a latent node from an observed that was not its child!");
 		cont.log("Attempting to disconnect observation " + observed.getName() + " from latent sequence " + latent.getName());
 		cont.disconnect(latent, observed);
 		double newLL = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont,opts);
@@ -253,10 +256,10 @@ public class IBPMixture {
 		return ll;
 	}
 	
-	private double attemptConnect(IParentProcess latent, IChildProcess observed, ModelController cont, IBPMModelOptions opts, double ll) throws FMMException
+	private double attemptConnect(IParentProcess latent, IChildProcess observed, FeaturalModelController cont, IBPMModelOptions opts, double ll) throws CMException
 	{
 		if(cont.getChildren(latent).contains(opts))
-			throw new FMMException("Attempted to connect parent " + latent.getName() + " to child " + observed.getName() + " when they already are connected.");
+			throw new CMException("Attempted to connect parent " + latent.getName() + " to child " + observed.getName() + " when they already are connected.");
 		cont.log("Attempting to connect observation " + observed.getName() + " to latent sequence " + latent.getName());
 		cont.connect(latent, observed);
 		double newLL = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont,opts);
@@ -268,7 +271,7 @@ public class IBPMixture {
 		return ll;
 	}
 	
-	private boolean accept(double newLL, double pf, double oldLL, double pb, ModelController cont) throws FMMException
+	private boolean accept(double newLL, double pf, double oldLL, double pb, FeaturalModelController cont) throws CMException
 	{
 		boolean ret = (MathUtil.rand.nextDouble() < Math.exp(newLL+Math.log(pb)-oldLL-Math.log(pf)));
 		if(ret)
@@ -283,7 +286,7 @@ public class IBPMixture {
 	double cachedAHN_alpha = -1;
 	int cachedAHN_id = -1;
 	
-	private double structureLL(ModelController cont, IBPMModelOptions opts)
+	private double structureLL(FeaturalModelController cont, IBPMModelOptions opts)
 	{
 		int N = cont.observables.size();
 		int K = cont.latents.size();

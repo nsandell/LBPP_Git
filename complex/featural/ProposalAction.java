@@ -1,18 +1,20 @@
 package complex.featural;
 
 import java.util.Collection;
+
 import java.util.HashSet;
 import java.util.Vector;
 
-import complex.featural.ModelController.LatentBackup;
+import complex.CMException;
+import complex.featural.FeaturalModelController.LatentBackup;
 
 public abstract class ProposalAction
 {
 	public double forward;
 	public double backward;
 
-	public abstract void perform(ModelController cont) throws FMMException;
-	public abstract void undo(ModelController cont) throws FMMException;
+	public abstract void perform(FeaturalModelController cont) throws CMException;
+	public abstract void undo(FeaturalModelController cont) throws CMException;
 
 	public static class SplitAction extends ProposalAction
 	{
@@ -22,7 +24,7 @@ public abstract class ProposalAction
 			this.movers = movers;
 		}
 
-		public void perform(ModelController cont) throws FMMException
+		public void perform(FeaturalModelController cont) throws CMException
 		{
 			this.newFeature = cont.newLatentModel();
 			for(IChildProcess child : this.movers)
@@ -32,7 +34,7 @@ public abstract class ProposalAction
 			}
 		}
 
-		public void undo(ModelController cont) throws FMMException
+		public void undo(FeaturalModelController cont) throws CMException
 		{
 			for(IChildProcess child : this.movers)
 				cont.connect(latentFeature,child);
@@ -53,7 +55,7 @@ public abstract class ProposalAction
 			this.latent2 = l2;
 		}
 
-		public void perform(ModelController cont) throws FMMException
+		public void perform(FeaturalModelController cont) throws CMException
 		{
 			this.latent2Backup = cont.backupAndRemoveLatentModel(latent2);
 			this.newl1Children = new HashSet<IChildProcess>();
@@ -68,7 +70,7 @@ public abstract class ProposalAction
 			}
 		}
 
-		public void undo(ModelController cont) throws FMMException
+		public void undo(FeaturalModelController cont) throws CMException
 		{
 			this.latent2 = cont.restoreBackup(this.latent2Backup);
 			for(IChildProcess child : this.newl1Children)
@@ -86,7 +88,7 @@ public abstract class ProposalAction
 			this.lfrom = from; this.lto = to; this.switches = switches;
 		}
 
-		public void perform(ModelController cont) throws FMMException
+		public void perform(FeaturalModelController cont) throws CMException
 		{
 			// It is assumed anything switching wasn't already in the to node.
 			for(IChildProcess child : this.switches)
@@ -96,7 +98,7 @@ public abstract class ProposalAction
 			}
 		}
 
-		public void undo(ModelController cont) throws FMMException
+		public void undo(FeaturalModelController cont) throws CMException
 		{
 			for(IChildProcess child : this.switches)
 			{
@@ -117,13 +119,13 @@ public abstract class ProposalAction
 			this.disconnects = discons;
 		}
 
-		public void perform(ModelController cont) throws FMMException
+		public void perform(FeaturalModelController cont) throws CMException
 		{
 			for(IChildProcess child : this.disconnects)
 				cont.disconnect(this.latent, child);
 		}
 
-		public void undo(ModelController cont) throws FMMException
+		public void undo(FeaturalModelController cont) throws CMException
 		{
 			for(IChildProcess child : this.disconnects)
 				cont.connect(this.latent, child);
@@ -141,14 +143,14 @@ public abstract class ProposalAction
 		}
 
 		@Override
-		public void perform(ModelController cont) throws FMMException {
+		public void perform(FeaturalModelController cont) throws CMException {
 			this.uniqParent = cont.newLatentModel();
 			for(IChildProcess cp : this.cps)
 				cont.connect(uniqParent,cp);
 		}
 
 		@Override
-		public void undo(ModelController cont) throws FMMException {
+		public void undo(FeaturalModelController cont) throws CMException {
 			cont.killLatentModel(this.uniqParent);
 		}
 		
@@ -164,13 +166,13 @@ public abstract class ProposalAction
 		}
 
 		@Override
-		public void perform(ModelController cont) throws FMMException {
+		public void perform(FeaturalModelController cont) throws CMException {
 			this.uniqParent = cont.newLatentModel();
 			cont.connect(uniqParent,cp);
 		}
 
 		@Override
-		public void undo(ModelController cont) throws FMMException {
+		public void undo(FeaturalModelController cont) throws CMException {
 			cont.killLatentModel(this.uniqParent);
 		}
 		
@@ -186,13 +188,13 @@ public abstract class ProposalAction
 			this.connects = cons;
 		}
 
-		public void perform(ModelController cont) throws FMMException
+		public void perform(FeaturalModelController cont) throws CMException
 		{
 			for(IChildProcess child : this.connects)
 				cont.connect(this.latent, child);
 		}
 
-		public void undo(ModelController cont) throws FMMException
+		public void undo(FeaturalModelController cont) throws CMException
 		{
 			for(IChildProcess child : this.connects)
 				cont.disconnect(this.latent, child);

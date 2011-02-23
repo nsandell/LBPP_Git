@@ -11,12 +11,12 @@ import bn.dynamic.IDynamicBayesNet;
 import bn.dynamic.IDBNNode;
 import bn.dynamic.IFDiscDBNNode;
 import bn.messages.FiniteDiscreteMessage;
-import complex.featural.FMMException;
+import complex.CMException;
 import complex.featural.IChildProcess;
 import complex.featural.IParentProcess;
-import complex.featural.ModelController;
+import complex.featural.FeaturalModelController;
 
-public class MFHMMController extends ModelController {
+public class MFHMMController extends FeaturalModelController {
 	
 	public static interface IFHMMChild extends IChildProcess
 	{
@@ -65,16 +65,16 @@ public class MFHMMController extends ModelController {
 
 
 	@Override
-	protected void killLatentModelI(IParentProcess node) throws FMMException {
+	protected void killLatentModelI(IParentProcess node) throws CMException {
 		try {
 			this.network.removeNode(node.getName());
 			this.killID(((FHMMX)node).ID);
-		} catch(BNException e) { throw new FMMException(e.getMessage()); }
-		catch(ClassCastException e) {throw new FMMException("MFHMM Controller got invalid state ... really shouldn't happen.");}
+		} catch(BNException e) { throw new CMException(e.getMessage()); }
+		catch(ClassCastException e) {throw new CMException("MFHMM Controller got invalid state ... really shouldn't happen.");}
 	}
 
 	@Override
-	protected IParentProcess newLatentModelI() throws FMMException {
+	protected IParentProcess newLatentModelI() throws CMException {
 		try {
 			
 			int id = this.nextID();
@@ -84,27 +84,27 @@ public class MFHMMController extends ModelController {
 			newNode.xnd.setAdvanceDistribution(this.paramgen.getInitialA());
 			
 			return newNode;
-		} catch(BNException e) { throw new FMMException(e.getMessage()); }
+		} catch(BNException e) { throw new CMException(e.getMessage()); }
 	}
 
 	@Override
 	protected void disconnectI(IParentProcess latent, IChildProcess observed)
-			throws FMMException {
+			throws CMException {
 		if(!(observed instanceof IFHMMChild))
-			throw new FMMException("MFHMM Controller received invalid child... this really shouldn't happen.");
+			throw new CMException("MFHMM Controller received invalid child... this really shouldn't happen.");
 		try {
 			this.network.removeIntraEdge(latent.getName(), ((IFHMMChild)observed).hook().getName());
-		} catch(BNException e) { throw new FMMException(e.getMessage()); }
+		} catch(BNException e) { throw new CMException(e.getMessage()); }
 	}
 
 	@Override
 	protected void connectI(IParentProcess latent, IChildProcess observed)
-			throws FMMException {
+			throws CMException {
 				if(!(observed instanceof IFHMMChild))
-			throw new FMMException("MFHMM Controller received invalid child... this really shouldn't happen.");
+			throw new CMException("MFHMM Controller received invalid child... this really shouldn't happen.");
 		try {
 			this.network.addIntraEdge(latent.getName(), ((IFHMMChild)observed).hook().getName());
-		} catch(BNException e) { throw new FMMException(e.getMessage()); }
+		} catch(BNException e) { throw new CMException(e.getMessage()); }
 	}
 
 	private int nextID()

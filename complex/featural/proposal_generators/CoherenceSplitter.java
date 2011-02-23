@@ -7,7 +7,7 @@ import util.MathUtil;
 
 import complex.featural.IChildProcess;
 import complex.featural.IParentProcess;
-import complex.featural.ModelController;
+import complex.featural.FeaturalModelController;
 import complex.featural.ProposalAction;
 import complex.featural.ProposalGenerator;
 import complex.metrics.Coherence;
@@ -21,7 +21,7 @@ public class CoherenceSplitter implements ProposalGenerator {
 	double pcspl; double prspl; double prmerge; double pdmerge;
 
 	@Override
-	public Proposal generate(ModelController cont) {
+	public Proposal generate(FeaturalModelController cont) {
 		Vector<IParentProcess> latents = cont.getLatentNodes();
 		if(latents.size()==0)
 			return null;

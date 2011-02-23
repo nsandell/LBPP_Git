@@ -2,8 +2,8 @@ package complex.featural.proposal_generators;
 
 import java.util.Vector;
 
-import complex.featural.ModelController;
-import complex.featural.ModelController.LatentPair;
+import complex.featural.FeaturalModelController;
+import complex.featural.FeaturalModelController.LatentPair;
 import complex.featural.IChildProcess;
 import complex.featural.ProposalAction;
 import complex.featural.ProposalGenerator;
@@ -21,7 +21,7 @@ public class RandomAbsorbGenerator implements ProposalGenerator
 		return "Random Absorbs";
 	}
 	
-	public Proposal generate(ModelController cont)
+	public Proposal generate(FeaturalModelController cont)
 	{
 		int N = cont.getLatentNodes().size();
 		if(N < 2)

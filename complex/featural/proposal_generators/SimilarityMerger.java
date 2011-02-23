@@ -5,7 +5,7 @@ import java.util.Vector;
 import util.MathUtil;
 
 import complex.featural.IParentProcess;
-import complex.featural.ModelController;
+import complex.featural.FeaturalModelController;
 import complex.featural.ProposalAction;
 import complex.featural.ProposalGenerator;
 import complex.metrics.FinDiscMarginalDivergence;
@@ -22,7 +22,7 @@ public class SimilarityMerger implements ProposalGenerator {
 	double smp, rmp, csp, rsp;
 
 	@Override
-	public Proposal generate(ModelController cont)
+	public Proposal generate(FeaturalModelController cont)
 	{
 		Vector<IParentProcess> latents = cont.getLatentNodes();
 		if(latents.size()<2)

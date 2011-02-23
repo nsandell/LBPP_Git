@@ -1,15 +1,12 @@
-package complex.featural;
+package complex;
 
-import bn.BNException;
-
-public class FMMException extends BNException
-{
-	public FMMException(String cause)
+public class CMException extends Exception {
+	public CMException(String cause)
 	{
 		super(cause);
 	}
 	
-	public FMMException(String cause, boolean ignoreable)
+	public CMException(String cause, boolean ignoreable)
 	{
 		super(cause);
 		this.ignoreable = ignoreable;

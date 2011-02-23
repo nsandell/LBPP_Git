@@ -1,6 +1,7 @@
 package complex.featural;
 
 import java.io.File;
+
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 
@@ -11,13 +12,14 @@ import java.util.Vector;
 
 import util.MathUtil;
 
-import bn.BNException;
+import complex.CMException;
+
 import bn.dynamic.IDynamicBayesNet;
 
-public abstract class ModelController
+public abstract class FeaturalModelController extends complex.ModelController
 {
 	
-	public ModelController(Collection<? extends IChildProcess> children)
+	public FeaturalModelController(Collection<? extends IChildProcess> children)
 	{
 		for(IChildProcess child : children)
 		{
@@ -25,47 +27,7 @@ public abstract class ModelController
 		}
 	}
 	
-	public void validate() throws FMMException
-	{
-		try {
-			this.network.validate();
-		} catch(BNException e) {throw new FMMException(e.toString());}
-	}
-
-	public double run(int max_it, double conv)  throws FMMException
-	{
-		try {
-			this.network.run_parallel_block(max_it, conv);
-			double ll = this.network.getLogLikelihood();
-			if(Double.isNaN(ll) || ll > 0)
-			{
-				this.network.resetMessages();
-				this.network.run_parallel_block(max_it,conv);
-				ll = this.network.getLogLikelihood();
-				if(Double.isNaN(ll) || ll > 0)
-				{
-					this.network.print(System.err);
-					this.network.getLogLikelihood();
-					throw new FMMException("Model returns NaN/Greater than 0 log likelihood!");
-				}
-			}
-			return ll;
-		} catch(BNException e) {
-			throw new FMMException("Error running the model : " + e.toString());
-		}
-	}
-	
-	public double learn(int max_learn_it, double learn_conv, int max_run_it, double run_conv) throws FMMException
-	{
-		try {
-			this.network.optimize_parallel(max_learn_it, learn_conv, max_run_it, run_conv);
-			return this.run(max_run_it,run_conv);
-		} catch(BNException e) {
-			throw new FMMException("Error optimizing the model : " + e.toString());
-		}
-	}
-
-	public IParentProcess newLatentModel() throws FMMException
+	public IParentProcess newLatentModel() throws CMException
 	{
 		IParentProcess newl = this.newLatentModelI();
 		this.latents.add(newl);
@@ -73,7 +35,7 @@ public abstract class ModelController
 		return newl;
 	}
 
-	public void killLatentModel(IParentProcess node) throws FMMException
+	public void killLatentModel(IParentProcess node) throws CMException
 	{
 		this.killLatentModelI(node);
 		for(IChildProcess child : this.children.get(node))
@@ -83,14 +45,14 @@ public abstract class ModelController
 		this.children.remove(node);
 	}
 
-	public LatentBackup backupAndRemoveLatentModel(IParentProcess latent) throws FMMException
+	public LatentBackup backupAndRemoveLatentModel(IParentProcess latent) throws CMException
 	{
 		LatentBackup backup = new LatentBackup(this, latent);
 		this.killLatentModel(latent);
 		return backup;
 	}
 
-	public IParentProcess restoreBackup(LatentBackup backup) throws FMMException
+	public IParentProcess restoreBackup(LatentBackup backup) throws CMException
 	{
 		IParentProcess latent = this.newLatentModel();
 		for(IChildProcess child : backup.children)
@@ -98,14 +60,14 @@ public abstract class ModelController
 		return latent;
 	}
 
-	public void connect(IParentProcess latent, IChildProcess observed) throws FMMException
+	public void connect(IParentProcess latent, IChildProcess observed) throws CMException
 	{
 		this.connectI(latent,observed);
 		this.children.get(latent).add(observed);
 		this.parents.get(observed).add(latent);
 	}
 
-	public void disconnect(IParentProcess latent, IChildProcess observed) throws FMMException
+	public void disconnect(IParentProcess latent, IChildProcess observed) throws CMException
 	{
 		this.disconnectI(latent, observed);
 		this.children.get(latent).remove(observed);
@@ -122,17 +84,7 @@ public abstract class ModelController
 		return this.parents.get(obs);
 	}
 	
-	public void log(String msg)
-	{
-		if(logger!=null)
-			logger.println(msg);
-	}
-	
-	public void setLogger(PrintStream log)
-	{
-		this.logger = log;
-	}
-	
+
 	public static class LatentPair
 	{
 		public LatentPair(IParentProcess l1, IParentProcess l2){this.l1 = l1; this.l2 = l2;}
@@ -161,7 +113,7 @@ public abstract class ModelController
 	
 	public static class LatentBackup
 	{
-		public LatentBackup(ModelController cont, IParentProcess node)
+		public LatentBackup(FeaturalModelController cont, IParentProcess node)
 		{
 			this.children =  new HashSet<IChildProcess>(cont.getChildren(node));
 		}
@@ -171,7 +123,7 @@ public abstract class ModelController
 	public Vector<IParentProcess> getLatentNodes(){return this.latents;}
 	public Vector<IChildProcess> getObservedNodes(){return this.observables;}
 	
-	public void saveBest(String mainDir,double ll) throws FMMException
+	public void saveBest(String mainDir,double ll) throws CMException
 	{
 		if(mainDir==null)
 			return;
@@ -179,7 +131,7 @@ public abstract class ModelController
 		String dir = mainDir+"/maxll/";
 		if(!(new File(dir).exists()))
 			if(!((new File(dir)).mkdir()))
-				throw new FMMException("Could not create directory" + dir);
+				throw new CMException("Could not create directory" + dir);
 		
 		new File(dir+"model.lbp").delete();
 		new File(dir+"info.txt").delete();
@@ -187,14 +139,14 @@ public abstract class ModelController
 		saveInfo(dir,ll);
 	}
 
-	public void saveInfo(String directory,double ll) throws FMMException
+	public void saveInfo(String directory,double ll) throws CMException
 	{
 		if(directory==null)
 			return;
 		
 		if(!(new File(directory).exists()))
 			if(!((new File(directory)).mkdir()))
-				throw new FMMException("Could not create directory " + directory);
+				throw new CMException("Could not create directory " + directory);
 
 		try
 		{
@@ -221,7 +173,7 @@ public abstract class ModelController
 				info.println();
 			}		
 		} catch(FileNotFoundException e) {
-			throw new FMMException(e.toString());
+			throw new CMException(e.toString());
 		}
 	}
 	
@@ -230,13 +182,12 @@ public abstract class ModelController
 		return this.network.getT();
 	}
 	
-	protected abstract void killLatentModelI(IParentProcess node) throws FMMException;
-	protected abstract IParentProcess newLatentModelI() throws FMMException;
+	protected abstract void killLatentModelI(IParentProcess node) throws CMException;
+	protected abstract IParentProcess newLatentModelI() throws CMException;
 	
-	protected abstract void disconnectI(IParentProcess latent, IChildProcess observed) throws FMMException;
-	protected abstract void connectI(IParentProcess latent, IChildProcess observed) throws FMMException;
+	protected abstract void disconnectI(IParentProcess latent, IChildProcess observed) throws CMException;
+	protected abstract void connectI(IParentProcess latent, IChildProcess observed) throws CMException;
 	
-	protected PrintStream logger = null;
 	protected IDynamicBayesNet network;
 	protected Vector<IParentProcess> latents = new Vector<IParentProcess>();
 	protected Vector<IChildProcess> observables = new Vector<IChildProcess>();

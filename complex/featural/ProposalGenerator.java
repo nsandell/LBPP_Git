@@ -2,7 +2,7 @@ package complex.featural;
 
 public interface ProposalGenerator
 {
-	public Proposal generate(ModelController cont);
+	public Proposal generate(FeaturalModelController cont);
 	public String name();
 	
 	public static class Proposal

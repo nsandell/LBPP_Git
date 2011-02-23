@@ -3,10 +3,10 @@ package complex.featural.proposal_generators;
 import java.util.Vector;
 
 import complex.featural.IChildProcess;
-import complex.featural.ModelController;
+import complex.featural.FeaturalModelController;
 import complex.featural.ProposalAction;
 import complex.featural.ProposalGenerator;
-import complex.featural.ModelController.LatentPair;
+import complex.featural.FeaturalModelController.LatentPair;
 
 public class RandomExpungeGenerator implements ProposalGenerator {
 	
@@ -22,7 +22,7 @@ public class RandomExpungeGenerator implements ProposalGenerator {
 	}
 	
 	@Override
-	public Proposal generate(ModelController cont)
+	public Proposal generate(FeaturalModelController cont)
 	{
 		int N = cont.getLatentNodes().size();
 		if(N < 2)

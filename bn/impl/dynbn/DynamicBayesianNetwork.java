@@ -1,5 +1,7 @@
 package bn.impl.dynbn;
 
+import java.util.Vector;
+
 import bn.BNException;
 import bn.IBayesNode;
 import bn.Optimizable;
@@ -197,6 +199,32 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynami
 		return new RunResults(cb.numIts, cb.timeElapsed, cb.errorD);
 		//System.out.println("Parellel inference has converged after " + elapsed_seconds + " seconds.");
 	}
+	
+	public RunResults run_parallel_block(int maxit, double conv, Iterable<String> nodes) throws BNException
+	{
+		BlockCallback2 cb = new BlockCallback2();
+		synchronized (cb.blockLock) {
+			this.run_parallel(maxit, conv, nodes, cb);
+			try{cb.blockLock.wait();}catch(InterruptedException e){System.err.println("Interrupted..");}
+		}
+		if(cb.error!=null)
+			throw new BNException(cb.error);
+		return new RunResults(cb.numIts, cb.timeElapsed, cb.errorD);
+		//System.out.println("Parellel inference has converged after " + elapsed_seconds + " seconds.");
+	}
+	
+	public RunResults run_parallel_block(int maxit, double conv, String node) throws BNException
+	{
+		BlockCallback2 cb = new BlockCallback2();
+		synchronized (cb.blockLock) {
+			this.run_parallel(maxit, conv, node, cb);
+			try{cb.blockLock.wait();}catch(InterruptedException e){System.err.println("Interrupted..");}
+		}
+		if(cb.error!=null)
+			throw new BNException(cb.error);
+		return new RunResults(cb.numIts, cb.timeElapsed, cb.errorD);
+		//System.out.println("Parellel inference has converged after " + elapsed_seconds + " seconds.");
+	}
 
 	public void run_parallel(int maxIt, double conv, ParallelCallback callback)
 	{
@@ -210,6 +238,31 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynami
 		ParallelStatus status = new ParallelStatus(this,conv,maxIt,callback,this.getNodes());
 		status.start_time = System.currentTimeMillis();
 		parallel_iteration_regions(status);
+	}
+
+	public void run_parallel(int maxIt, double conv, Iterable<String> nodes, ParallelCallback callback) throws BNException
+	{
+		Vector<DBNNode> nodesi = new Vector<DBNNode>();
+		for(String node : nodes)
+		{
+			if(this.getNode(node)==null)
+				throw new BNException("Node " + node + " doesn't exist.");
+			nodesi.add(this.getNode(node));
+		}
+		ParallelStatus status = new ParallelStatus(this,conv,maxIt,callback,nodesi);
+		status.start_time = System.currentTimeMillis();
+		parallel_iteration_regions(status);	
+	}
+	
+	public void run_parallel(int maxIt, double conv, String node, ParallelCallback callback) throws BNException
+	{
+		if(this.getNode(node)==null)
+			throw new BNException("Node " + node + " doesn't exist.");
+		Vector<DBNNode> nodev = new Vector<DBNNode>();
+		nodev.add(this.getNode(node));
+		ParallelStatus status = new ParallelStatus(this,conv,maxIt,callback,nodev);
+		status.start_time = System.currentTimeMillis();
+		parallel_iteration_regions(status);	
 	}
 	
 	private void parallel_iteration_regions(ParallelStatus status)

@@ -28,6 +28,12 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 	 * General information accessors.
 	 */
 	
+	@Override
+	public String toString()
+	{
+		return this.name;
+	}
+	
 	public final String getName()
 	{
 		return this.name;

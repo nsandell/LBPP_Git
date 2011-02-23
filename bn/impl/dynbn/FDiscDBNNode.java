@@ -382,7 +382,7 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 	{
 		if(this.values==null || this.values[t]==null)
 			return 0.0;
-		return Math.log(this.localPi.get(t).getValue(this.values[t]));
+		return -Math.log(this.localPi.get(t).getValue(this.values[t]));
 	}
 	
 	DiscreteFiniteDistribution initialDist = null, advanceDist = null;

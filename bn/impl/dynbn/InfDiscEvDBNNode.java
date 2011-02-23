@@ -266,10 +266,31 @@ public class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode, Opti
 	}
 	
 	@Override
-	public double conditionalLL(int t) {
-		// TODO Auto-generated method stub
-		return 0;
+	public double conditionalLL(int t)
+	{
+		return t==0? this.init.computeBethePotential(this.parentMessages.getIncomingPis(0), this.values[0]) :
+					 this.advance.computeBethePotential(this.parentMessages.getIncomingPis(t), this.values[t]);
 	}
+	
+	@Override
+	protected void updateOutgoingInterLambda(int t, DynamicMessageIndex idx) throws BNException {
+		if(t==0) 
+			return;
+		this.advance.computeLambda(this.parentMessages.getOutgoingLambdas(t), idx.getIndex(), this.parentMessages.getIncomingPis(t), this.values[t]);
+	}
+
+	@Override
+	protected void updateOutgoingIntraLambda(int t, DynamicMessageIndex idx) throws BNException {
+		int index = idx.getIndex();
+		if(t > 0)
+			index += this.interParents.size();
+		this.advance.computeLambda(this.parentMessages.getOutgoingLambdas(t), index, this.parentMessages.getIncomingPis(t), this.values[t]);
+	}
+
+	@Override
+	protected void updateOutgoingInterPi(int t, DynamicMessageIndex idx) {}
+	@Override
+	protected void updateOutgoingIntraPi(int t, DynamicMessageIndex idx) {}
 
 	private DynamicContextManager.DynamicParentManager<FiniteDiscreteMessage> parentMessages;
 	private InfiniteDiscreteDistribution init, advance;

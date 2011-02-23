@@ -132,15 +132,7 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 		this.childrenMessages.resetMessages();
 	}
 	
-	@Override
-	public double updateMessages(int t) throws BNException
-	{
-		return FiniteDiscreteNode.updateMessages((t==0 && this.initialDist!=null) ? this.initialDist : this.advanceDist, 
-				this.localLambda.get(t), this.localPi.get(t), this.marginal.get(t),
-				this.parentMessages.getIncomingPis(t),this.childrenMessages.getOutgoingPis(t),
-				this.childrenMessages.getIncomingLambdas(t),this.parentMessages.getOutgoingLambdas(t),
-				this.values==null ? null : this.values[t],this.cardinality);
-	}
+
 	
 
 	public double betheFreeEnergy() throws BNException
@@ -383,6 +375,53 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 		if(this.values==null || this.values[t]==null)
 			return 0.0;
 		return -Math.log(this.localPi.get(t).getValue(this.values[t]));
+	}
+	
+	// TODO I don't like how any of these functions go.... they should be okay for now.
+	// At the heart of the problem is that the indexes vary depending on inter/intra and time
+	@Override
+	protected void updateOutgoingInterLambda(int t, DynamicMessageIndex idx) throws BNException
+	{
+		if(t==0) 
+			return;
+		FiniteDiscreteNode.updateOutgoingLambda(this.advanceDist, this.parentMessages.getOutgoingLambdas(t), idx.getIndex(), 
+				this.parentMessages.getIncomingPis(t), this.localLambda.get(t), this.values==null? null : this.values[t]);
+	}
+
+	@Override
+	protected void updateOutgoingIntraLambda(int t, DynamicMessageIndex idx) throws BNException {
+		int index = idx.getIndex();
+		if(t > 0)
+			index += this.interParents.size();
+		FiniteDiscreteNode.updateOutgoingLambda(t==0?this.initialDist:this.advanceDist, this.parentMessages.getOutgoingLambdas(t), index, 
+				this.parentMessages.getIncomingPis(t), this.localLambda.get(t), this.values==null? null : this.values[t]);
+	}
+
+	@Override
+	protected void updateOutgoingInterPi(int t, DynamicMessageIndex idx) throws BNException {
+		if(t==this.bayesNet.T)
+			return;
+		FiniteDiscreteNode.updateOutgoingPi(this.childrenMessages.getIncomingLambdas(t),this.childrenMessages.getOutgoingPis(t),
+				idx.getIndex(),this.localPi.get(t),this.cardinality,this.values==null? null : this.values[t]);
+	}
+
+	@Override
+	protected void updateOutgoingIntraPi(int t, DynamicMessageIndex idx) throws BNException {
+		int index = idx.getIndex();
+		if(t < this.bayesNet.T)
+			index += this.interChildren.size();
+		FiniteDiscreteNode.updateOutgoingPi(this.childrenMessages.getIncomingLambdas(t), this.childrenMessages.getOutgoingPis(t),
+				index, this.localPi.get(t),this.cardinality,this.values==null? null : this.values[t]);
+	}
+	
+	@Override
+	public double updateMessages(int t) throws BNException
+	{
+		return FiniteDiscreteNode.updateMessages((t==0 && this.initialDist!=null) ? this.initialDist : this.advanceDist, 
+				this.localLambda.get(t), this.localPi.get(t), this.marginal.get(t),
+				this.parentMessages.getIncomingPis(t),this.childrenMessages.getOutgoingPis(t),
+				this.childrenMessages.getIncomingLambdas(t),this.parentMessages.getOutgoingLambdas(t),
+				this.values==null ? null : this.values[t],this.cardinality);
 	}
 	
 	DiscreteFiniteDistribution initialDist = null, advanceDist = null;

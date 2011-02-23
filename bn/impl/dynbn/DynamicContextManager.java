@@ -21,6 +21,11 @@ public class DynamicContextManager
 		}
 		protected int index;
 		
+		public int getIndex()
+		{
+			return this.index;
+		}
+		
 		@Override
 		public int compareTo(DynamicMessageIndex o) {
 			return this.index-o.index;
@@ -71,7 +76,6 @@ public class DynamicContextManager
 		@Override
 		public Iterator<MessageType> iterator()
 		{
-			//return new DMSIterator(this.intraMessages.iterator(), this.interMessages.iterator());
 			return new DMSIterator(this.interMessages.iterator(), this.intraMessages.iterator());
 		}
 		

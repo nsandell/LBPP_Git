@@ -1,7 +1,6 @@
 package bn;
 
 import java.io.PrintStream;
-import java.util.Collection;
 import java.util.HashMap;
 
 import bn.distributions.Distribution;
@@ -125,7 +124,8 @@ public interface IBayesNet<BaseInterface> {
 	 */
 	public RunResults run(int maxit, double convergence) throws BNException;
 	
-	RunResults run(int maxit, double convergence, Collection<String> nodeNames) throws BNException;
+	//TODO Need to make this more comprehensive, including updating sets of nodes and calculating the border
+	// and updating those outgoing messages, iterating, and parallel
 	void run(String nodeName) throws BNException;
 	
 	

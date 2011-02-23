@@ -2,7 +2,6 @@ package bn.impl;
 
 import java.io.PrintStream;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import bn.BNException;
@@ -184,33 +183,7 @@ public abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		return new RunResults(i, ((double)(end_time-start_time))/1000.0, err);
 	}
 	
-	public RunResults run(int maxit, double conv, Collection<String> nodenames) throws BNException
-	{
-		long start_time = System.currentTimeMillis();
-		double err = Double.POSITIVE_INFINITY;
-	
-		int i;
-		for(i = 0; i < maxit && err > conv; i++)
-		{
-			err = 0;
-			for(String nodeName: nodenames)
-			{
-				BaseNodeType node = nodes.get(nodeName);
-				if(node==null) throw new BNException("Attempted to update non-existant node : " + nodeName);
-				try{err = Math.max(err,node.updateMessages());}
-				catch(BNException e){throw new BNException("Node " + nodeName + " threw an exception while updating : ",e);}
-			}
-		}
-		long end_time = System.currentTimeMillis();
-		return new RunResults(i, ((double)(end_time-start_time))/1000.0, err);
-	}
-	
-	public void run(String nodeName) throws BNException
-	{
-		BaseNodeType node = nodes.get(nodeName);
-		if(node==null) throw new BNException("Attempted to update non-existant node : " + nodeName);
-		node.updateMessages();
-	}
+	public abstract void run(String nodeName) throws BNException;
 	
 	public RunResults run() throws BNException
 	{

@@ -130,8 +130,6 @@ public interface IDynamicBayesNet extends IBayesNet<IDBNNode>
 	 * 		maximum number of iterations has been reached.)
 	 */
 	public void run_parallel(int maxint, double conv, ParallelCallback callback);
-	public void run_parallel(int maxint, double conv, Iterable<String> nodes, ParallelCallback callback) throws BNException;
-	public void run_parallel(int maxint, double conv, String node, ParallelCallback callback) throws BNException;
 	
 	/**
 	 * Run belief propagation over the network in parallel as in run_parallel, but this method
@@ -142,8 +140,6 @@ public interface IDynamicBayesNet extends IBayesNet<IDBNNode>
 	 * @throws BNException
 	 */
 	public RunResults run_parallel_block(int maxit, double conv) throws BNException;
-	public RunResults run_parallel_block(int maxit, double conv, Iterable<String> nodes) throws BNException;
-	public RunResults run_parallel_block(int maxit, double conv, String nodes) throws BNException;
 	
 	/**
 	 * Perform expectation maximization with inference in parallel

@@ -12,6 +12,7 @@ import bn.impl.InternalIBayesNode;
 import bn.impl.staticbn.StaticContextManagers.StaticMessageIndex;
 import bn.messages.Message.MessageInterface;
 import bn.statc.IBNNode;
+import bn.statc.IStaticBayesNet;
 
 /**
  * Bayes node root class.  Simply has parents and children so we can
@@ -141,6 +142,12 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
 				Entry<BNNode, StaticMessageIndex> o2) {
 			return o1.getValue().compareTo(o2.getValue());
 		}
+	}
+	
+	@Override
+	public StaticBayesianNetwork getNetwork()
+	{
+		return this.bnet;
 	}
 	
 	public abstract double updateMessages() throws BNException;

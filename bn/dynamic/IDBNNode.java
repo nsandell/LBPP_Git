@@ -35,6 +35,9 @@ public interface IDBNNode extends IBayesNode
 	 */	
 	Iterable<? extends IDBNNode> getIntraParents();
 	
+	@Override
+	IDynamicBayesNet getNetwork();
+	
 	boolean hasInterChild(IDBNNode child);
 	boolean hasIntraChild(IDBNNode child);
 	boolean hasInterParent(IDBNNode child);

@@ -1,5 +1,6 @@
 package bn.impl;
 
+import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
 import java.util.HashMap;
@@ -29,6 +30,15 @@ public abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 			// Node should validate its CPT matches its parents, etc.
 			node.validate();
 		}
+	}
+
+	@Override
+	public String toString()
+	{
+		ByteArrayOutputStream boas = new ByteArrayOutputStream();
+		PrintStream ps = new PrintStream(boas,true);
+		this.print(ps);
+		return boas.toString();
 	}
 	
 	public void print(PrintStream ps)

@@ -79,6 +79,12 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 		}
 	}
 	
+	@Override
+	public DynamicBayesianNetwork getNetwork()
+	{
+		return this.bayesNet;
+	}
+	
 	/*
 	 *  Abstract methods for the creation and removal of edges.  Expected
 	 *  to be implemented by specific node types.

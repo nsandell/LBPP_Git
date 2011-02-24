@@ -40,6 +40,8 @@ public interface IBayesNode {
 	 */
 	Iterable<? extends IBayesNode> getParents();
 	
+	IBayesNet<? extends IBayesNode> getNetwork();
+	
 	/**
 	 * Validate the well-formedness of this node.
 	 * @throws BNException If the node is not well formed.

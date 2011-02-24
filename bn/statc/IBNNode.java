@@ -8,5 +8,8 @@ public interface IBNNode extends IBayesNode {
 	Distribution getDistribution();
 	void setDistribution(Distribution dist) throws BNException;
 	
+	@Override
+	public IStaticBayesNet getNetwork();
+	
 	public double conditionalLL();
 }

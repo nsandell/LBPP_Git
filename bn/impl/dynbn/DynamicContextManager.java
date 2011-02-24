@@ -21,11 +21,6 @@ public class DynamicContextManager
 		}
 		protected int index;
 		
-		public int getIndex()
-		{
-			return this.index;
-		}
-		
 		@Override
 		public int compareTo(DynamicMessageIndex o) {
 			return this.index-o.index;

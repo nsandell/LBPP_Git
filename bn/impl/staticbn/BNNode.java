@@ -81,18 +81,6 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
 			parent.removeChild(this);
 	}
 	
-	public void updateOutgoingInterface(BNNode other) throws BNException
-	{
-		if(this.children.keySet().contains(other))
-			this.updateOutgoingPi(this.children.get(other));
-		else if(this.parents.keySet().contains(other))
-			this.updateOutgoingLambda(this.children.get(other));
-		else throw new BNException("Attempted to update an interface that doesn't exist...");
-	}
-	
-	protected abstract void updateOutgoingLambda(StaticMessageIndex idx) throws BNException;
-	protected abstract void updateOutgoingPi(StaticMessageIndex idx) throws BNException;
-	
 	protected abstract MessageInterface<?> newChildInterface() throws BNException;
 
 	protected abstract StaticMessageIndex addParentInterface(MessageInterface<?> mi) throws BNException;

@@ -183,8 +183,6 @@ public abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		return new RunResults(i, ((double)(end_time-start_time))/1000.0, err);
 	}
 	
-	public abstract void run(String nodeName) throws BNException;
-	
 	public RunResults run() throws BNException
 	{
 		return this.run(100,0);
@@ -211,14 +209,6 @@ public abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 			else
 				stats.get(nodename).update(node.getSufficientStatistic());
 		}
-	}
-	
-	public final void optimize(String nodeName) throws BNException
-	{
-		Optimizable nd = this.opti_nodes.get(nodeName);
-		if(nd==null)
-			throw new BNException("Attempted to optimize non-existant (or non-optimizable) node " + nodeName);
-		nd.optimizeParameters();
 	}
 	
 	public final void optimize(Iterable<String> nodeNames, HashMap<String,SufficientStatistic> stats) throws BNException

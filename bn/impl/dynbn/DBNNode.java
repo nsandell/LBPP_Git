@@ -79,40 +79,6 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 		}
 	}
 	
-	public void updateInterface(DBNNode other) throws BNException
-	{
-		this.updateInterface(0, this.bayesNet.T-1, other);
-	}
-	
-	public void updateInterface(int tmin, int tmax, DBNNode other) throws BNException
-	{
-		if(this.interChildren.containsKey(other))
-		{
-			for(int t = tmin; t <= tmax; t++)
-				this.updateOutgoingInterPi(t,this.interChildren.get(other));
-		}
-		if(this.interParents.containsKey(other))
-		{
-			for(int t = tmin; t <= tmax; t++)
-				this.updateOutgoingInterLambda(t,this.interParents.get(other));
-		}
-		if(this.intraChildren.containsKey(other))
-		{
-			for(int t = tmin; t <= tmax; t++)
-				this.updateOutgoingIntraPi(t,this.intraChildren.get(other));
-		}
-		if(this.intraParents.containsKey(other))
-		{
-			for(int t = tmin; t <= tmax; t++)
-				this.updateOutgoingIntraLambda(t,this.intraParents.get(other));
-		}
-	}
-	
-	protected abstract void updateOutgoingInterLambda(int t, DynamicMessageIndex idx) throws BNException;
-	protected abstract void updateOutgoingIntraLambda(int t, DynamicMessageIndex idx) throws BNException;
-	protected abstract void updateOutgoingInterPi(int t, DynamicMessageIndex idx) throws BNException;
-	protected abstract void updateOutgoingIntraPi(int t, DynamicMessageIndex idx) throws BNException;
-	
 	/*
 	 *  Abstract methods for the creation and removal of edges.  Expected
 	 *  to be implemented by specific node types.

@@ -73,8 +73,6 @@ public interface IBayesNet<BaseInterface> {
 	 */
 	public void optimize(Iterable<String> nodenames, HashMap<String,SufficientStatistic> stats) throws BNException; // Update the parameters of 'this' network using the stats in the hashmap
 	
-	public void optimize(String nodeName) throws BNException;
-	
 	/**
 	 * Run expectation maximization on this network.
 	 * @param learnIt Will perform at most this many EM iterations.
@@ -123,11 +121,6 @@ public interface IBayesNet<BaseInterface> {
 	 * @throws BNException Shouldn't be thrown unless the network is invalid.(you should call validate first!)
 	 */
 	public RunResults run(int maxit, double convergence) throws BNException;
-	
-	//TODO Need to make this more comprehensive, including updating sets of nodes and calculating the border
-	// and updating those outgoing messages, iterating, and parallel
-	void run(String nodeName) throws BNException;
-	
 	
 	/**
 	 * Run belief propagation on the network, using default parameters.

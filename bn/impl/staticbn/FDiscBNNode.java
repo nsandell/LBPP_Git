@@ -197,20 +197,6 @@ class FDiscBNNode extends BNNode implements IFDiscBNNode, Optimizable
     	this.cpt.printDistribution(ps);
     }
     
-    @Override
-	public void updateOutgoingLambda(StaticMessageIndex idx) throws BNException
-	{
-    	FiniteDiscreteNode.updateOutgoingLambda(cpt, this.parentInterface.getOutgoingLambdas(), 
-    			idx.getIndex(), this.parentInterface.getIncomingPis(), this.localLambda, this.value);
-	}
-    
-    @Override
-	public void updateOutgoingPi(StaticMessageIndex idx) throws BNException
-	{
-    	FiniteDiscreteNode.updateOutgoingPi(this.childrenInterface.getIncomingLambdas(),
-    			this.childrenInterface.getOutgoingPis(), idx.getIndex(), localPi, cardinality, value);
-	}
-    
 	private int cardinality;
 	private DiscreteFiniteDistribution cpt;
 	

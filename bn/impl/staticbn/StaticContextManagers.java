@@ -59,11 +59,6 @@ public class StaticContextManagers
 			return this.index-other.index;
 		}
 		
-		public int getIndex()
-		{
-			return this.index;
-		}
-		
 		protected int index;
 	}
 	

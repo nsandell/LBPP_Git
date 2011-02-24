@@ -149,15 +149,6 @@ public class InfDiscEvBNNode extends BNNode implements IInfDiscEvBNNode, Optimiz
 		this.dist.validateConditionDimensions(parentDims);
 	}
 	
-	@Override
-	public void updateOutgoingLambda(StaticMessageIndex idx) throws BNException
-	{
-		dist.computeLambda(this.parentMsgs.getOutgoingLambdas(), idx.getIndex(), this.parentMsgs.getIncomingPis(), this.value);
-	}
-
-	@Override
-	public void updateOutgoingPi(StaticMessageIndex idx) throws BNException {}
-	
 	private StaticContextManagers.StaticParentManager<FiniteDiscreteMessage> parentMsgs = new StaticContextManagers.StaticParentManager<FiniteDiscreteMessage>();
 	private InfiniteDiscreteDistribution dist;
 	private int value;

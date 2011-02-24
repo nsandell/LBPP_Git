@@ -185,25 +185,6 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynami
 		Object blockLock = new Object();
 	}
 	
-	@Override
-	public void run(String nodeName) throws BNException
-	{
-		DBNNode nd = this.getNode(nodeName);
-		if(nd==null)
-			throw new BNException("Couldn't run node " + nodeName + " : Doesn't exist.");
-		
-		nd.updateMessages();
-		
-		for(DBNNode ond : nd.interChildren.keySet())
-			nd.updateInterface(ond);
-		for(DBNNode ond : nd.intraChildren.keySet())
-			nd.updateInterface(ond);
-		for(DBNNode ond : nd.interParents.keySet())
-			nd.updateInterface(ond);
-		for(DBNNode ond : nd.intraParents.keySet())
-			nd.updateInterface(ond);
-	}
-	
 	public RunResults run_parallel_block(int maxit, double conv) throws BNException
 	{
 		BlockCallback2 cb = new BlockCallback2();

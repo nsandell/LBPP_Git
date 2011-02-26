@@ -65,13 +65,13 @@ public class FixedMixture
 				opts.controller.setParent(childProcs.get(i), latentProcs.get(MathUtil.rand.nextInt(N)));
 		}
 		
-		opts.controller.log("Initial Assigments: ");
+		opts.controller.trace("Initial Assigments: ");
 		for(IParentProcess parent : opts.controller.getAllParents())
 		{
 			for(IChildProcess child : opts.controller.getChildren(parent))
-				opts.controller.log(parent.getName() + " -> " + child.getName());
+				opts.controller.trace(parent.getName() + " -> " + child.getName());
 		}
-		opts.controller.log("\n");
+		opts.controller.trace("\n");
 		
 		opts.controller.validate();
 		
@@ -82,7 +82,7 @@ public class FixedMixture
 			ll = opts.controller.run(opts.maxRunIterations,opts.runConv);
 	
 		
-		opts.controller.log("Starting:");
+		opts.controller.trace("Starting:");
 			
 		boolean changed = true;
 		int iteration = 1;
@@ -132,16 +132,16 @@ public class FixedMixture
 				opts.controller.setParent(currentC, latentProcs.get(maxnewlli));
 				if(maxnewlli!=ci)
 				{
-					opts.controller.log(latentProcs.get(maxnewlli).getName() + " -> " + currentC.getName());
+					opts.controller.trace(latentProcs.get(maxnewlli).getName() + " -> " + currentC.getName());
 					changed = true;
 				}
 				else
-					opts.controller.log(currentC.getName() + " (" + opts.controller.getParent(currentC).getName() + ", NO CHANGE )");
+					opts.controller.trace(currentC.getName() + " (" + opts.controller.getParent(currentC).getName() + ", NO CHANGE )");
 				opts.controller.optimizeChildParameters(currentC);
 				ll = opts.controller.learn(opts.maxLearnIterations, opts.learnConv, opts.maxRunIterations, opts.runConv);
 			}
 			ll = opts.controller.learn(opts.maxLearnIterations, opts.learnConv, opts.maxRunIterations, opts.runConv);
-			opts.controller.log("Iteration " + iteration + " completed with log likelihood : " + ll);
+			opts.controller.trace("Iteration " + iteration + " completed with log likelihood : " + ll);
 			iteration++;
 		}
 		opts.controller.log("\nFinal Assigments: ");

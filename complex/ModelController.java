@@ -60,6 +60,17 @@ public abstract class ModelController
 		this.logger = log;
 	}
 	
-	protected PrintStream logger = null;
+	public void trace(String msg)
+	{
+		if(this.tracer!=null)
+			this.tracer.println(msg);
+	}
+	
+	public void setTrace(PrintStream tracer)
+	{
+		this.tracer = tracer;
+	}
+	
+	protected PrintStream logger = null, tracer = null;
 	protected IDynamicBayesNet network;
 }

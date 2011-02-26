@@ -7,6 +7,7 @@ import cern.jet.random.engine.DRand;
 
 import bn.BNException;
 import bn.distributions.DiscreteDistribution.InfiniteDiscreteDistribution;
+import bn.distributions.SparseDiscreteCPT.Entry;
 import bn.messages.FiniteDiscreteMessage;
 import bn.messages.MessageSet;
 
@@ -24,6 +25,17 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 		this.means = means;
 		this.parentDims = new int[1];
 		this.parentDims[0] = means.length;
+	}
+	
+	public SwitchingPoisson(int[] dimensions, Iterable<Entry> means) throws BNException
+	{
+		this.parentDims = dimensions;
+		int dimprod = 1;
+		for(int dim : dimensions)
+			dimprod *= dim;
+		this.means = new double[dimprod];
+		for(Entry ent : means)
+			this.means[getIndex(ent.conditional_indices, parentDims)] = ent.p;
 	}
 
 	@Override
@@ -64,7 +76,8 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 	public String getDefinition()
 	{
 		String ret = "SwitchingPoisson(";
-		for(int i = 0; i < this.parentDims.length; i++)
+		ret += this.parentDims[0];
+		for(int i = 1; i < this.parentDims.length; i++)
 			ret += "," + this.parentDims[i];
 		ret += ")\n";
 
@@ -251,7 +264,7 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 	public double computeBethePotential(
 			MessageSet<FiniteDiscreteMessage> incoming_pis, int value) {
 		//H2 is always zero - no children, always observed.
-		int indices[] = initialIndices(this.means.length);
+		int indices[] = initialIndices(this.parentDims.length);
 		double pu[] = new double[this.means.length];
 		double E = 0, H1 = 0;
 		int index = 0;
@@ -267,13 +280,16 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 			index++;
 		}
 		while((indices = incrementIndices(indices, this.parentDims))!=null);
-		
+
 		for(int i = 0; i < this.means.length; i++)
 		{
-			poiss.setMean(this.means[index]);
-			double pun = pu[index]/pusum;
-			E -= pun*Math.log(poiss.pdf(value));
-			H1 += pun*Math.log(pun);
+			poiss.setMean(this.means[i]);
+			double pun = pu[i]/pusum;
+			if(pun > 0)
+			{
+				E -= pun*Math.log(poiss.pdf(value));
+				H1 += pun*Math.log(pun);
+			}
 		}
 		return E+H1;
 	}

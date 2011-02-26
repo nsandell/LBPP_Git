@@ -41,7 +41,19 @@ public class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode, Opti
 
 	@Override
 	public String getNodeDefinition() {
-		return ""; //TODO determine the way evidence nodes are defined... evidence in parens, after entered?
+		String def = this.getName()+":DiscreteEvidenceNode()\n";
+		def+=this.values[0];
+		for(int i = 1; i < this.values.length; i++)
+			def+=" " + this.values[i];
+		def += "\n";
+		if(this.init!=null)
+		{
+			def += this.getName()+"__CPT__INITIAL < " +this.init.getDefinition()
+			+  this.getName()+"~~"+this.getName()+"__CPT__INITIAL\n";
+		}
+		def+= this.getName()+"__CPT < " + this.advance.getDefinition();
+		def += this.getName() + "~" + this.getName()+"__CPT\n\n";
+		return def;
 	}
 
 	@Override

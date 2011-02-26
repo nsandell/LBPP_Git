@@ -1,10 +1,9 @@
 package bn.dynamic;
 
 import bn.BNException;
-import bn.IBayesNode;
 import bn.distributions.DiscreteDistribution.InfiniteDiscreteDistribution;
 
-public interface IInfDiscEvDBNNode extends IBayesNode {
+public interface IInfDiscEvDBNNode extends IDBNNode {
 	/**
 	 * Get the current integer value of this node.
 	 * @return The current value of the node.

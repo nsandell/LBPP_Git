@@ -100,6 +100,7 @@ public class DynamicCommandHandlers
 		public String description(){return "Creates a discrete node with specified cardinality, e.g. X:Discrete(3) creates" +
 				" a discrete node with cardinality 3, named X";}
 	}
+	
 
 	static class InitialDistSetter  extends Parser.MethodWrapperHandler<Distribution>
 	{
@@ -173,6 +174,84 @@ public class DynamicCommandHandlers
 				" iteration of learning.";}
 	}
 
+	static class DiscreteEvidenceNodeAdder implements Parser.ParserFunction
+	{
+		public DiscreteEvidenceNodeAdder(IDynamicBayesNet net)
+		{
+			this.net = net;
+		}
+		IDynamicBayesNet net;
+		
+		public String getPrompt() {return null;}
+		public void finish(){}
+		public int[] getGroups(){return groups;}
+		public Pattern getRegEx(){return patt;}
+
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*:\\s*DiscreteEvidenceNode\\(\\)\\s*$");
+		private static int[] groups = new int[]{1};
+		
+		public String name(){return "DiscreteEvidenceNode";}
+		public String description(){return "Create a discrete evidence node -- this will then prompt for the entire observation sequence of this node.";};
+		
+		public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException {
+			return new EvidenceGrabber(this.net,args[0], this.net.getT());
+		}
+		
+		private static class EvidenceGrabber implements Parser.ParserFunction
+		{
+			
+			public EvidenceGrabber(IDynamicBayesNet net, String name, int T)
+			{
+				this.net = net;
+				this.name = name;
+				this.T = T;
+			}
+			IDynamicBayesNet net;
+			String name;
+			int T;
+			public String getPrompt() {return "Enter evidence sequence : ";}
+			public void finish(){}
+			public int[] getGroups(){return groups;}
+			public Pattern getRegEx(){return patt;}
+			
+			private static Pattern patt = Pattern.compile("^\\s*(\\d+)((\\s+\\d+)+)\\s*$");
+			private static int[] groups = new int[]{1,2};
+			public String name(){return "";}
+			public String description(){return "";}
+			
+			@Override
+			public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException {
+				int[] evidence = new int[T];
+				try {
+					evidence[0] = Integer.parseInt(args[0]);
+					String[] splits = args[1].split("\\s+");
+					int count = 1;
+					for(int i = 0; i < splits.length; i++)
+					{
+						if(!splits[i].equals(""))
+						{
+							evidence[count] = Integer.parseInt(splits[i]);
+							count++;
+						}
+					}
+					if(count!=T)
+					{
+						System.out.println("Expected 5 pieces of evidence!");
+						return this;
+					}
+
+					try {
+						net.addDiscreteEvidenceNode(this.name, evidence);
+					} catch(BNException e) {
+						throw new ParserException("Failed to add evidence node : " + e.toString());
+					}
+					return null;
+				} catch(NumberFormatException e) {
+					throw new ParserException("Failed to load evidence for evidence node : "+ e.toString());
+				}
+			}
+		}
+	}
 
 	static class MarginalHandler implements Parser.ParserFunction
 	{

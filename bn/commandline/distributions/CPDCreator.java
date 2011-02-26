@@ -15,6 +15,7 @@ public class CPDCreator implements ParserFunction
 	{
 		CPDCreator cr = new CPDCreator(distmap);
 		//TODO Update this for ALL distributions
+		cr.addCPDCreator("SwitchingPoisson", SwitchingPoissonCreator.getFactory());
 		cr.addCPDCreator("PV", DiscreteCPTUCCreator.getFactory());
 		cr.addCPDCreator("CPT", CPTCreator.getFactory());
 		cr.addCPDCreator("SparseCPT", SparseCPTCreator.getFactory());

@@ -1,5 +1,6 @@
 package complex.mixture.controllers;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Vector;
 
@@ -33,6 +34,7 @@ public class MHMMController extends MixtureModelController {
 		double evaluateP();
 		void sampleInit();
 		void samplePosterior();
+		Collection<String> constituentNodeNames();
 	}
 	
 	private static class MHMMX implements IParentProcess
@@ -142,6 +144,48 @@ public class MHMMController extends MixtureModelController {
 		else throw new CMException("Attempted to optimize non-mHMM observation process.");
 	}
 	
+	public double runChain(IParentProcess proc, int maxit, double conv) throws CMException
+	{
+		if(proc instanceof MHMMX)
+		{
+			MHMMX procx = (MHMMX)proc;
+			
+			Vector<String> nodes = new Vector<String>();
+			nodes.add(procx.xnd.getName());
+			Vector<IChildProcess> children = this.getChildren(proc);
+			for(IChildProcess child : children)
+			{
+				if(child instanceof MHMMChild)
+					nodes.addAll(((MHMMChild)child).constituentNodeNames());
+				else
+					throw new CMException("MHMM model has non MHMM child process...");
+			}
+			
+			try {
+				this.network.run_parallel_block(nodes,maxit,conv);
+				double ll = this.network.getLogLikelihood();
+				
+				if(Double.isNaN(ll) || ll > 0)
+				{
+					this.network.resetMessages();
+					this.network.run_parallel_block(maxit,conv);
+					ll = this.network.getLogLikelihood();
+					if(Double.isNaN(ll) || ll > 0)
+					{
+						this.network.print(System.err);
+						this.network.getLogLikelihood();
+						throw new CMException("Model returns NaN/Greater than 0 log likelihood!");
+					}
+				}
+				return ll;
+			} catch(BNException e) {
+				throw new CMException(e.toString());
+			}
+		}
+		else
+			throw new CMException("MHMM model has non MHMM latent process...");
+	}
+	
 	private int nextID()
 	{
 		int ret = this.minimum_available_id;
@@ -154,6 +198,7 @@ public class MHMMController extends MixtureModelController {
 		}
 		return ret;
 	}
+	
 	
 	private void killID(int id)
 	{

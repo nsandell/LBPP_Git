@@ -15,6 +15,14 @@ public abstract class ModelController
 			this.network.validate();
 		} catch(BNException e) {throw new CMException(e.toString());}
 	}
+	
+	public void printNetwork(boolean log)
+	{
+		if(log && this.logger!=null)
+			this.network.print(this.logger);
+		else if(this.tracer!=null)
+			this.network.print(this.tracer);
+	}
 
 	public double run(int max_it, double conv)  throws CMException
 	{

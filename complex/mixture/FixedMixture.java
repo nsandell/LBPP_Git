@@ -115,12 +115,27 @@ public class FixedMixture
 						double tmp;
 						if(opts.controller.getChildren(newP).size()==1)
 						{
+							opts.controller.optimizeChildParameters(currentC);
 							tmp = opts.controller.learn(opts.maxLearnIterations, opts.learnConv, opts.maxRunIterations, opts.runConv);
 						}
 						else
 						{
 							opts.controller.optimizeChildParameters(currentC);
-							tmp = opts.controller.run(opts.maxRunIterations, opts.runConv);
+							tmp = opts.controller.runChain(newP, opts.maxRunIterations, opts.runConv);
+							//tmp = opts.controller.run(opts.maxRunIterations, opts.runConv);
+						}
+						if(tmp==0)
+						{
+
+							opts.controller.log("\nProblems doing " + newP.getName() + "->" + currentC.getName() + ".. Current Assignments: ");
+							for(IParentProcess parent : opts.controller.getAllParents())
+							{
+								for(IChildProcess child : opts.controller.getChildren(parent))
+									opts.controller.log(parent.getName() + " -> " + child.getName());
+							}
+
+							opts.controller.printNetwork(true);
+							return;
 						}
 						if(tmp > maxnewll)
 						{

@@ -3,6 +3,7 @@ package complex.prepacked;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.util.Collection;
 import java.util.Scanner;
 import java.util.Vector;
 
@@ -105,6 +106,13 @@ public class MHMMDiscrete
 		@Override
 		public double getDisagreement(int t) {
 			return node.conditionalLL(t);
+		}
+		
+		public Collection<String> constituentNodeNames()
+		{
+			Vector<String> names = new Vector<String>();
+			names.add(node.getName());
+			return names;
 		}
 
 		@Override
@@ -275,7 +283,7 @@ public class MHMMDiscrete
 		{
 			for(int j = 0; j < no; j++)
 			{
-				if(i%ns==j)
+				if(i%no==j)
 					mat[i][j] = .9;
 				else
 					mat[i][j] = .1/(no-1);

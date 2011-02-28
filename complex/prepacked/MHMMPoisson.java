@@ -3,6 +3,7 @@ package complex.prepacked;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.util.Collection;
 import java.util.Scanner;
 import java.util.Vector;
 
@@ -106,6 +107,13 @@ public class MHMMPoisson
 		@Override
 		public double getDisagreement(int t) {
 			return node.conditionalLL(t);
+		}
+		
+		public Collection<String> constituentNodeNames()
+		{
+			Vector<String> names = new Vector<String>();
+			names.add(node.getName());
+			return names;
 		}
 
 		@Override

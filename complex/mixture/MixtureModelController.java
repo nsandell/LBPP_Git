@@ -44,6 +44,8 @@ public abstract class MixtureModelController extends complex.ModelController{
 		return this.allParents;
 	}
 	
+	public abstract double runChain(IParentProcess proc, int maxit, double conv) throws CMException;
+	
 	public abstract void optimizeChildParameters(IChildProcess child) throws CMException;
 	
 	public void deleteParent(IParentProcess parent) throws CMException

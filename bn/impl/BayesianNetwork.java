@@ -193,6 +193,27 @@ public abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		return new RunResults(i, ((double)(end_time-start_time))/1000.0, err);
 	}
 	
+	public RunResults run(Iterable<String> nodeNames, int maxit, double conv) throws BNException
+	{
+		long start_time = System.currentTimeMillis();
+		double err = Double.POSITIVE_INFINITY;
+	
+		int i;
+		for(i = 0; i < maxit && err > conv; i++)
+		{
+			err = 0;
+			for(String nodeName: nodeNames)
+			{
+				BaseNodeType node = nodes.get(nodeName);
+				if(node==null) throw new BNException("Node " + nodeName + " does not exist...");
+				try{err = Math.max(err,node.updateMessages());}
+				catch(BNException e){throw new BNException("Node " + nodeName + " threw an exception while updating : ",e);}
+			}
+		}
+		long end_time = System.currentTimeMillis();
+		return new RunResults(i, ((double)(end_time-start_time))/1000.0, err);
+	}
+	
 	public RunResults run() throws BNException
 	{
 		return this.run(100,0);

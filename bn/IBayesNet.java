@@ -121,6 +121,7 @@ public interface IBayesNet<BaseInterface> {
 	 * @throws BNException Shouldn't be thrown unless the network is invalid.(you should call validate first!)
 	 */
 	public RunResults run(int maxit, double convergence) throws BNException;
+	public RunResults run(Iterable<String> nodes, int maxit, double convergence) throws BNException;
 	
 	/**
 	 * Run belief propagation on the network, using default parameters.

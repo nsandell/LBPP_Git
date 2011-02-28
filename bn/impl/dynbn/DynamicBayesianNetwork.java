@@ -1,5 +1,7 @@
 package bn.impl.dynbn;
 
+import java.util.Vector;
+
 import bn.BNException;
 import bn.IBayesNode;
 import bn.Optimizable;
@@ -195,6 +197,32 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynami
 		if(cb.error!=null)
 			throw new BNException(cb.error);
 		return new RunResults(cb.numIts, cb.timeElapsed, cb.errorD);
+	}
+	
+	public RunResults run_parallel_block(Iterable<String> nodes, int maxit, double conv) throws BNException
+	{
+		BlockCallback2 cb = new BlockCallback2();
+		synchronized (cb.blockLock) {
+			this.run_parallel(maxit, conv, cb);
+			try{cb.blockLock.wait();}catch(InterruptedException e){System.err.println("Interrupted..");}
+		}
+		if(cb.error!=null)
+			throw new BNException(cb.error);
+		return new RunResults(cb.numIts, cb.timeElapsed, cb.errorD);
+	}
+
+	public void run_parallel(Iterable<String> nodeNames, int maxit, double conv, ParallelCallback callback) throws BNException
+	{
+		Vector<DBNNode> nodes = new Vector<DBNNode>();
+		for(String nodeName : nodeNames)
+		{
+			DBNNode node = this.getNode(nodeName);
+			if(node==null) throw new BNException("Cannot find node named : " + nodeName);
+			nodes.add(node);
+		}
+		ParallelStatus status = new ParallelStatus(this, conv, maxit, callback, nodes);
+		status.start_time = System.currentTimeMillis();
+		parallel_iteration_regions(status);
 	}
 
 	public void run_parallel(int maxIt, double conv, ParallelCallback callback)

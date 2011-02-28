@@ -140,6 +140,7 @@ public interface IDynamicBayesNet extends IBayesNet<IDBNNode>
 	 * @throws BNException
 	 */
 	public RunResults run_parallel_block(int maxit, double conv) throws BNException;
+	public RunResults run_parallel_block(Iterable<String> nodeNames, int maxit, double conv) throws BNException;
 	
 	/**
 	 * Perform expectation maximization with inference in parallel

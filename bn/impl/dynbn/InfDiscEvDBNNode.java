@@ -35,7 +35,7 @@ public class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode, Opti
 		else
 			bfe += this.advance.computeBethePotential(this.parentMessages.getIncomingPis(0), this.values[0]);
 		for(int t = 1; t < this.bayesNet.T; t++)
-			bfe += this.advance.computeBethePotential(this.parentMessages.getIncomingPis(0), this.values[0]);
+			bfe += this.advance.computeBethePotential(this.parentMessages.getIncomingPis(t), this.values[t]);
 		return bfe;
 	}
 
@@ -62,7 +62,7 @@ public class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode, Opti
 	@Override
 	public void setInitialDistribution(Distribution dist) throws BNException {
 		if(dist instanceof InfiniteDiscreteDistribution)
-			this.init = (InfiniteDiscreteDistribution)dist;
+			this.init = (InfiniteDiscreteDistribution)dist.copy();
 		else
 			throw new BNException("Expected infinite discrete distribution for evidence node.");
 	}
@@ -70,7 +70,7 @@ public class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode, Opti
 	@Override
 	public void setAdvanceDistribution(Distribution dist) throws BNException {
 		if(dist instanceof InfiniteDiscreteDistribution)
-			this.advance = (InfiniteDiscreteDistribution)dist;
+			this.advance = (InfiniteDiscreteDistribution)dist.copy();
 		else
 			throw new BNException("Expected infinite discrete distribution for evidence node.");
 	}

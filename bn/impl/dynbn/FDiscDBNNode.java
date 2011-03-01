@@ -170,7 +170,7 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 	}
 	public void setInitialDistribution(DiscreteFiniteDistribution dist)
 	throws BNException {
-		this.initialDist = dist;
+		this.initialDist = dist.copy();
 	}
 	public void setAdvanceDistribution(DiscreteFiniteDistribution dist)
 	throws BNException {

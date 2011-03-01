@@ -181,6 +181,11 @@ public class MHMMDiscrete
 		opt.setArgs(1);opt.setArgName("threshold");
 		options.addOption(opt);
 		
+		//TODO This option wouldn't be as necessary without the bug that causes oscillations so.. figure that out.
+		opt = new Option("i","maxiterations",true,"Maximum number of times to run through the observables to change assignments.");
+		opt.setArgs(1);opt.setArgName("#Iterations");
+		options.addOption(opt);
+		
 		opt = new Option("output","o",true,"Model output file");
 		opt.setArgs(1);opt.setArgName("file");
 		options.addOption(opt);
@@ -248,6 +253,9 @@ public class MHMMDiscrete
 			cno = "emconvergence";
 			if(line.hasOption("emconvergence"))
 				opts.learnConv = Double.parseDouble(line.getOptionValue("emconvergence"));
+			cno = "maxiterations";
+			if(line.hasOption("maxiterations"))
+				opts.maxAssignmentIterations = Integer.parseInt(line.getOptionValue("maxiterations"));
 		} catch(NumberFormatException nfe) {
 			System.err.println("Invalid option "+cno+"="+line.getOptionValue(cno));
 		}

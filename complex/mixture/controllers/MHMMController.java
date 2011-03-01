@@ -172,8 +172,8 @@ public class MHMMController extends MixtureModelController {
 					ll = this.network.getLogLikelihood();
 					if(Double.isNaN(ll) || ll > 0)
 					{
-						this.network.print(System.err);
-						this.network.getLogLikelihood();
+						this.log("NAN LIKELIHOOD");
+						this.log(this.network.toString());
 						throw new CMException("Model returns NaN/Greater than 0 log likelihood!");
 					}
 				}

@@ -18,6 +18,7 @@ public class FixedMixture
 			this.N = N;
 		}
 		
+		public int maxAssignmentIterations = 1000;
 		public int maxRunIterations = 10, maxLearnIterations = 10;
 		public double runConv = 1e-8, learnConv = 1e-6;
 		
@@ -81,12 +82,13 @@ public class FixedMixture
 		else
 			ll = opts.controller.run(opts.maxRunIterations,opts.runConv);
 	
+		opts.controller.trace("Initial LL : " + ll);
 		
 		opts.controller.trace("Starting:");
 			
 		boolean changed = true;
 		int iteration = 1;
-		while(changed)
+		while(changed && iteration <= opts.maxAssignmentIterations)
 		{
 			changed = false;
 			
@@ -121,8 +123,8 @@ public class FixedMixture
 						else
 						{
 							opts.controller.optimizeChildParameters(currentC);
-							tmp = opts.controller.runChain(newP, opts.maxRunIterations, opts.runConv);
-							//tmp = opts.controller.run(opts.maxRunIterations, opts.runConv);
+							//tmp = opts.controller.runChain(newP, opts.maxRunIterations, opts.runConv);
+							tmp = opts.controller.run(opts.maxRunIterations, opts.runConv);
 						}
 						if(tmp==0)
 						{

@@ -128,14 +128,18 @@ public class MHMMPoisson
 				int N = chainIncPis.get(0).getCardinality();
 				
 				double[] sums = new double[N];
+				double[] times = new double[N];
 				int T = this.node.getNetwork().getT();
-				for(int t = 0; t < T; t++)
-					for(int i = 0; i < N; i++)
+				for(int t = 0; t < T; t++) {
+					for(int i = 0; i < N; i++) {
 						sums[i] += ((double)this.node.getValue(t))*chainIncPis.get(t).getValue(i);
+						times[i] += chainIncPis.get(t).getValue(i);
+					}
+				}
 				
 				double[] means = new double[N];
 				for(int i = 0; i < N; i++)
-					means[i] = sums[i]/T;
+					means[i] = sums[i]/times[i];
 
 				this.node.setAdvanceDistribution(new SwitchingPoisson(means));
 			} catch(BNException e) {
@@ -264,6 +268,8 @@ public class MHMMPoisson
 			System.err.println("Couldn't write to output file " + line.getOptionValue("output"));
 		}
 		
+		//opts.initialAssignment = new int[]{	0,0,1,1 };
+		
 		FixedMixture.learnFixedMixture(opts);
 		
 		if(outfile!=null)
@@ -273,22 +279,6 @@ public class MHMMPoisson
 		}
 	}
 
-	private static double[][] obsmat(int ns, int no)
-	{
-		double[][] mat = new double[ns][no];
-		for(int i = 0; i < ns; i++)
-		{
-			for(int j = 0; j < no; j++)
-			{
-				if(i%ns==j)
-					mat[i][j] = .9;
-				else
-					mat[i][j] = .1/(no-1);
-			}
-		}
-		return mat;
-	}
-	
 	private static int[][] loadData(String file) throws FileNotFoundException
 	{
 		Scanner scan = new Scanner(new File(file));

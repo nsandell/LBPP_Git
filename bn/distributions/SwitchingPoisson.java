@@ -14,15 +14,21 @@ import bn.messages.MessageSet;
 public class SwitchingPoisson extends InfiniteDiscreteDistribution
 {
 	
+	public static double minimumMean = 1e-8;
+	
 	public SwitchingPoisson(double[] means, int[] dimensions)
 	{
 		this.means = means;
+		for(int i = 0; i < means.length; i++)
+			this.means[i] = Math.max(this.means[i],minimumMean);
 		this.parentDims = dimensions;
 	}
 	
 	public SwitchingPoisson(double[] means)
 	{
 		this.means = means;
+		for(int i = 0; i < means.length; i++)
+			this.means[i] = Math.max(this.means[i],minimumMean);
 		this.parentDims = new int[1];
 		this.parentDims[0] = means.length;
 	}
@@ -35,7 +41,7 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 			dimprod *= dim;
 		this.means = new double[dimprod];
 		for(Entry ent : means)
-			this.means[getIndex(ent.conditional_indices, parentDims)] = ent.p;
+			this.means[getIndex(ent.conditional_indices, parentDims)] = Math.max(ent.p,minimumMean);
 	}
 
 	@Override
@@ -48,8 +54,11 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 				throw new BNException("Invalidly sized switching poisson statistic!");
 			for(int i = 0; i < stat.weight_sums.length; i++)
 			{
+				if(stat.weight_sums[i]==0)
+					continue;
 				double newmean = stat.weighted_sums[i]/stat.weight_sums[i];
-				maxdiff = Math.max(maxdiff,newmean-this.means[i]);
+				newmean = Math.max(newmean,minimumMean);
+				maxdiff = Math.max(maxdiff,Math.abs(newmean-this.means[i]));
 				this.means[i] = newmean;
 			}
 			return maxdiff;

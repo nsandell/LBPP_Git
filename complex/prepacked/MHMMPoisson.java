@@ -15,10 +15,13 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
+import util.MathUtil;
+
 
 import bn.BNException;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
+import bn.distributions.Distribution;
 import bn.distributions.SwitchingPoisson;
 import bn.dynamic.IDBNNode;
 import bn.dynamic.IDynamicBayesNet;
@@ -139,7 +142,11 @@ public class MHMMPoisson
 				
 				double[] means = new double[N];
 				for(int i = 0; i < N; i++)
+				{
+					if(times[i]==0)
+						continue;
 					means[i] = sums[i]/times[i];
+				}
 
 				this.node.setAdvanceDistribution(new SwitchingPoisson(means));
 			} catch(BNException e) {
@@ -157,6 +164,28 @@ public class MHMMPoisson
 
 		@Override
 		public void samplePosterior() {}
+
+		@Override
+		public void backupParameters() throws CMException{
+			try {
+				this.backupDist = this.node.getAdvanceDistribution().copy();
+			} catch(BNException e) {
+				throw new CMException("Failed to backup distribution for node " + this.getName() + " : " + e.toString());
+			}
+		}
+
+		@Override
+		public void restoreParameters() throws CMException {
+			if(this.backupDist!=null)
+			{
+				try {
+					this.node.setAdvanceDistribution(this.backupDist);
+				} catch(BNException e) {
+					throw new CMException("Failed to backup distribution for node " + this.getName() + " : " + e.toString());
+				}
+			}
+		}
+		Distribution backupDist = null;
 		
 	}
 
@@ -181,10 +210,18 @@ public class MHMMPoisson
 		
 		opt = new Option("emconvergence","Convergence threshold for expectation maximization.");
 		opt.setArgs(1);opt.setArgName("threshold");
+		options.addOption(opt);	
+		
+		opt = new Option("i","maxiterations",true,"Maximum number of times to run through the observables to change assignments.");
+		opt.setArgs(1);opt.setArgName("#Iterations");
 		options.addOption(opt);
 		
 		opt = new Option("output","o",true,"Model output file");
 		opt.setArgs(1);opt.setArgName("file");
+		options.addOption(opt);
+		
+		opt = new Option("modelTraceFilebase","m",true,"Base file name if we wish to have a model printed to file every iteration.");
+		opt.setArgs(1);opt.setArgName("base file name");
 		options.addOption(opt);
 		
 		HelpFormatter formatter = new HelpFormatter();
@@ -226,15 +263,14 @@ public class MHMMPoisson
 		
 		IDynamicBayesNet network = DynamicNetworkFactory.newDynamicBayesNet(o[0].length);
 		Vector<MHMMChild> children = new Vector<MHMMChild>();
-		int T = o[0].length;
 		for(int i = 0; i < o.length; i++)
 		{
-			int cardinality = 1;
-			for(int j = 0; j < T; j++)
-				cardinality = Math.max(cardinality, o[i][j]+1);
 			IInfDiscEvDBNNode nd = network.addDiscreteEvidenceNode("Y"+i, o[i]);
 			children.add(new MHMM_PoissChild(nd));
-			nd.setAdvanceDistribution(new SwitchingPoisson(new double[]{1.0,2.0}));
+			double[] means = new double[Ns];
+			for(int j = 0; j < Ns; j++)
+				means[j] = MathUtil.rand.nextDouble()*30.0;
+			nd.setAdvanceDistribution(new SwitchingPoisson(means));
 		}
 
 		MHMMController cont = new MHMMController(network, children, new Priors(Ns), Ns);
@@ -249,6 +285,9 @@ public class MHMMPoisson
 			cno = "emconvergence";
 			if(line.hasOption("emconvergence"))
 				opts.learnConv = Double.parseDouble(line.getOptionValue("emconvergence"));
+			cno = "maxiterations";
+			if(line.hasOption("maxiterations"))
+				opts.maxAssignmentIterations = Integer.parseInt(line.getOptionValue("maxiterations"));
 		} catch(NumberFormatException nfe) {
 			System.err.println("Invalid option "+cno+"="+line.getOptionValue(cno));
 		}
@@ -256,6 +295,9 @@ public class MHMMPoisson
 		if(line.hasOption("verbose"))
 			cont.setTrace(System.out);
 		cont.setLogger(System.out);
+		
+		if(line.hasOption("modelTraceFilebase"))
+			opts.modelBaseName = line.getOptionValue("modelTraceFilebase");
 
 		PrintStream outfile = null;
 		try {

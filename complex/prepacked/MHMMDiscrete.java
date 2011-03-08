@@ -19,6 +19,7 @@ import org.apache.commons.cli.ParseException;
 import bn.BNException;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
+import bn.distributions.Distribution;
 import bn.dynamic.IDBNNode;
 import bn.dynamic.IDynamicBayesNet;
 import bn.dynamic.IFDiscDBNNode;
@@ -114,6 +115,7 @@ public class MHMMDiscrete
 			names.add(node.getName());
 			return names;
 		}
+		
 
 		@Override
 		public IDBNNode hook() {
@@ -155,7 +157,28 @@ public class MHMMDiscrete
 
 		@Override
 		public void samplePosterior() {}
-		
+
+		@Override
+		public void backupParameters() throws CMException {
+			try {
+				this.backupDist = this.node.getAdvanceDistribution().copy();
+			} catch(BNException e) {
+				throw new CMException("Failed to backup parameters for node " + this.getName() + ": " + e.getMessage());
+			}
+		}
+
+		@Override
+		public void restoreParameters() throws CMException {
+			if(backupDist!=null)
+			{
+				try {
+					this.node.setAdvanceDistribution(backupDist);
+				} catch(BNException e) {
+				throw new CMException("Failed to restore parameters for node " + this.getName() + ": " + e.getMessage());
+			}
+			}
+		}
+		Distribution backupDist = null;
 	}
 
 	public static void main(String[] args) throws BNException, CMException
@@ -188,6 +211,10 @@ public class MHMMDiscrete
 		
 		opt = new Option("output","o",true,"Model output file");
 		opt.setArgs(1);opt.setArgName("file");
+		options.addOption(opt);
+		
+		opt = new Option("modelTraceFilebase","m",true,"Base file name if we wish to have a model printed to file every iteration.");
+		opt.setArgs(1);opt.setArgName("base file name");
 		options.addOption(opt);
 		
 		HelpFormatter formatter = new HelpFormatter();
@@ -259,6 +286,9 @@ public class MHMMDiscrete
 		} catch(NumberFormatException nfe) {
 			System.err.println("Invalid option "+cno+"="+line.getOptionValue(cno));
 		}
+		
+		if(line.hasOption("modelTraceFilebase"))
+			opts.modelBaseName = line.getOptionValue("modelTraceFilebase");
 		
 		if(line.hasOption("verbose"))
 			cont.setTrace(System.out);

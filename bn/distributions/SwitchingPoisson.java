@@ -2,6 +2,8 @@ package bn.distributions;
 
 import java.io.PrintStream;
 
+import util.MathUtil;
+
 import cern.jet.random.Poisson;
 import cern.jet.random.engine.DRand;
 
@@ -108,7 +110,7 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 
 	@Override
 	public int sample(ValueSet<Integer> parentVals) throws BNException {
-		poiss.setMean(this.means[getIndex(parentVals, parentDims)]);
+		Poisson poiss = new Poisson(this.means[getIndex(parentVals, parentDims)],new DRand(MathUtil.rand.nextInt()));
 		return poiss.nextInt();
 	}
 
@@ -124,7 +126,7 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 
 	@Override
 	public double evaluate(int[] indices, int value) throws BNException {
-		poiss.setMean(this.means[getIndex(indices, parentDims)]);
+		Poisson poiss = new Poisson(this.means[getIndex(indices, parentDims)], new DRand());
 		return poiss.pdf(value);
 	}
 
@@ -182,6 +184,7 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 			if(incPis.size()!=this.dist.parentDims.length)
 				throw new BNException("Attempted to update switching poisson statistic with invalid pi vector set.");
 			int[] indices = initialIndices(this.dist.parentDims.length);
+			Poisson poiss = new Poisson(0.0, new DRand());
 			
 			double weights[] = new double[this.dist.means.length];
 			double weightsums = 0;
@@ -193,8 +196,8 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 				double weight = 1;
 				for(int i = 0; i < indices.length; i++)
 					weight *= incPis.get(i).getValue(indices[i]);
-				SwitchingPoisson.poiss.setMean(this.dist.means[index]);
-				weight *= SwitchingPoisson.poiss.pdf(value);
+				poiss.setMean(this.dist.means[index]);
+				weight *= poiss.pdf(value);
 				weights[index] = weight;
 				weightsums += weight;
 				index++;
@@ -217,6 +220,7 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 			MessageSet<FiniteDiscreteMessage> incoming_pis, int obsvalue)
 			throws BNException {
 		int[] indices = initialIndices(this.parentDims.length);
+		Poisson poiss = new Poisson(0.0, new DRand());
 		int absindex = 0;
 		do
 		{
@@ -251,6 +255,7 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 			MessageSet<FiniteDiscreteMessage> incoming_pis, int obsvalue)
 			throws BNException {
 		int[] indices = initialIndices(this.parentDims.length);
+		Poisson poiss = new Poisson(0.0, new DRand());
 		int absindex = 0;
 		do
 		{
@@ -273,6 +278,7 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 	public double computeBethePotential(
 			MessageSet<FiniteDiscreteMessage> incoming_pis, int value) {
 		//H2 is always zero - no children, always observed.
+		Poisson poiss = new Poisson(0.0, new DRand());
 		int indices[] = initialIndices(this.parentDims.length);
 		double pu[] = new double[this.means.length];
 		double E = 0, H1 = 0;
@@ -303,7 +309,6 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 		return E+H1;
 	}
 
-	private static Poisson poiss = new Poisson(1.0, new DRand());
 	private double[] means;
 	private int[] parentDims;
 

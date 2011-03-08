@@ -22,6 +22,8 @@ public class FixedMixture
 		public int maxRunIterations = 10, maxLearnIterations = 10;
 		public double runConv = 1e-8, learnConv = 1e-6;
 		
+		public String modelBaseName = null;
+		
 		public MixtureModelController controller;
 		public boolean optimizeParameters = true;		// Optimize parameters at each timestep
 		public int N;									// Number of latent processes
@@ -90,73 +92,51 @@ public class FixedMixture
 		int iteration = 1;
 		while(changed && iteration <= opts.maxAssignmentIterations)
 		{
+		
+			if(opts.modelBaseName!=null)
+				opts.controller.printNetwork(opts.modelBaseName+iteration+".lbp");
+			
 			changed = false;
 			
-			for(int i = 0; i < M; i++)
+			for(IChildProcess cchild : childProcs)
 			{
-				IChildProcess currentC = childProcs.get(i);
-				IParentProcess currentP = opts.controller.getParent(currentC);
-				int ci = -1;
-				double maxnewll = Double.NEGATIVE_INFINITY;
-				int maxnewlli = -1;
-				for(int j = 0; j < N; j++)
+				IParentProcess originalParent = opts.controller.getParent(cchild);
+				IParentProcess bestParent = originalParent;
+				cchild.backupParameters();
+				double bestLL = ll;
+				
+				for(IParentProcess parent : latentProcs)
 				{
-					IParentProcess newP = latentProcs.get(j);
-					if(newP==currentP)
+					if(parent==originalParent)
+						continue;
+					opts.controller.setParent(cchild, parent);
+					opts.controller.optimizeChildParameters(cchild);
+					double tmp = opts.controller.run(opts.maxRunIterations, opts.runConv);
+					if(tmp > bestLL)
 					{
-						ci = j;
-						if(ll > maxnewll)
-						{
-							maxnewll = ll;
-							maxnewlli = j;
-						}
-					}
-					else
-					{
-						opts.controller.setParent(childProcs.get(i), newP);
-						double tmp;
-						if(opts.controller.getChildren(newP).size()==1)
-						{
-							opts.controller.optimizeChildParameters(currentC);
-							tmp = opts.controller.learn(opts.maxLearnIterations, opts.learnConv, opts.maxRunIterations, opts.runConv);
-						}
-						else
-						{
-							opts.controller.optimizeChildParameters(currentC);
-							//tmp = opts.controller.runChain(newP, opts.maxRunIterations, opts.runConv);
-							tmp = opts.controller.run(opts.maxRunIterations, opts.runConv);
-						}
-						if(tmp==0)
-						{
-
-							opts.controller.log("\nProblems doing " + newP.getName() + "->" + currentC.getName() + ".. Current Assignments: ");
-							for(IParentProcess parent : opts.controller.getAllParents())
-							{
-								for(IChildProcess child : opts.controller.getChildren(parent))
-									opts.controller.log(parent.getName() + " -> " + child.getName());
-							}
-
-							opts.controller.printNetwork(true);
-							return;
-						}
-						if(tmp > maxnewll)
-						{
-							maxnewll = tmp;
-							maxnewlli = j;
-						}
+						bestParent = parent;
+						bestLL = tmp;
 					}
 				}
-				opts.controller.setParent(currentC, latentProcs.get(maxnewlli));
-				if(maxnewlli!=ci)
+				opts.controller.setParent(cchild, bestParent);
+				if(bestParent==originalParent)
+					cchild.restoreParameters();
+				else
+					opts.controller.optimizeChildParameters(cchild);
+				
+				ll = opts.controller.run(opts.maxRunIterations, opts.runConv);
+				if(bestParent!=originalParent)
+					ll = opts.controller.learn(opts.maxLearnIterations, opts.learnConv, opts.maxRunIterations, opts.runConv);
+
+				if(bestParent!=originalParent)
 				{
-					opts.controller.trace(latentProcs.get(maxnewlli).getName() + " -> " + currentC.getName());
+					opts.controller.trace(bestParent.getName() + " -> " + cchild.getName());
 					changed = true;
 				}
 				else
-					opts.controller.trace(currentC.getName() + " (" + opts.controller.getParent(currentC).getName() + ", NO CHANGE )");
-				opts.controller.optimizeChildParameters(currentC);
-				ll = opts.controller.learn(opts.maxLearnIterations, opts.learnConv, opts.maxRunIterations, opts.runConv);
+					opts.controller.trace(cchild.getName() + " (" + originalParent.getName() + ", NO CHANGE )");
 			}
+
 			ll = opts.controller.learn(opts.maxLearnIterations, opts.learnConv, opts.maxRunIterations, opts.runConv);
 			opts.controller.trace("Iteration " + iteration + " completed with log likelihood : " + ll);
 			iteration++;

@@ -101,7 +101,7 @@ public class DiscreteCPTUC extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value) throws BNException
+	public void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis) throws BNException
 	{
 		for(int i = 0; i < this.getCardinality(); i++)
 			local_pi.setValue(i, dist[i]);

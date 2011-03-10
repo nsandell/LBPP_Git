@@ -39,8 +39,8 @@ public abstract class DiscreteDistribution implements Distribution {
 		 * @param value Value of the node
 		 * @throws BNException 
 		 */
-		public abstract void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis, 
-				Integer value) throws BNException;
+		public abstract void computeLocalPi(FiniteDiscreteMessage local_pi, 
+				MessageSet<FiniteDiscreteMessage> incoming_pis) throws BNException;
 
 		/**
 		 * Compute outgoing lambda messages for a node with this as its CPD given the incoming pi messages, and

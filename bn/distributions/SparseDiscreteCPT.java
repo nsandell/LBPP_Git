@@ -82,7 +82,7 @@ public class SparseDiscreteCPT extends DiscreteFiniteDistribution
 	 * Wrap a set of indices for hashing and comparison, for use in our tables.
 	 * @author Nils F. Sandell
 	 */
-	private static class IndexWrapper
+	static class IndexWrapper
 	{
 		public IndexWrapper(int[] indices)
 		{
@@ -118,8 +118,8 @@ public class SparseDiscreteCPT extends DiscreteFiniteDistribution
 			return true;
 		}
 
-		private Integer hashCodeV = null;
-		private int[] indices;
+		Integer hashCodeV = null;
+		int[] indices;
 	}
 
 	/**
@@ -303,7 +303,7 @@ public class SparseDiscreteCPT extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value) throws BNException
+	public void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis) throws BNException
 	{
 		for(IndexWrapper indexset : this.entries.keySet())
 		{

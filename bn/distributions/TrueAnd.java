@@ -70,7 +70,7 @@ public class TrueAnd extends DiscreteFiniteDistribution {
 
 	@Override
 	public void computeLocalPi(FiniteDiscreteMessage local_pi,
-			MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value)
+			MessageSet<FiniteDiscreteMessage> incoming_pis)
 			throws BNException {
 		
 		//TODO Implement!

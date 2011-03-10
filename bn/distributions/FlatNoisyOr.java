@@ -95,7 +95,7 @@ public class FlatNoisyOr extends DiscreteFiniteDistribution {
 
 	@Override
 	public void computeLocalPi(FiniteDiscreteMessage local_pi,
-			MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value)
+			MessageSet<FiniteDiscreteMessage> incoming_pis)
 			throws BNException {
 		double pAllP0 = 1;
 		for(FiniteDiscreteMessage incPi : incoming_pis)

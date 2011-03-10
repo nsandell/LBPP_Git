@@ -20,7 +20,7 @@ public class FiniteDiscreteNode implements Serializable
 		else
 			FiniteDiscreteNode.updateLocalLambda(localLambda, value);
 
-		FiniteDiscreteNode.updateLocalPi(cpt, localPi, incPis, value);
+		FiniteDiscreteNode.updateLocalPi(cpt, localPi, incPis);
 		FiniteDiscreteNode.updateLambdas(cpt, outLambdas, incPis, localLambda, value);
 		FiniteDiscreteNode.updatePis(incLambdas, outPis, localPi, cardinality, value);
 
@@ -53,11 +53,11 @@ public class FiniteDiscreteNode implements Serializable
 		local_lambda.setDelta(observation, 1.0);
 	}
 
-	public static void updateLocalPi(DiscreteFiniteDistribution cpt, FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incomingPiMessages, Integer value) throws BNException
+	public static void updateLocalPi(DiscreteFiniteDistribution cpt, FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incomingPiMessages) throws BNException
 	{
 		for(int i = 0; i < local_pi.getCardinality(); i++)
 			local_pi.setValue(i, 0);
-		cpt.computeLocalPi(local_pi, incomingPiMessages, value);	
+		cpt.computeLocalPi(local_pi, incomingPiMessages);	
 	}
 	
 	public static void updateLambdas(DiscreteFiniteDistribution cpt, MessageSet<FiniteDiscreteMessage> outgoingLambdas, MessageSet<FiniteDiscreteMessage> incomingPis , FiniteDiscreteMessage localLambda, Integer value) throws BNException

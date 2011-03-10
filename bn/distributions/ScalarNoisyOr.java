@@ -77,7 +77,7 @@ public class ScalarNoisyOr extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value) throws BNException
+	public void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis) throws BNException
 	{
 		double localProduct = 1;
 		for(int i = 0; i < incoming_pis.size(); i++)

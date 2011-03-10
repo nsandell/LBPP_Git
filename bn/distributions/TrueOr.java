@@ -68,7 +68,7 @@ public class TrueOr extends DiscreteFiniteDistribution {
 	}
 
 	static void computeLocalPiS(FiniteDiscreteMessage local_pi,
-			MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value)
+			MessageSet<FiniteDiscreteMessage> incoming_pis)
 			throws BNException {
 		if(incoming_pis.size()==0)
 			local_pi.setDelta(0, 1.0);
@@ -82,9 +82,9 @@ public class TrueOr extends DiscreteFiniteDistribution {
 	
 	@Override
 	public void computeLocalPi(FiniteDiscreteMessage local_pi,
-			MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value)
+			MessageSet<FiniteDiscreteMessage> incoming_pis)
 			throws BNException {
-		computeLocalPiS(local_pi, incoming_pis, value);
+		computeLocalPiS(local_pi, incoming_pis);
 	}
 	
 	static void computeLambdasS(MessageSet<FiniteDiscreteMessage> lambdas_out,

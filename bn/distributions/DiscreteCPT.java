@@ -164,7 +164,7 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 	public int[] getConditionDimensions(){return this.dimSizes;}
 	
 	@Override
-	public void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis, Integer value) throws BNException
+	public void computeLocalPi(FiniteDiscreteMessage local_pi, MessageSet<FiniteDiscreteMessage> incoming_pis) throws BNException
 	{
 		int[] indices = initialIndices(dimSizes.length);
 		int compositeindex = 0;

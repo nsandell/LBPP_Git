@@ -384,32 +384,7 @@ public class ScalarNoisyOr extends DiscreteFiniteDistribution
 			}
 		}
 	}
-	
-	@Override
-	public void computeLambda(MessageSet<FiniteDiscreteMessage> lambdas_out, int updateIdx, MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda, Integer value) throws BNException
-	{
-		double localProd = 1;
-		for(int i = 0; i < lambdas_out.size(); i++)
-		{
-			if(i==updateIdx)
-				continue;
-			double tmp = (1-this.c*incoming_pis.get(i).getValue(1)/(incoming_pis.get(i).getValue(0)+incoming_pis.get(i).getValue(1)));
-			localProd *= tmp;
-		}
-		double ll1 = local_lambda.getValue(1);
-		localProd *= (ll1-local_lambda.getValue(0));
-		
-		if(localProd==0)
-		{
-			lambdas_out.get(updateIdx).setValue(0,ll1);
-			lambdas_out.get(updateIdx).setValue(1,ll1);
-		}
-		else
-		{
-			lambdas_out.get(updateIdx).setValue(0, ll1 - localProd);
-			lambdas_out.get(updateIdx).setValue(1, ll1 - this.q*localProd);
-		}
-	}
+
 	
 	private static final void computeLR(double[] c, double[] R, double[] L)
 	{

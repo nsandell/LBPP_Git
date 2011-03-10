@@ -238,40 +238,6 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 	}
 	
 	@Override
-	public void computeLambda(MessageSet<FiniteDiscreteMessage> lambdas_out, int updateIdx, MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda, Integer obsvalue) throws BNException
-	{
-		if(updateIdx >= lambdas_out.size()) 
-			throw new BNException("Attempted to update lambda message that does not exist!");
-		int[] indices = initialIndices(dimSizes.length);
-
-		do
-		{
-			double pi_product = 1;
-			for(int i = 0; i < indices.length; i++)
-			{
-				if(i==updateIdx)
-					continue;
-				pi_product *= incoming_pis.get(i).getValue(indices[i]);
-			}
-
-			if(obsvalue==null)
-			{
-				for(int i = 0; i < this.getCardinality(); i++)
-				{
-					double p = this.evaluate(indices, i);
-					lambdas_out.get(updateIdx).setValue(indices[updateIdx], lambdas_out.get(updateIdx).getValue(indices[updateIdx]) + p*pi_product*local_lambda.getValue(i));
-				}
-			}
-			else
-			{
-				double p = this.evaluate(indices, obsvalue);
-				lambdas_out.get(updateIdx).setValue(indices[updateIdx], lambdas_out.get(updateIdx).getValue(indices[updateIdx]) + p*pi_product*local_lambda.getValue(obsvalue));
-			}
-		}
-		while((indices = DiscreteDistribution.incrementIndices(indices, this.dimSizes))!=null);
-	}
-	
-	@Override
 	public CPTSufficient2SliceStat getSufficientStatisticObj()
 	{
 		return new CPTSufficient2SliceStat(this);

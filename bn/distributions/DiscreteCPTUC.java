@@ -236,9 +236,6 @@ public class DiscreteCPTUC extends DiscreteFiniteDistribution
 	public void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out, MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda, Integer value) throws BNException{}
 
 	@Override
-	public void computeLambda(MessageSet<FiniteDiscreteMessage> lambdas_out, int updateIndex, MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda, Integer value) throws BNException{}
-	
-	@Override
 	public String getDefinition() {
 		String ret = "PV("+this.getCardinality()+")\n"+dist[0]+" ";
 		for(int i = 1; i < dist.length; i++)

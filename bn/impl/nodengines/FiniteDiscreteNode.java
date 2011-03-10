@@ -69,13 +69,6 @@ public class FiniteDiscreteNode implements Serializable
 			lambda.normalize();
 	}
 	
-	public static void updateOutgoingLambda(DiscreteFiniteDistribution cpt, MessageSet<FiniteDiscreteMessage> outgoingLambdas, int index, MessageSet<FiniteDiscreteMessage> incomingPis , FiniteDiscreteMessage localLambda, Integer value) throws BNException
-	{
-		outgoingLambdas.get(index).empty();
-		cpt.computeLambda(outgoingLambdas, index, incomingPis, localLambda, value);
-		outgoingLambdas.get(index).normalize();
-	}
-	
 	public static void updateOutgoingPi(MessageSet<FiniteDiscreteMessage> incomingLambdaMessages, MessageSet<FiniteDiscreteMessage> outgoingPiMessages, int updateIndex, FiniteDiscreteMessage localPi,int cardinality, Integer observation) throws BNException
 	{
 		if(observation!=null)

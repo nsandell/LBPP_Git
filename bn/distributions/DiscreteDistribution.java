@@ -54,9 +54,6 @@ public abstract class DiscreteDistribution implements Distribution {
 		public abstract void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out, MessageSet<FiniteDiscreteMessage> incoming_pis,
 				FiniteDiscreteMessage local_lambda, Integer value) throws BNException;
 		
-		public abstract void computeLambda(MessageSet<FiniteDiscreteMessage> lambdas_out, int updateIdx, MessageSet<FiniteDiscreteMessage> incoming_pis,
-				FiniteDiscreteMessage local_lambda, Integer value) throws BNException;
-
 		public abstract double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis,
 				FiniteDiscreteMessage local_lambda, FiniteDiscreteMessage marginal, Integer value, int numChildren) throws BNException;
 		

@@ -151,41 +151,6 @@ public class FlatNoisyOr extends DiscreteFiniteDistribution {
 		}
 	}
 	
-	@Override
-	public void computeLambda(MessageSet<FiniteDiscreteMessage> lambdas_out, int updateIndex,
-			MessageSet<FiniteDiscreteMessage> incoming_pis, FiniteDiscreteMessage local_lambda,
-			Integer value) throws BNException {
-		
-		double pAll0 = 1;
-		double[] pieces = new double[incoming_pis.size()];
-		for(int i = 0; i < incoming_pis.size(); i++)
-		{
-			if(i==updateIndex)
-				continue;
-			pieces[i] =  incoming_pis.get(i).getValue(0)/(incoming_pis.get(i).getValue(0)+incoming_pis.get(i).getValue(1));
-			if(pieces[i] > 0)
-				pAll0 *= pieces[i];
-			else
-			{
-				pAll0 = 0;
-				break;
-			}
-		}
-		double ll0 = local_lambda.getValue(0)/(local_lambda.getValue(0)+local_lambda.getValue(1));
-		double ll1 = 1-ll0;
-		double lo1 = ll0*(1-c)+ll1*c;
-	
-		if(pAll0==0)
-		{
-			lambdas_out.get(updateIndex).setValue(0, .5);
-			lambdas_out.get(updateIndex).setValue(1, .5);
-		}
-		else
-		{
-			lambdas_out.get(updateIndex).setValue(0, ll0*(pAll0+(1-c)*(1-pAll0)) + ll1*c*(1-pAll0));
-			lambdas_out.get(updateIndex).setValue(1, lo1);
-		}
-	}
 
 	@Override
 	public double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis,

@@ -48,7 +48,7 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode {
 		for(int i = 0; i < l; i++)
 		{
 			ret.lambda_v.add(FiniteDiscreteMessage.normalMessage(this.cardinality));
-			ret.pi_v.add(FiniteDiscreteMessage.normalMessage(this.cardinality));
+			ret.pi_v.add(this.marginal.get(i).copy()); //TODO Consider this change after some FHMM runs
 		}
 		return ret;
 	}

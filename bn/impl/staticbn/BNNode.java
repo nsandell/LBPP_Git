@@ -8,6 +8,7 @@ import java.util.Vector;
 
 import bn.BNException;
 import bn.IBayesNode;
+import bn.distributions.Distribution.SufficientStatistic;
 import bn.impl.InternalIBayesNode;
 import bn.impl.staticbn.StaticContextManagers.StaticMessageIndex;
 import bn.messages.Message.MessageInterface;
@@ -123,6 +124,38 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
 		return this.children.keySet();
 	}
 	
+	
+	@Override
+	public final double optimizeParameters(SufficientStatistic stat) throws BNException
+	{
+		if(this.parametersLocked)
+			return 0.0;
+		else
+			return this.optimizeParametersI(stat);
+	}
+    @Override
+	public final double optimizeParameters() throws BNException
+	{
+    	if(this.parametersLocked)
+    		return 0.0;
+    	else
+    		return this.optimizeParametersI();
+	}
+    
+    public void lockParameters()
+    {
+    	this.parametersLocked = true;
+    }
+    public void unlockParameters()
+    {
+    	this.parametersLocked = false;
+    }
+    
+	protected abstract double optimizeParametersI(SufficientStatistic stat) throws BNException;
+	protected abstract double optimizeParametersI() throws BNException;
+    
+    protected boolean parametersLocked = false;
+    
 	@Override
     public String getEdgeDefinition()
     {

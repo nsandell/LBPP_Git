@@ -4,7 +4,6 @@ import java.io.PrintStream;
 
 
 import bn.BNException;
-import bn.Optimizable;
 import bn.distributions.Distribution;
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.distributions.DiscreteDistribution.DiscreteSufficientStatistic;
@@ -17,7 +16,7 @@ import bn.messages.FiniteDiscreteMessage.FDiscMessageInterface;
 import bn.messages.Message.MessageInterface;
 import bn.statc.IFDiscBNNode;
 
-class FDiscBNNode extends BNNode implements IFDiscBNNode, Optimizable
+class FDiscBNNode extends BNNode implements IFDiscBNNode
 {
 	public FDiscBNNode(StaticBayesianNetwork bn, String name, int cardinality)
 	{
@@ -136,11 +135,7 @@ class FDiscBNNode extends BNNode implements IFDiscBNNode, Optimizable
 	{
 		stat.update(this.getSufficientStatistic());
 	}
-	public double optimizeParameters(SufficientStatistic stat) throws BNException
-	{
-		return this.cpt.optimize(stat);
-	}
-	public double optimizeParameters(DiscreteSufficientStatistic stat) throws BNException
+	protected double optimizeParametersI(SufficientStatistic stat) throws BNException
 	{
 		return this.cpt.optimize(stat);
 	}
@@ -153,7 +148,7 @@ class FDiscBNNode extends BNNode implements IFDiscBNNode, Optimizable
 	}
 	
     @Override
-	public double optimizeParameters() throws BNException
+	protected double optimizeParametersI() throws BNException
 	{
 		return this.optimizeParameters(this.getSufficientStatistic());
 	}

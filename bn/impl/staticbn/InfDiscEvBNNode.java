@@ -3,7 +3,6 @@ package bn.impl.staticbn;
 import java.io.PrintStream;
 
 import bn.BNException;
-import bn.Optimizable;
 import bn.distributions.DiscreteDistribution.InfiniteDiscreteDistribution;
 import bn.distributions.Distribution;
 import bn.distributions.Distribution.SufficientStatistic;
@@ -14,7 +13,7 @@ import bn.messages.FiniteDiscreteMessage.FDiscMessageInterface;
 import bn.messages.Message.MessageInterface;
 import bn.statc.IInfDiscEvBNNode;
 
-public class InfDiscEvBNNode extends BNNode implements IInfDiscEvBNNode, Optimizable
+public class InfDiscEvBNNode extends BNNode implements IInfDiscEvBNNode
 {
 	public InfDiscEvBNNode(StaticBayesianNetwork net, String name, int value)
 	{
@@ -82,13 +81,13 @@ public class InfDiscEvBNNode extends BNNode implements IInfDiscEvBNNode, Optimiz
 	}
 
 	@Override
-	public double optimizeParameters(SufficientStatistic stat)
+	protected double optimizeParametersI(SufficientStatistic stat)
 			throws BNException {
 		return dist.optimize(stat);
 	}
 
 	@Override
-	public double optimizeParameters() throws BNException {
+	protected double optimizeParametersI() throws BNException {
 		return dist.optimize(dist.getSufficientStatisticObj());
 	}
 

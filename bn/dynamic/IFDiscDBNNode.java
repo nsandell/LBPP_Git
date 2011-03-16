@@ -30,6 +30,9 @@ public interface IFDiscDBNNode extends IDBNNode {
 	 */
 	public void setAdvanceDistribution(DiscreteFiniteDistribution dist) throws BNException;
 	
+	public DiscreteFiniteDistribution getInitialDistribution();
+	public DiscreteFiniteDistribution getAdvanceDistribution();
+	
 	/**
 	 * Get the marginal for this node at time slice 't'.  Initially set to uniform, this
 	 * marginal only reflects the state of the node after the last round of belief propagation.

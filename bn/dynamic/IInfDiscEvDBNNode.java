@@ -22,6 +22,9 @@ public interface IInfDiscEvDBNNode extends IDBNNode {
 	void setAdvanceDistribution(InfiniteDiscreteDistribution dist) throws BNException;
 	void setInitialDistribution(InfiniteDiscreteDistribution dist) throws BNException;
 	
+	InfiniteDiscreteDistribution getAdvanceDistribution();
+	InfiniteDiscreteDistribution getInitialDistribution();
+	
 	/**
 	 * Set an observed value for this node.
 	 * @param o The value desired.

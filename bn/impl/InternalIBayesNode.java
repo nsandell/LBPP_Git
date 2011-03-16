@@ -2,6 +2,7 @@ package bn.impl;
 
 import java.io.PrintStream;
 import bn.BNException;
+import bn.distributions.Distribution.SufficientStatistic;
 
 //TODO figure out encapsulation
 public interface InternalIBayesNode
@@ -31,6 +32,10 @@ public interface InternalIBayesNode
 	public Iterable<? extends InternalIBayesNode> getParentsI();
 	
 	public double betheFreeEnergy() throws BNException;
+	
+	public SufficientStatistic getSufficientStatistic() throws BNException;
+	public double optimizeParameters(SufficientStatistic stat) throws BNException;
+	public double optimizeParameters() throws BNException;
 	
 	public String getNodeDefinition();
 	public String getEdgeDefinition();

@@ -18,12 +18,20 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 	
 	public static double minimumMean = 1e-8;
 	
+	private void initLocks()
+	{
+		this.locks = new boolean[this.means.length];
+		for(int i = 0; i < this.locks.length; i++)
+			this.locks[i] = false;
+	}
+	
 	public SwitchingPoisson(double[] means, int[] dimensions)
 	{
 		this.means = means;
 		for(int i = 0; i < means.length; i++)
 			this.means[i] = Math.max(this.means[i],minimumMean);
 		this.parentDims = dimensions;
+		this.initLocks();
 	}
 	
 	public SwitchingPoisson(double[] means)
@@ -33,6 +41,7 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 			this.means[i] = Math.max(this.means[i],minimumMean);
 		this.parentDims = new int[1];
 		this.parentDims[0] = means.length;
+		this.initLocks();
 	}
 	
 	public SwitchingPoisson(int[] dimensions, Iterable<Entry> means) throws BNException
@@ -44,6 +53,7 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 		this.means = new double[dimprod];
 		for(Entry ent : means)
 			this.means[getIndex(ent.conditional_indices, parentDims)] = Math.max(ent.p,minimumMean);
+		this.initLocks();
 	}
 
 	@Override
@@ -56,7 +66,7 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 				throw new BNException("Invalidly sized switching poisson statistic!");
 			for(int i = 0; i < stat.weight_sums.length; i++)
 			{
-				if(stat.weight_sums[i]==0)
+				if(stat.weight_sums[i]==0 || this.locks[i])
 					continue;
 				double newmean = stat.weighted_sums[i]/stat.weight_sums[i];
 				newmean = Math.max(newmean,minimumMean);
@@ -120,10 +130,12 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 	}
 
 	@Override
-	public DiscreteDistribution copy() throws BNException {
-		return new SwitchingPoisson(this.means.clone(),this.parentDims.clone());
+	public SwitchingPoisson copy() throws BNException {
+		SwitchingPoisson cp = new SwitchingPoisson(this.means.clone(),this.parentDims.clone());
+		cp.locks = this.locks;
+		return cp;
 	}
-
+	
 	@Override
 	public double evaluate(int[] indices, int value) throws BNException {
 		Poisson poiss = new Poisson(this.means[getIndex(indices, parentDims)], new DRand());
@@ -250,28 +262,10 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 		while((indices = DiscreteDistribution.incrementIndices(indices, this.parentDims))!=null);
 	}
 	
-	@Override
-	public void computeLambda(MessageSet<FiniteDiscreteMessage> lambdas_out, int updateIdx,
-			MessageSet<FiniteDiscreteMessage> incoming_pis, int obsvalue)
-			throws BNException {
-		int[] indices = initialIndices(this.parentDims.length);
-		Poisson poiss = new Poisson(0.0, new DRand());
-		int absindex = 0;
-		do
-		{
-			double pi_product = 1;
-			for(int i = 0; i < indices.length; i++)
-			{
-				if(i==updateIdx)
-					continue;
-				pi_product *= incoming_pis.get(i).getValue(indices[i]);
-			}
-			poiss.setMean(this.means[absindex]);
-			double p = poiss.pdf(obsvalue);
-			lambdas_out.get(updateIdx).setValue(indices[updateIdx], lambdas_out.get(updateIdx).getValue(indices[updateIdx]) + p*pi_product);
-			absindex++;
-		}
-		while((indices = DiscreteDistribution.incrementIndices(indices, this.parentDims))!=null);
+	public void lockMean(int[] indices,boolean lockval) throws BNException
+	{
+		int index = getIndex(indices,this.parentDims);
+		locks[index] = lockval;
 	}
 
 	@Override
@@ -308,7 +302,8 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 		}
 		return E+H1;
 	}
-
+	
+	private boolean[] locks;
 	private double[] means;
 	private int[] parentDims;
 

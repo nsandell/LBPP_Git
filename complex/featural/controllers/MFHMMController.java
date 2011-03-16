@@ -30,6 +30,11 @@ public class MFHMMController extends FeaturalModelController<IFeaturalChild, FHM
 		this.ns = Ns;
 	}
 
+	public MFHMMController(IDynamicBayesNet network, Vector<IFeaturalChild> observations, MFHMMInitialParamGenerator paramgen, int Ns, boolean lockParameters) throws BNException
+	{
+		this(network,observations,paramgen,Ns);
+		this.lockXParameters = lockParameters;
+	}
 
 	@Override
 	protected void killLatentModelI(FHMMX node) throws CMException {
@@ -46,9 +51,9 @@ public class MFHMMController extends FeaturalModelController<IFeaturalChild, FHM
 			
 			int id = this.nextID();
 			FHMMX newNode = new FHMMX(this.network.addDiscreteNode("X"+id, this.ns),id);
-		
-			//TODO REMOVE THIS 
-			newNode.xnd.lockParameters();
+
+			if(this.lockXParameters)
+				newNode.xnd.lockParameters();
 			
 			this.network.addInterEdge(newNode.xnd, newNode.xnd);
 			newNode.xnd.setInitialDistribution(this.paramgen.getInitialPi());
@@ -94,6 +99,7 @@ public class MFHMMController extends FeaturalModelController<IFeaturalChild, FHM
 			this.minimum_available_id = id;
 	}
 	
+	private boolean lockXParameters = false;
 	private HashSet<Integer> usedIDs = new HashSet<Integer>();
 	private int minimum_available_id = 0;
 	private int ns;

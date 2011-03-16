@@ -126,7 +126,8 @@ public abstract class DiscreteDistribution implements Distribution {
 		int cinc = 1;
 		int index = 0;
 		//TODO TEST THIS FOR CHRISTSAKE
-		for(int i = indices.length-1; i >= 0; i--)
+		//for(int i = indices.length-1; i >= 0; i--)
+		for(int i = 0; i < indices.length; i++)
 		{
 			if(indices[i] >= dimSizes[i] || indices[i] < 0)
 				throw new BNException("Out of bounds indices set " + indexString(indices) + " size = " + indexString(dimSizes));
@@ -181,7 +182,8 @@ public abstract class DiscreteDistribution implements Distribution {
 	public final static int[] incrementIndices(int[] indices, int[] dimSizes)
 	{
 		//TODO TESTTESTTEST
-		for(int i = indices.length-1; i >= 0; i--)
+		//for(int i = indices.length-1; i >= 0; i--)
+		for(int i = 0; i < indices.length; i++)
 		{
 			if(indices[i]==(dimSizes[i]-1))
 				indices[i] = 0;

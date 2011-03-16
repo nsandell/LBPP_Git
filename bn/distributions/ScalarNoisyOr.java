@@ -106,7 +106,7 @@ public class ScalarNoisyOr extends DiscreteFiniteDistribution
 			double N = N0+stato.pns.get(i).px1;
 			this.q += N/normfac*Math.pow(N0/N, 1/((double)i));
 		}
-		this.c = Math.min(1-q,.99); //TODO evaluate this truncation..
+		this.c = Math.max(0, Math.min(1-q,.99)); //TODO evaluate this truncation..
 		this.q = 1-this.c;
 		double change = Math.abs(this.c-(1-q));
 		return change;

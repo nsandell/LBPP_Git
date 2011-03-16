@@ -200,6 +200,7 @@ public class DiscreteCPTUC extends DiscreteFiniteDistribution
 		public DiscreteSufficientStatistic update(Integer value,
 				MessageSet<FiniteDiscreteMessage> parent_pis) throws BNException {
 			this.expected_data[value]++;
+			this.expected_sum++;
 			return this;
 		}
 		

@@ -38,6 +38,12 @@ public class FiniteDiscreteMessage extends Message
 		this(0,0.0,cardinality);
 	}
 	
+	public FiniteDiscreteMessage(double[] values)
+	{
+		this.vp = null;
+		this.message_values = values.clone();
+	}
+	
 	public FiniteDiscreteMessage(int index, double value, int cardinality)
 	{
 		this.message_values = null;
@@ -102,8 +108,7 @@ public class FiniteDiscreteMessage extends Message
 	{
 		if(this.vp!=null)
 			return new FiniteDiscreteMessage(this.vp.index,this.vp.value,this.vp.cardinality);
-		FiniteDiscreteMessage newMsg = new FiniteDiscreteMessage(this.message_values.length);
-		newMsg.message_values = this.message_values.clone();
+		FiniteDiscreteMessage newMsg = new FiniteDiscreteMessage(this.message_values);
 		return newMsg;
 	}
 

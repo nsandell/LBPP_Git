@@ -292,6 +292,32 @@ public class FiniteDiscreteMessage extends Message
 			}
 		}
 	}
+	
+	@Override
+	public String toString()
+	{
+		String ret = "[";
+		if(vp==null)
+		{
+			ret += message_values[0];
+			for(int i = 1; i < message_values.length; i++)
+				ret += "," + message_values[i];
+		}
+		else
+		{
+			if(vp.index==0)
+				ret += vp.value;
+			for(int i = 1; i < vp.cardinality; i++)
+			{
+				if(i==vp.index)
+					ret += "," + vp.value;
+				else
+					ret += ",0";
+			}
+		}
+		ret += "]";
+		return ret;
+	}
 
 	// If message_values is null, this is a value node, and 'value' is the index of the value that is certain.
 	private double[] message_values;

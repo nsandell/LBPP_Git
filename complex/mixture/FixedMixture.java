@@ -21,6 +21,8 @@ public class FixedMixture
 		public int maxRunIterations = 10, maxLearnIterations = 10;
 		public double runConv = 1e-8, learnConv = 1e-6;
 		
+		public double totalConvergence = 1e-4;
+		
 		public String modelBaseName = null;
 		
 		public MixtureModelController<ChildProcess, ParentProcess> controller;
@@ -87,6 +89,8 @@ public class FixedMixture
 		int iteration = 1;
 		while(changed && iteration <= opts.maxAssignmentIterations)
 		{
+			
+			double llprev = ll;
 		
 			if(opts.modelBaseName!=null)
 				opts.controller.printNetwork(opts.modelBaseName+iteration+".lbp");
@@ -135,6 +139,8 @@ public class FixedMixture
 			ll = opts.controller.learn(opts.maxLearnIterations, opts.learnConv, opts.maxRunIterations, opts.runConv);
 			opts.controller.trace("Iteration " + iteration + " completed with log likelihood : " + ll);
 			iteration++;
+			if((ll-llprev)/Math.abs(llprev) < opts.totalConvergence)
+				break;
 		}
 		opts.controller.log("\nFinal Assigments: ");
 		for(ParentProcess parent : opts.controller.getAllParents())

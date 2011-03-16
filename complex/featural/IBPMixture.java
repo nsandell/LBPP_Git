@@ -111,7 +111,6 @@ public class IBPMixture {
 		this.workThr = Thread.currentThread();
 		Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
 		FeaturalModelController cont = opts.controller;
-		//int N = opts.initialAssignments.length;  	// The number of obsevation sequences
 		int M = opts.initialAssignments[0].length;	// The number of latent processes
 		
 		Vector<IChildProcess> obs = cont.getObservedNodes();
@@ -131,6 +130,8 @@ public class IBPMixture {
 		
 		cont.validate();
 		
+		if(opts.optimizeParameters)
+			cont.learn(opts.max_learn_it, opts.learn_conv, opts.max_run_it,opts.run_conv);
 		double ll = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont,opts);
 		double bestLL = ll;
 		cont.saveInfo(opts.savePath + "/initial_iteration",ll);
@@ -246,12 +247,24 @@ public class IBPMixture {
 		if(!cont.getChildren(latent).contains(observed))
 			throw new CMException("Attempted to disconnect a latent node from an observed that was not its child!");
 		cont.log("Attempting to disconnect observation " + observed.getName() + " from latent sequence " + latent.getName());
+		
+		if(opts.optimizeParameters)
+			observed.backupParameters();
+		
 		cont.disconnect(latent, observed);
+	
+		if(opts.optimizeParameters)
+			observed.optimize();
+		
 		double newLL = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont,opts);
 		if(accept(newLL,this.main_probs[1]+this.main_probs[0],ll,this.main_probs[1]+this.main_probs[0],cont))
 			ll = newLL;
 		else
+		{
+			if(opts.optimizeParameters)
+				observed.restoreParameters();
 			cont.connect(latent, observed);
+		}
 		
 		return ll;
 	}
@@ -261,12 +274,24 @@ public class IBPMixture {
 		if(cont.getChildren(latent).contains(opts))
 			throw new CMException("Attempted to connect parent " + latent.getName() + " to child " + observed.getName() + " when they already are connected.");
 		cont.log("Attempting to connect observation " + observed.getName() + " to latent sequence " + latent.getName());
+		
+		if(opts.optimizeParameters)
+			observed.backupParameters();
+		
 		cont.connect(latent, observed);
+	
+		if(opts.optimizeParameters)
+			observed.optimize();
+		
 		double newLL = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont,opts);
 		if(accept(newLL,this.main_probs[1]+this.main_probs[0],ll,this.main_probs[1]+this.main_probs[0],cont))
 			ll = newLL;
 		else
+		{
+			if(opts.optimizeParameters)
+				observed.restoreParameters();
 			cont.disconnect(latent, observed);
+		}
 		
 		return ll;
 	}

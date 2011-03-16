@@ -1,99 +1,79 @@
 package complex.prepacked;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
 import java.util.Collection;
-import java.util.Scanner;
+import java.util.HashMap;
 import java.util.Vector;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
-
 
 import bn.BNException;
 import bn.distributions.DiscreteCPT;
-import bn.distributions.DiscreteCPTUC;
 import bn.distributions.Distribution;
 import bn.dynamic.IDBNNode;
 import bn.dynamic.IDynamicBayesNet;
 import bn.dynamic.IFDiscDBNNode;
-import bn.impl.dynbn.DynamicNetworkFactory;
 import bn.messages.FiniteDiscreteMessage;
 
 import complex.CMException;
-import complex.mixture.FixedMixture;
-import complex.mixture.FixedMixture.FMModelOptions;
-import complex.mixture.controllers.MHMMController;
+import complex.featural.IParentProcess;
 import complex.mixture.controllers.MHMMController.MHMMChild;
-import complex.mixture.controllers.MHMMController.MHMMParameterPrior;
+import complex.prepacked.MHMM.MHMMChildFactory;
 
 public class MHMMDiscrete
 {
 	
-	private static class Priors implements MHMMParameterPrior
+	private static class BDCFactory implements MHMMChildFactory
 	{
-		
-		public Priors(int Ns) throws BNException
+
+		@Override
+		public MHMMChild getChild(IDynamicBayesNet net, int nameIndex, int ns, int[] observations)
 		{
-			double[] piv = new double[Ns]; piv[0] = 1.0;
-			double[][] Av = new double[Ns][Ns];
-			for(int i = 0; i < Ns; i++)
+			try {
+				int T = net.getT();
+				int cardinality = 1;
+				for(int j = 0; j < T; j++)
+					cardinality = Math.max(cardinality, observations[j]+1);
+				IFDiscDBNNode nd = net.addDiscreteNode("Y"+nameIndex, cardinality);
+				nd.setAdvanceDistribution(new DiscreteCPT(obsmat(ns, cardinality),cardinality));
+				nd.setValue(observations, 0);
+				return new BasicDiscreteChild(nd);
+			} catch(BNException bne) {
+				System.err.println("Error creating observation node Y"+nameIndex+": " + bne.toString());
+				return null;
+			}
+		}
+		
+		private static double[][] obsmat(int ns, int no)
+		{
+			double[][] mat = new double[ns][no];
+			for(int i = 0; i < ns; i++)
 			{
-				for(int j = 0; j < Ns; j++)
+				for(int j = 0; j < no; j++)
 				{
-					if(i==j)
-						Av[i][j] = .9;
+					if(i%no==j)
+						mat[i][j] = concentration;
 					else
-						Av[i][j] = .1/(Ns-1);
+						mat[i][j] = (1-concentration)/(no-1);
 				}
 			}
-			this.pi = new DiscreteCPTUC(piv);
-			this.A = new DiscreteCPT(Av, Ns);
-		}
-
-		@Override
-		public double evaluate(DiscreteCPT A) {
-			return 1;
-		}
-
-		@Override
-		public double evaluate(DiscreteCPTUC pi) {
-			return 1;
-		}
-
-		@Override
-		public DiscreteCPT initialSampleA() {
-			return  this.A;
-		}
-
-		@Override
-		public DiscreteCPTUC initialSamplePi() {
-			return this.pi;
-		}
-
-		@Override
-		public DiscreteCPT posteriorSampleA(DiscreteCPT A) {
-			return A;
-		}
-
-		@Override
-		public DiscreteCPTUC posteriorSamplePi(DiscreteCPTUC pi) {
-			return pi;
+			return mat;
 		}
 		
-		DiscreteCPT A;
-		DiscreteCPTUC pi;
+		static double concentration = .9;
+
+		@Override
+		public void setArg(String arg) throws CMException {
+			try {
+				concentration = Double.parseDouble(arg);
+				if(concentration < 0 || concentration > 1)
+					throw new CMException("Concentration parameter for discrete nodes must be in range [0,1]");
+			} catch(NumberFormatException e) {
+				throw new CMException("Error parsing floating point concentration parameter : " + arg);
+			} 
+		}
 	}
 	
-	private static class MHMM_BasicChild implements MHMMChild
+	private static class BasicDiscreteChild implements MHMMChild
 	{
-		public MHMM_BasicChild(IFDiscDBNNode node)
+		public BasicDiscreteChild(IFDiscDBNNode node)
 		{
 			this.node = node;
 		}
@@ -179,172 +159,22 @@ public class MHMMDiscrete
 			}
 		}
 		Distribution backupDist = null;
+
+		@Override
+		public void addParent(IParentProcess parent) {}
+
+		@Override
+		public void killParent(IParentProcess parent) {}
+
+		@Override
+		public void optimize() {}
 	}
 
 	public static void main(String[] args) throws BNException, CMException
 	{
-		Options options = new Options();
-		options.addOption("v", "verbose", false, "Use verbose mode.");
-		Option opt;
-// Removed these options because in this mHMM should be able to converge exactly and quickly, enable if this file 
-//		is copied for something like AR-mHMM
-//		opt = new Option("bp-iterations","Maximum number of iterations to perform in belief propagation.");
-//		opt.setArgs(1);opt.setArgName("#Iterations");
-//		options.addOption(opt);
-//		
-//		opt = new Option("bp-convergence","Convergence threshold for belief propagation.");
-//		opt.setArgs(1);opt.setArgName("threshold");
-//		options.addOption(opt);
-		
-		opt = new Option("emiterations","Maximum number of iterations to perform in expectation-maximization.");
-		opt.setArgs(1);opt.setArgName("#Iterations");
-		options.addOption(opt);
-		
-		opt = new Option("emconvergence","Convergence threshold for expectation maximization.");
-		opt.setArgs(1);opt.setArgName("threshold");
-		options.addOption(opt);
-		
-		//TODO This option wouldn't be as necessary without the bug that causes oscillations so.. figure that out.
-		opt = new Option("i","maxiterations",true,"Maximum number of times to run through the observables to change assignments.");
-		opt.setArgs(1);opt.setArgName("#Iterations");
-		options.addOption(opt);
-		
-		opt = new Option("output","o",true,"Model output file");
-		opt.setArgs(1);opt.setArgName("file");
-		options.addOption(opt);
-		
-		opt = new Option("modelTraceFilebase","m",true,"Base file name if we wish to have a model printed to file every iteration.");
-		opt.setArgs(1);opt.setArgName("base file name");
-		options.addOption(opt);
-		
-		HelpFormatter formatter = new HelpFormatter();
-		
-		CommandLineParser clp = new GnuParser();
-		
-		String[] justArgs = new String[]{""};
-		int[][] o;
-		int N;
-		int Ns;
-		CommandLine line;
-		try {
-			line = clp.parse(options,args);
-			justArgs = line.getArgs();
-			
-			if(justArgs.length!=3)
-				throw new ParseException("Expect 3 arguments, observation file name, number of latent chains, and the size of latent chains state spaces.");
-			
-			o = loadData(justArgs[0]);
-			if(o==null)
-			{
-				System.err.println("Error laoding observation file - provided dimensions are incorrect.");
-				return;
-			}
-			N = Integer.parseInt(justArgs[1]);
-			Ns = Integer.parseInt(justArgs[2]);
-		}
-		catch ( ParseException exp ) {
-			System.err.println("Invalid options..");
-			formatter.printHelp("mhmm [observation file] [number of latent chains] [cardinality of latent chains' state spaces]", options);
-			return;
-		} catch(FileNotFoundException e) {
-			System.err.println("Observation file <"+justArgs[0]+"> not found.");
-			return;
-		} catch(NumberFormatException e) {
-			System.err.println("Invalid value of N - " + justArgs[1] + " or Ns - " + justArgs[2]);
-			return;
-		}
-		
-		IDynamicBayesNet network = DynamicNetworkFactory.newDynamicBayesNet(o[0].length);
-		Vector<MHMMChild> children = new Vector<MHMMChild>();
-		int T = o[0].length;
-		for(int i = 0; i < o.length; i++)
-		{
-			int cardinality = 1;
-			for(int j = 0; j < T; j++)
-				cardinality = Math.max(cardinality, o[i][j]+1);
-			IFDiscDBNNode nd = network.addDiscreteNode("Y"+i, cardinality);
-			children.add(new MHMM_BasicChild(nd));
-			nd.setAdvanceDistribution(new DiscreteCPT(obsmat(Ns, cardinality),cardinality));
-			nd.setValue(o[i], 0);
-		}
-
-		MHMMController cont = new MHMMController(network, children, new Priors(Ns), Ns);
-		FMModelOptions opts = new FMModelOptions(cont, N);
-
-		String cno = "";
-		try
-		{
-			cno = "emiterations";
-			if(line.hasOption("emiterations"))
-				opts.maxLearnIterations = Integer.parseInt(line.getOptionValue("emiterations"));
-			cno = "emconvergence";
-			if(line.hasOption("emconvergence"))
-				opts.learnConv = Double.parseDouble(line.getOptionValue("emconvergence"));
-			cno = "maxiterations";
-			if(line.hasOption("maxiterations"))
-				opts.maxAssignmentIterations = Integer.parseInt(line.getOptionValue("maxiterations"));
-		} catch(NumberFormatException nfe) {
-			System.err.println("Invalid option "+cno+"="+line.getOptionValue(cno));
-		}
-		
-		if(line.hasOption("modelTraceFilebase"))
-			opts.modelBaseName = line.getOptionValue("modelTraceFilebase");
-		
-		if(line.hasOption("verbose"))
-			cont.setTrace(System.out);
-		cont.setLogger(System.out);
-
-		PrintStream outfile = null;
-		try {
-			if(line.hasOption("output"))
-			{
-				String outfileName = line.getOptionValue("output");
-				outfile = new PrintStream(new File(outfileName));
-			}
-		} catch(FileNotFoundException e) {
-			System.err.println("Couldn't write to output file " + line.getOptionValue("output"));
-		}
-		
-		FixedMixture.learnFixedMixture(opts);
-		
-		if(outfile!=null)
-		{
-			network.print(outfile);
-			outfile.flush();outfile.close();
-		}
-	}
-
-	private static double[][] obsmat(int ns, int no)
-	{
-		double[][] mat = new double[ns][no];
-		for(int i = 0; i < ns; i++)
-		{
-			for(int j = 0; j < no; j++)
-			{
-				if(i%no==j)
-					mat[i][j] = .9;
-				else
-					mat[i][j] = .1/(no-1);
-			}
-		}
-		return mat;
-	}
-	
-	private static int[][] loadData(String file) throws FileNotFoundException
-	{
-		Scanner scan = new Scanner(new File(file));
-		int rows = scan.nextInt();
-		int cols = scan.nextInt();
-		int[][] dat = new int[rows][cols];
-		for(int i = 0; i < rows; i++)
-		{
-			for(int j = 0; j < cols; j++)
-			{
-				if(!scan.hasNext())
-					return null;
-				dat[i][j] = scan.nextInt();
-			}
-		}
-		return dat;
+		HashMap<String,MHMMChildFactory> factories = new HashMap<String,MHMMChildFactory>();
+		factories.put("default",new BDCFactory());
+		factories.put("basic", new BDCFactory());
+		MHMM.mhmm_main(args, factories);
 	}
 }

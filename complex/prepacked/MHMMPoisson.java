@@ -1,102 +1,318 @@
 package complex.prepacked;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
 import java.util.Collection;
-import java.util.Scanner;
+import java.util.HashMap;
 import java.util.Vector;
-
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.GnuParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 
 import util.MathUtil;
 
-
 import bn.BNException;
-import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
+import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
+import bn.distributions.DiscreteDistribution.InfiniteDiscreteDistribution;
+import bn.distributions.DiscreteCPT;
 import bn.distributions.Distribution;
 import bn.distributions.SwitchingPoisson;
 import bn.dynamic.IDBNNode;
 import bn.dynamic.IDynamicBayesNet;
+import bn.dynamic.IFDiscDBNNode;
 import bn.dynamic.IInfDiscEvDBNNode;
-import bn.impl.dynbn.DynamicNetworkFactory;
 import bn.messages.FiniteDiscreteMessage;
 
 import complex.CMException;
-import complex.mixture.FixedMixture;
-import complex.mixture.FixedMixture.FMModelOptions;
-import complex.mixture.controllers.MHMMController;
+import complex.featural.IParentProcess;
 import complex.mixture.controllers.MHMMController.MHMMChild;
-import complex.mixture.controllers.MHMMController.MHMMParameterPrior;
+import complex.prepacked.MHMM.MHMMChildFactory;
 
 public class MHMMPoisson
 {
 	
-	private static class Priors implements MHMMParameterPrior
+	private static class ARCFactory implements MHMMChildFactory
 	{
-		
-		public Priors(int Ns) throws BNException
+		public void setArg(String arg) throws CMException
 		{
-			double[] piv = new double[Ns]; piv[0] = 1.0;
-			double[][] Av = new double[Ns][Ns];
-			for(int i = 0; i < Ns; i++)
-			{
-				for(int j = 0; j < Ns; j++)
-				{
-					if(i==j)
-						Av[i][j] = .9;
-					else
-						Av[i][j] = .1/(Ns-1);
-				}
-			}
-			this.pi = new DiscreteCPTUC(piv);
-			this.A = new DiscreteCPT(Av, Ns);
+			this.nsar = Integer.parseInt(arg);
 		}
-
-		@Override
-		public double evaluate(DiscreteCPT A) {
-			return 1;
-		}
-
-		@Override
-		public double evaluate(DiscreteCPTUC pi) {
-			return 1;
-		}
-
-		@Override
-		public DiscreteCPT initialSampleA() {
-			return  this.A;
-		}
-
-		@Override
-		public DiscreteCPTUC initialSamplePi() {
-			return this.pi;
-		}
-
-		@Override
-		public DiscreteCPT posteriorSampleA(DiscreteCPT A) {
-			return A;
-		}
-
-		@Override
-		public DiscreteCPTUC posteriorSamplePi(DiscreteCPTUC pi) {
-			return pi;
-		}
+		int nsar = 2;
 		
-		DiscreteCPT A;
-		DiscreteCPTUC pi;
+		@Override
+		public MHMMChild getChild(IDynamicBayesNet net, int nameidx, int ns,
+				int[] observations) {
+			try {
+				return new HiddenARPoiss(net, nameidx, ns, nsar, observations);
+			} catch(BNException e) {
+				System.err.println("");
+				return null;
+			}
+		}
 	}
 	
-	private static class MHMM_PoissChild implements MHMMChild
+	private static class BPCFactory implements MHMMChildFactory
 	{
-		public MHMM_PoissChild(IInfDiscEvDBNNode node)
+
+		@Override
+		public MHMMChild getChild(IDynamicBayesNet net, int nameidx, int ns,
+				int[] observations) {
+			try {
+				IInfDiscEvDBNNode nd = net.addDiscreteEvidenceNode("Y"+nameidx, observations);
+				double[] means = new double[ns];
+				for(int i = 0; i < ns; i++)
+					means[i] = 30.0*MathUtil.rand.nextDouble();
+				SwitchingPoisson dist = new SwitchingPoisson(means);
+				nd.setAdvanceDistribution(dist);
+				return new BasicPoissChild(nd);
+			} catch(BNException e) {
+				System.err.println("Error creating child Y"+nameidx+": " + e.toString());
+				return null;
+			}
+		}
+
+		@Override
+		public void setArg(String arg) throws CMException {
+		}
+		
+	}
+	
+	private static class TCFactory implements MHMMChildFactory
+	{
+
+		@Override
+		public MHMMChild getChild(IDynamicBayesNet net, int nameidx, int ns,
+				int[] observations) {
+			try {
+				return new Twitter(net, nameidx, observations);
+			} catch(BNException e) {
+				System.err.println("Error creating child Y"+nameidx+": " + e.toString());
+				return null;
+			}
+		}
+
+		@Override
+		public void setArg(String arg) throws CMException {
+		}
+		
+	}
+	
+	private static class Twitter implements MHMMChild
+	{
+		public Twitter(IDynamicBayesNet net, int id, int[] obs) throws BNException
+		{
+			this.evnode = net.addDiscreteEvidenceNode("YEV"+id, obs);
+			SwitchingPoisson dist = new SwitchingPoisson(new double[]{0.0,0.0,1.0,10.0},new int[]{2,2});
+			dist.lockMean(new int[]{0,0}, true);
+			dist.lockMean(new int[]{0,1}, true);
+			this.evnode.setAdvanceDistribution(dist);
+			
+			this.state = net.addDiscreteNode("YS"+id, 2);
+			this.state.setAdvanceDistribution(new DiscreteCPTUC(new double[]{.5,.5}));
+
+			this.net = net;
+			
+			net.addIntraEdge(this.state, this.evnode);
+			
+			nodeNames.add("YEV"+id);
+			nodeNames.add("YS"+id);
+			this.name = "Y"+id;
+		}
+		
+		private Vector<String> nodeNames = new Vector<String>();
+		private IDynamicBayesNet net;
+		private IFDiscDBNNode state;
+		private IInfDiscEvDBNNode evnode;
+		private String name;
+		
+		@Override
+		public String getName() {
+			return this.name;
+		}
+		
+		InfiniteDiscreteDistribution poissBackup = null;
+		DiscreteFiniteDistribution stateBackup = null;
+		@Override
+		public void backupParameters() throws CMException {
+			try {
+				this.poissBackup = evnode.getAdvanceDistribution().copy();
+				this.stateBackup = state.getAdvanceDistribution().copy();
+			} catch(BNException e) {
+				throw new CMException("Error backing up parameters.. this shouldn't happen: " + e.toString());
+			}
+		}
+		@Override
+		public void restoreParameters() throws CMException {
+			try {
+				this.evnode.setAdvanceDistribution(this.poissBackup);
+				this.state.setAdvanceDistribution(this.stateBackup);
+			} catch(BNException e) {
+				throw new CMException("Error storing parameters.. this shouldn't happen: " + e.toString());
+			}
+		}
+		@Override
+		public double getDisagreement(int t) {
+			return 0;
+		}
+		@Override
+		public IDBNNode hook() {
+			return this.evnode;
+		}
+		@Override
+		public void optimize(Vector<FiniteDiscreteMessage> incPis)
+		{
+			try {
+
+				this.net.run(this.nodeNames, 10, 1e-8);
+				this.state.optimizeParameters();
+				this.evnode.optimizeParameters();
+				this.net.run(this.nodeNames, 10, 1e-8);
+				this.state.optimizeParameters();
+				this.evnode.optimizeParameters();
+				
+			} catch(BNException e) {
+				System.err.println("Failed to optimized for node " + this.getName());
+			}
+		}
+		@Override
+		public double evaluateP() {
+			return 1;
+		}
+		@Override
+		public void sampleInit() {}
+		@Override
+		public void samplePosterior() {}
+		@Override
+		public Collection<String> constituentNodeNames() {
+			return this.nodeNames;
+		}
+		
+		@Override
+		public void addParent(IParentProcess parent) {}
+
+		@Override
+		public void killParent(IParentProcess parent) {}
+
+		@Override
+		public void optimize() {}
+	}
+	
+	
+	//TODO This isn't a well thought out child.  Individual chains might as well be responsible
+	// for observations as much as the shared chains!
+	private static class HiddenARPoiss implements MHMMChild
+	{
+		public HiddenARPoiss(IDynamicBayesNet net, int id, int nsx, int nsar, int[] observations) throws BNException
+		{
+			this.evnode = net.addDiscreteEvidenceNode("YEV"+id, observations);
+			double[] means = new double[nsar*nsx];
+			for(int i = 0; i < means.length; i++)
+				means[i] = 30.0*MathUtil.rand.nextDouble();
+			this.evnode.setAdvanceDistribution(new SwitchingPoisson(means,new int[]{2,2}));
+			this.arnode = net.addDiscreteNode("YAR"+id, nsar);
+			//TODO Need to think of a better what of configuring these parameters...
+			//TODO a good idea would be to take a configuration file, if none provided go
+			// through a manual prompt
+			if(nsar!=2 || nsx!=2)
+				throw new BNException("Hey duder you need to implement more flexible parameters if you want to do this.");
+			DiscreteCPT a = new DiscreteCPT(new double[][]{{.9,.1},{.1,.9}},2);
+			DiscreteCPTUC pi = new DiscreteCPTUC(new double[]{.5,.5});
+			this.arnode.setAdvanceDistribution(a);
+			this.arnode.setInitialDistribution(pi);
+			net.addInterEdge(this.arnode, this.arnode);
+			net.addIntraEdge(this.arnode, this.evnode);
+			this.name = "Y"+id;
+			this.net = net;
+			this.nnset = new Vector<String>();
+			this.nnset.add(this.evnode.getName());
+			this.nnset.add(this.arnode.getName());
+		}
+		Vector<String> nnset;
+		IDynamicBayesNet net;
+		IInfDiscEvDBNNode evnode;
+		IFDiscDBNNode arnode;
+		String name;
+		
+		@Override
+		public String getName() {
+			return name;
+		}
+
+		InfiniteDiscreteDistribution poiss_backup;
+		DiscreteFiniteDistribution a_dist, b_dist;
+		@Override
+		public void backupParameters() throws CMException {
+			try {
+				this.poiss_backup = this.evnode.getAdvanceDistribution().copy();
+				this.a_dist = this.arnode.getAdvanceDistribution().copy();
+				this.b_dist = this.arnode.getInitialDistribution().copy();
+			} catch(BNException e) {
+				System.err.println("Error while backing up parameters.. this shouldn't happen : " + e.toString());
+			}
+		}
+		
+		@Override
+		public void restoreParameters() throws CMException {
+			if(this.a_dist==null || this.b_dist==null || this.poiss_backup==null)
+				return;
+			try {
+				this.evnode.setAdvanceDistribution(this.poiss_backup);
+				this.arnode.setAdvanceDistribution(this.a_dist);
+				this.arnode.setInitialDistribution(this.b_dist);
+			} catch(BNException e) {
+				throw new CMException("Failure to restore ARPoiss paramters - this should not happen!\n"+e.toString());
+			}
+		}
+
+		@Override
+		public double getDisagreement(int t) {
+			// TODO Auto-generated method stub
+			return 0;
+		}
+		
+		@Override
+		public IDBNNode hook() {
+			return this.evnode;
+		}
+		
+		@Override
+		public void optimize(Vector<FiniteDiscreteMessage> incPis) {
+			try {
+				this.net.run(this.nnset, 20, 1e-8);
+				
+				this.arnode.optimizeParameters();
+				this.evnode.optimizeParameters();
+				
+			} catch(BNException e) {
+				System.err.println("Error while attempting to optimize observable" + this.name);
+			}
+		}
+		
+		@Override
+		public double evaluateP() {
+			return 1;
+		}
+		
+		@Override
+		public void sampleInit() {}
+		
+		@Override
+		public void samplePosterior() {}
+		
+		@Override
+		public void addParent(IParentProcess parent) {}
+
+		@Override
+		public void killParent(IParentProcess parent) {}
+
+		@Override
+		public void optimize() {}
+		
+		@Override
+		public Collection<String> constituentNodeNames() {
+			return this.nnset;
+		}
+	}
+	
+	private static class BasicPoissChild implements MHMMChild
+	{
+		public BasicPoissChild(IInfDiscEvDBNNode node)
 		{
 			this.node = node;
 		}
@@ -185,157 +401,27 @@ public class MHMMPoisson
 				}
 			}
 		}
+		
+		@Override
+		public void addParent(IParentProcess parent) {}
+
+		@Override
+		public void killParent(IParentProcess parent) {}
+
+		@Override
+		public void optimize() {}
+		
 		Distribution backupDist = null;
 		
 	}
 
 	public static void main(String[] args) throws BNException, CMException
 	{
-		Options options = new Options();
-		options.addOption("v", "verbose", false, "Use verbose mode.");
-		Option opt;
-// Removed these options because in this mHMM should be able to converge exactly and quickly, enable if this file 
-//		is copied for something like AR-mHMM
-//		opt = new Option("bp-iterations","Maximum number of iterations to perform in belief propagation.");
-//		opt.setArgs(1);opt.setArgName("#Iterations");
-//		options.addOption(opt);
-//		
-//		opt = new Option("bp-convergence","Convergence threshold for belief propagation.");
-//		opt.setArgs(1);opt.setArgName("threshold");
-//		options.addOption(opt);
-		
-		opt = new Option("emiterations","Maximum number of iterations to perform in expectation-maximization.");
-		opt.setArgs(1);opt.setArgName("#Iterations");
-		options.addOption(opt);
-		
-		opt = new Option("emconvergence","Convergence threshold for expectation maximization.");
-		opt.setArgs(1);opt.setArgName("threshold");
-		options.addOption(opt);	
-		
-		opt = new Option("i","maxiterations",true,"Maximum number of times to run through the observables to change assignments.");
-		opt.setArgs(1);opt.setArgName("#Iterations");
-		options.addOption(opt);
-		
-		opt = new Option("output","o",true,"Model output file");
-		opt.setArgs(1);opt.setArgName("file");
-		options.addOption(opt);
-		
-		opt = new Option("modelTraceFilebase","m",true,"Base file name if we wish to have a model printed to file every iteration.");
-		opt.setArgs(1);opt.setArgName("base file name");
-		options.addOption(opt);
-		
-		HelpFormatter formatter = new HelpFormatter();
-		
-		CommandLineParser clp = new GnuParser();
-		
-		String[] justArgs = new String[]{""};
-		int[][] o;
-		int N;
-		int Ns;
-		CommandLine line;
-		try {
-			line = clp.parse(options,args);
-			justArgs = line.getArgs();
-			
-			if(justArgs.length!=3)
-				throw new ParseException("Expect 3 arguments, observation file name, number of latent chains, and the size of latent chains state spaces.");
-			
-			o = loadData(justArgs[0]);
-			if(o==null)
-			{
-				System.err.println("Error laoding observation file - provided dimensions are incorrect.");
-				return;
-			}
-			N = Integer.parseInt(justArgs[1]);
-			Ns = Integer.parseInt(justArgs[2]);
-		}
-		catch ( ParseException exp ) {
-			System.err.println("Invalid options..");
-			formatter.printHelp("mhmm [observation file] [number of latent chains] [cardinality of latent chains' state spaces]", options);
-			return;
-		} catch(FileNotFoundException e) {
-			System.err.println("Observation file <"+justArgs[0]+"> not found.");
-			return;
-		} catch(NumberFormatException e) {
-			System.err.println("Invalid value of N - " + justArgs[1] + " or Ns - " + justArgs[2]);
-			return;
-		}
-		
-		IDynamicBayesNet network = DynamicNetworkFactory.newDynamicBayesNet(o[0].length);
-		Vector<MHMMChild> children = new Vector<MHMMChild>();
-		for(int i = 0; i < o.length; i++)
-		{
-			IInfDiscEvDBNNode nd = network.addDiscreteEvidenceNode("Y"+i, o[i]);
-			children.add(new MHMM_PoissChild(nd));
-			double[] means = new double[Ns];
-			for(int j = 0; j < Ns; j++)
-				means[j] = MathUtil.rand.nextDouble()*30.0;
-			nd.setAdvanceDistribution(new SwitchingPoisson(means));
-		}
-
-		MHMMController cont = new MHMMController(network, children, new Priors(Ns), Ns);
-		FMModelOptions opts = new FMModelOptions(cont, N);
-
-		String cno = "";
-		try
-		{
-			cno = "emiterations";
-			if(line.hasOption("emiterations"))
-				opts.maxLearnIterations = Integer.parseInt(line.getOptionValue("emiterations"));
-			cno = "emconvergence";
-			if(line.hasOption("emconvergence"))
-				opts.learnConv = Double.parseDouble(line.getOptionValue("emconvergence"));
-			cno = "maxiterations";
-			if(line.hasOption("maxiterations"))
-				opts.maxAssignmentIterations = Integer.parseInt(line.getOptionValue("maxiterations"));
-		} catch(NumberFormatException nfe) {
-			System.err.println("Invalid option "+cno+"="+line.getOptionValue(cno));
-		}
-		
-		if(line.hasOption("verbose"))
-			cont.setTrace(System.out);
-		cont.setLogger(System.out);
-		
-		if(line.hasOption("modelTraceFilebase"))
-			opts.modelBaseName = line.getOptionValue("modelTraceFilebase");
-
-		PrintStream outfile = null;
-		try {
-			if(line.hasOption("output"))
-			{
-				String outfileName = line.getOptionValue("output");
-				outfile = new PrintStream(new File(outfileName));
-			}
-		} catch(FileNotFoundException e) {
-			System.err.println("Couldn't write to output file " + line.getOptionValue("output"));
-		}
-		
-		//opts.initialAssignment = new int[]{	0,0,1,1 };
-		
-		FixedMixture.learnFixedMixture(opts);
-		
-		if(outfile!=null)
-		{
-			network.print(outfile);
-			outfile.flush();outfile.close();
-		}
-	}
-
-	private static int[][] loadData(String file) throws FileNotFoundException
-	{
-		Scanner scan = new Scanner(new File(file));
-		int rows = scan.nextInt();
-		int cols = scan.nextInt();
-		int[][] dat = new int[rows][cols];
-		for(int i = 0; i < rows; i++)
-		{
-			for(int j = 0; j < cols; j++)
-			{
-				if(!scan.hasNext())
-					return null;
-				dat[i][j] = scan.nextInt();
-			}
-		}
-		return dat;
+		HashMap<String,MHMMChildFactory> factories = new HashMap<String,MHMMChildFactory>();
+		factories.put("default",new BPCFactory());
+		factories.put("basic", new BPCFactory());
+		factories.put("ar", new ARCFactory());
+		factories.put("twit", new TCFactory());
+		MHMM.mhmm_main(args, factories);
 	}
 }

@@ -1,6 +1,8 @@
 package complex;
 
 
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.PrintStream;
 
 import bn.BNException;
@@ -23,16 +25,30 @@ public abstract class ModelController
 		else if(this.tracer!=null)
 			this.network.print(this.tracer);
 	}
+	
+	public void printNetwork(String filename)
+	{
+		PrintStream outfile = null;
+		try {
+			outfile = new PrintStream(new File(filename));
+			this.network.print(outfile);
+		} catch(FileNotFoundException e) {
+			System.err.println("Couldn't write to output file " + filename);
+		}
+	}
 
 	public double run(int max_it, double conv)  throws CMException
 	{
 		try {
-			this.network.run_parallel_block(max_it, conv);
+			this.network.resetMessages();//TODO REMOVE THIS
+			//this.network.run_parallel_block(max_it, conv);
+			this.network.run(max_it,conv);
 			double ll = this.network.getLogLikelihood();
 			if(Double.isNaN(ll) || ll > 0)
 			{
 				this.network.resetMessages();
-				this.network.run_parallel_block(max_it,conv);
+//				this.network.run_parallel_block(max_it,conv);
+				this.network.run(max_it,conv);
 				ll = this.network.getLogLikelihood();
 				if(Double.isNaN(ll) || ll > 0)
 				{
@@ -50,7 +66,8 @@ public abstract class ModelController
 	public double learn(int max_learn_it, double learn_conv, int max_run_it, double run_conv) throws CMException
 	{
 		try {
-			this.network.optimize_parallel(max_learn_it, learn_conv, max_run_it, run_conv);
+			//this.network.optimize_parallel(max_learn_it, learn_conv, max_run_it, run_conv);
+			this.network.optimize(max_learn_it, learn_conv, max_run_it, run_conv);
 			return this.run(max_run_it,run_conv);
 		} catch(BNException e) {
 			throw new CMException("Error optimizing the model : " + e.toString());

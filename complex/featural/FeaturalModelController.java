@@ -14,8 +14,6 @@ import util.MathUtil;
 
 import complex.CMException;
 
-import bn.dynamic.IDynamicBayesNet;
-
 public abstract class FeaturalModelController extends complex.ModelController
 {
 	
@@ -188,7 +186,7 @@ public abstract class FeaturalModelController extends complex.ModelController
 	protected abstract void disconnectI(IParentProcess latent, IChildProcess observed) throws CMException;
 	protected abstract void connectI(IParentProcess latent, IChildProcess observed) throws CMException;
 	
-	protected IDynamicBayesNet network;
+	//protected IDynamicBayesNet network;
 	protected Vector<IParentProcess> latents = new Vector<IParentProcess>();
 	protected Vector<IChildProcess> observables = new Vector<IChildProcess>();
 	private HashMap<IParentProcess, HashSet<IChildProcess>> children = new HashMap<IParentProcess, HashSet<IChildProcess>>();

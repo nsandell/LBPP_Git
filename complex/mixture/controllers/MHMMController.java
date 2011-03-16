@@ -1,6 +1,7 @@
 package complex.mixture.controllers;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
 
@@ -94,6 +95,7 @@ public class MHMMController extends MixtureModelController {
 			newp.setAdvanceDistribution(this.priors.initialSampleA());
 			this.network.addInterEdge(newp, newp);
 			MHMMX parent = new MHMMX(newp, id);
+			this.parentNames.add("X"+id);
 			return parent;
 		} catch(BNException e) {
 			throw new CMException("Failed to add a new node to network!");
@@ -109,14 +111,11 @@ public class MHMMController extends MixtureModelController {
 			try {
 				MHMMChild mchild = (MHMMChild)child;
 				MHMMX mp = (MHMMX)parent;
-				Vector<IDBNNode> parents = new Vector<IDBNNode>();
-				for(IDBNNode parentnd : mchild.hook().getIntraParents())
-					parents.add(parentnd);
-				if(parents.size()>1)
-					throw new BNException("Expected child " + child.getName() + " to have one and only one parent!");
-				if(parents.size()==1)
-					this.network.removeIntraEdge(parents.get(0).getName(), mchild.hook().getName());
+				
+				if(parents.containsKey(mchild))
+					this.network.removeIntraEdge(parents.get(mchild).xnd.getName(),mchild.hook().getName());
 				this.network.addIntraEdge(mp.xnd.getName(), mchild.hook().getName());
+				this.parents.put(mchild,mp);
 			} catch(BNException e) {
 				throw new CMException("Error changing parent for node " + child.getName() + " : " + e.toString());
 			}
@@ -125,6 +124,47 @@ public class MHMMController extends MixtureModelController {
 			throw new CMException("Attempted to change parent of non-MHMM observation process.");
 	}
 	
+	@Override
+	public double learn(int max_learn_it, double learn_conv, int max_run_it, double run_conv) throws CMException
+	{
+		try {
+			this.network.optimize_subsets_parallel(this.parentNames, max_learn_it, learn_conv, max_run_it, run_conv);
+			return this.run(max_run_it,run_conv);
+		} catch(BNException e) {
+			throw new CMException("Error optimizing the model : " + e.toString());
+		}
+	}
+	
+	@Override
+	public double run(int max_it, double conv) throws CMException
+	{
+		try {
+			this.network.run_subsets_parallel(this.parentNames, max_it, conv);
+			//this.network.run(max_it,conv);
+			double ll = this.network.getLogLikelihood();
+			if(Double.isNaN(ll) || ll > 0)
+			{
+				System.out.println("Resetting to try to recover..");
+				this.network.resetMessages();
+				//this.network.run_subsets_parallel(this.parentNames, max_it, conv);
+				this.network.run(max_it,conv);
+				ll = this.network.getLogLikelihood();
+				if(Double.isNaN(ll) || ll > 0)
+				{
+					this.network.print(System.err);
+					this.network.getLogLikelihood();
+					throw new CMException("Model returns NaN/Greater than 0 log likelihood!");
+				}
+			}
+			return ll;
+		} catch(BNException e) {
+			throw new CMException("Error running the model : " + e.toString());
+		}
+	}
+
+	private HashMap<MHMMChild,MHMMX> parents = new HashMap<MHMMController.MHMMChild, MHMMController.MHMMX>();
+	private Vector<String> parentNames = new Vector<String>();
+
 	@Override
 	public void optimizeChildParameters(IChildProcess child)
 	throws CMException {

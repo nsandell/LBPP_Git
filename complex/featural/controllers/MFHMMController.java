@@ -79,6 +79,10 @@ public class MFHMMController extends FeaturalModelController {
 			
 			int id = this.nextID();
 			FHMMX newNode = new FHMMX(this.network.addDiscreteNode("X"+id, this.ns),id);
+		
+			//TODO REMOVE THIS 
+			newNode.xnd.lockParameters();
+			
 			this.network.addInterEdge(newNode.xnd, newNode.xnd);
 			newNode.xnd.setInitialDistribution(this.paramgen.getInitialPi());
 			newNode.xnd.setAdvanceDistribution(this.paramgen.getInitialA());

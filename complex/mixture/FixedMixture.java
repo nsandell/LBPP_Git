@@ -25,7 +25,6 @@ public class FixedMixture
 		public String modelBaseName = null;
 		
 		public MixtureModelController controller;
-		public boolean optimizeParameters = true;		// Optimize parameters at each timestep
 		public int N;									// Number of latent processes
 		public int[] initialAssignment;					// Initial assignment matrix (optional)
 		public int maxIterations = Integer.MAX_VALUE;   // maximum possible number of iterations
@@ -78,11 +77,7 @@ public class FixedMixture
 		
 		opts.controller.validate();
 		
-		double ll;
-		if(opts.optimizeParameters)
-			ll = opts.controller.learn(opts.maxLearnIterations,opts.learnConv,opts.maxRunIterations,opts.runConv);
-		else
-			ll = opts.controller.run(opts.maxRunIterations,opts.runConv);
+		double ll = opts.controller.learn(opts.maxLearnIterations,opts.learnConv,opts.maxRunIterations,opts.runConv);
 	
 		opts.controller.trace("Initial LL : " + ll);
 		

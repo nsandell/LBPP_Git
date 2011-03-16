@@ -1,5 +1,7 @@
 package bn.dynamic;
 
+import java.util.Vector;
+
 import bn.BNException;
 
 import bn.IBayesNet;
@@ -142,6 +144,8 @@ public interface IDynamicBayesNet extends IBayesNet<IDBNNode>
 	public RunResults run_parallel_block(int maxit, double conv) throws BNException;
 	public RunResults run_parallel_block(Iterable<String> nodeNames, int maxit, double conv) throws BNException;
 	
+	public RunResults optimize_subsets_parallel(Vector<String> nodeSeeds, int lmaxit, double lconv, int rmaxit, double rconv) throws BNException;
+	
 	/**
 	 * Perform expectation maximization with inference in parallel
 	 * @param maxit Maximum number of EM iterations
@@ -180,4 +184,6 @@ public interface IDynamicBayesNet extends IBayesNet<IDBNNode>
 		 */
 		void error(IDynamicBayesNet net, String error);
 	}
+	
+	public void run_subsets_parallel(Vector<String> nodeSeeds,int maxit, double conv) throws BNException;
 }

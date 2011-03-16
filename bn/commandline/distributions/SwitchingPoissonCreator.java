@@ -11,7 +11,6 @@ import java.util.regex.Pattern;
 import util.Parser.ParserException;
 import util.Parser.ParserFunction;
 import bn.BNException;
-import bn.distributions.DiscreteCPT;
 import bn.distributions.Distribution;
 import bn.distributions.SwitchingPoisson;
 import bn.commandline.distributions.CPDCreator.ICPDCreator;
@@ -76,7 +75,6 @@ class SwitchingPoissonCreator implements ICPDCreator
 	
 	private ArrayList<Entry> entries;
 	private String name;
-	private int cardinality;
 	private int[] dimensions;
 	public final int[] getGroups() {return groups;}
 	public final Pattern getRegEx() {return patt;}

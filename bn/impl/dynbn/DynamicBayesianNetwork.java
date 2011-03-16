@@ -1,10 +1,13 @@
 package bn.impl.dynbn;
 
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.Vector;
 
 import bn.BNException;
 import bn.IBayesNode;
-import bn.Optimizable;
 import bn.distributions.Distribution;
 import bn.dynamic.IFDiscDBNNode;
 import bn.dynamic.IDynamicBayesNet;
@@ -15,6 +18,160 @@ import bn.impl.BayesianNetwork;
 class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynamicBayesNet
 {
 	public DynamicBayesianNetwork(int T){this.T = T;}
+	
+	public RunResults optimize_subsets_parallel(Vector<String> nodeSeeds, int lmaxit, double lconv, int rmaxit, double rconv) throws BNException
+	{
+		long startTime = System.currentTimeMillis();
+		int i = 0;
+		double learnErr = 0;
+		while(i < lmaxit)
+		{
+			learnErr = 0;
+			this.run_subsets_parallel(nodeSeeds, rmaxit, rconv);
+			for(DBNNode node : this.getNodes())
+				learnErr = Math.max(node.optimizeParameters(),learnErr);
+			if(learnErr < lconv)
+				break;
+			i++;
+		}
+		return new RunResults(i, ((double)(System.currentTimeMillis()-startTime))/1000.0, learnErr);
+	}
+	
+	public void run_subsets_parallel(Vector<String> nodeSeeds,int maxit, double conv) throws BNException
+	{
+		Vector<HashSet<String>> sets = new Vector<HashSet<String>>();
+		for(int i = 0; i < nodeSeeds.size(); i++)
+		{
+			DBNNode nd = this.getNode(nodeSeeds.get(i));
+			if(nd==null)
+				throw new BNException("Node seed " + nodeSeeds.get(i) + " is not a node...");
+			boolean contained = false;
+			for(int j= 0; j < i; j++)
+				if(sets.get(j).contains(nodeSeeds.get(i)))
+					contained = true;
+			if(!contained)
+			{
+				HashSet<String> set = new HashSet<String>();
+				this.addNeighbors(nd, set);
+				sets.add(set);
+			}
+		}
+		
+		try {
+			SubsetThreadPool pool = new SubsetThreadPool(Runtime.getRuntime().availableProcessors(), this, maxit, conv);
+			for(int i = 0; i < sets.size(); i++)
+			{
+				pool.spawnThread(sets.get(i));
+			}
+			synchronized (pool.threads) {
+				while(pool.threads.size()!=Runtime.getRuntime().availableProcessors())
+					pool.threads.wait();
+			}
+		} catch(InterruptedException e) {
+			throw new BNException("Subset parallel run interrupted!");
+		}
+	}
+
+	private void addNeighbors(DBNNode node, Collection<String> coll)
+	{
+		for(DBNNode nd : node.getInterChildren())
+		{
+			if(!coll.contains(nd.getName()))
+			{
+				coll.add(nd.getName());
+				this.addNeighbors(nd,coll);
+			}
+		}
+		for(DBNNode nd : node.getIntraChildren())
+		{
+			if(!coll.contains(nd.getName()))
+			{
+				coll.add(nd.getName());
+				this.addNeighbors(nd,coll);
+			}
+		}
+		for(DBNNode nd : node.getIntraParents())
+		{
+			if(!coll.contains(nd.getName()))
+			{
+				coll.add(nd.getName());
+				this.addNeighbors(nd,coll);
+			}
+		}
+		for(DBNNode nd : node.getInterParents())
+		{
+			if(!coll.contains(nd.getName()))
+			{
+				coll.add(nd.getName());
+				this.addNeighbors(nd,coll);
+			}
+		}
+	}
+
+	private static class SubsetThreadPool
+	{
+		public SubsetThreadPool(int maxthreads, DynamicBayesianNetwork net, int maxit, double conv)
+		{
+			for(int i = 0; i < maxthreads; i++)
+				this.threads.add(new SubsetThread(net, maxit, conv, this));
+		}
+
+		public void spawnThread(Iterable<String> nodes) throws InterruptedException
+		{
+			synchronized (threads)
+			{
+				while(threads.isEmpty()) {
+					threads.wait();
+				}
+				SubsetThread thread = threads.remove(0);
+				thread.setSubset(nodes);
+				thread.start();
+			}
+		}
+		
+		public void returnThread(SubsetThread thread)
+		{
+			synchronized(threads)
+			{
+				//this.threads.add(thread);
+				this.threads.add(new SubsetThread(thread.net, thread.maxit, thread.conv, this));
+				threads.notify();
+			}
+		}
+		ArrayList<SubsetThread> threads = new ArrayList<DynamicBayesianNetwork.SubsetThread>();
+	}
+
+	private static class SubsetThread extends Thread
+	{
+		public SubsetThread(DynamicBayesianNetwork net, int maxit, double conv, SubsetThreadPool pool)
+		{
+			this.pool = pool;
+			this.net = net;
+			this.maxit = maxit;
+			this.conv = conv;
+		}
+
+		public void setSubset(Iterable<String> nodes)
+		{
+			this.nodes = nodes;
+		}
+
+		public void run()
+		{
+			try {
+				this.net.run(this.nodes, this.maxit, this.conv);
+				this.pool.returnThread(this);
+			} catch(BNException e) {
+				System.err.println("Failure running subsets parallel.");
+			}
+		}
+		
+		int maxit;
+		double conv;
+		DynamicBayesianNetwork net;
+		Iterable<String> nodes;
+		SubsetThreadPool pool;
+	}
 
 	public IFDiscDBNNode addDiscreteNode(String name, int cardinality) throws BNException
 	{
@@ -86,7 +243,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynami
 		{
 			learnErr = 0;
 			this.run_parallel_block(maxInfIt, infErrConvergence);
-			for(Optimizable node : this.getOptimizableNodes())
+			for(DBNNode node : this.getNodes())
 				learnErr = Math.max(node.optimizeParameters(),learnErr);
 			if(learnErr < learnErrConvergence)
 				break;
@@ -106,8 +263,8 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynami
 			this.run_parallel_block(maxInfIt, infErrConvergence);
 			for(String nodename : nodes)
 			{
-				if(this.getNode(nodename) instanceof Optimizable)
-					learnErr = Math.max(((Optimizable)this.getNode(nodename)).optimizeParameters(),learnErr);
+				if(this.getNode(nodename)!=null)
+					learnErr = Math.max(this.getNode(nodename).optimizeParameters(),learnErr);
 				else
 					throw new BNException("Node " + nodename + " does not exist or is not optimizable.");
 			}
@@ -352,7 +509,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynami
 		public String message;
 		public int iteration = 0;
 		public int maxIterations;
-		public int maxThreads = availableProcs;
+		public int maxThreads = Runtime.getRuntime().availableProcessors();
 		public Iterable<DBNNode> nodes;
 		private ParallelCallback callback;
 		private int doneThreads;

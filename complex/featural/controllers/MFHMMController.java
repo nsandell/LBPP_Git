@@ -8,44 +8,11 @@ import bn.BNException;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.dynamic.IDynamicBayesNet;
-import bn.dynamic.IDBNNode;
-import bn.dynamic.IFDiscDBNNode;
-import bn.messages.FiniteDiscreteMessage;
 import complex.CMException;
-import complex.featural.IChildProcess;
-import complex.featural.IParentProcess;
+import complex.featural.IFeaturalChild;
 import complex.featural.FeaturalModelController;
 
-public class MFHMMController extends FeaturalModelController {
-	
-	public static interface IFHMMChild extends IChildProcess
-	{
-		public IDBNNode hook();
-	}
-	
-	private static class FHMMX implements IParentProcess
-	{
-		FHMMX(IFDiscDBNNode xnd,int ID)
-		{
-			this.xnd = xnd;
-			this.ID = ID;
-		}
-		public String getName()
-		{
-			return this.xnd.getName();
-		}
-		public FiniteDiscreteMessage marginal(int t)
-		{
-			try {
-				return this.xnd.getMarginal(t);
-			} catch(BNException e) {
-				System.err.println("Error : " + e.toString());
-				return null;
-			}
-		}
-		int ID;
-		IFDiscDBNNode xnd;
-	}
+public class MFHMMController extends FeaturalModelController<IFeaturalChild, FHMMX> {
 	
 	public static interface MFHMMInitialParamGenerator
 	{
@@ -53,11 +20,11 @@ public class MFHMMController extends FeaturalModelController {
 		public DiscreteCPTUC getInitialPi();
 	}
 	
-	public MFHMMController(IDynamicBayesNet network, Vector<IFHMMChild> observations, MFHMMInitialParamGenerator paramgen, int Ns) throws BNException
+	public MFHMMController(IDynamicBayesNet network, Vector<IFeaturalChild> observations, MFHMMInitialParamGenerator paramgen, int Ns) throws BNException
 	{
 		super(observations);
 		this.network = network;
-		for(IFHMMChild child : observations)
+		for(IFeaturalChild child : observations)
 			this.observables.add(child);
 		this.paramgen = paramgen;
 		this.ns = Ns;
@@ -65,7 +32,7 @@ public class MFHMMController extends FeaturalModelController {
 
 
 	@Override
-	protected void killLatentModelI(IParentProcess node) throws CMException {
+	protected void killLatentModelI(FHMMX node) throws CMException {
 		try {
 			this.network.removeNode(node.getName());
 			this.killID(((FHMMX)node).ID);
@@ -74,7 +41,7 @@ public class MFHMMController extends FeaturalModelController {
 	}
 
 	@Override
-	protected IParentProcess newLatentModelI() throws CMException {
+	protected FHMMX newLatentModelI() throws CMException {
 		try {
 			
 			int id = this.nextID();
@@ -92,22 +59,18 @@ public class MFHMMController extends FeaturalModelController {
 	}
 
 	@Override
-	protected void disconnectI(IParentProcess latent, IChildProcess observed)
+	protected void disconnectI(FHMMX latent, IFeaturalChild observed)
 			throws CMException {
-		if(!(observed instanceof IFHMMChild))
-			throw new CMException("MFHMM Controller received invalid child... this really shouldn't happen.");
 		try {
-			this.network.removeIntraEdge(latent.getName(), ((IFHMMChild)observed).hook().getName());
+			this.network.removeIntraEdge(latent.getName(), observed.hook().getName());
 		} catch(BNException e) { throw new CMException(e.getMessage()); }
 	}
 
 	@Override
-	protected void connectI(IParentProcess latent, IChildProcess observed)
+	protected void connectI(FHMMX latent, IFeaturalChild observed)
 			throws CMException {
-				if(!(observed instanceof IFHMMChild))
-			throw new CMException("MFHMM Controller received invalid child... this really shouldn't happen.");
 		try {
-			this.network.addIntraEdge(latent.getName(), ((IFHMMChild)observed).hook().getName());
+			this.network.addIntraEdge(latent.getName(), observed.hook().getName());
 		} catch(BNException e) { throw new CMException(e.getMessage()); }
 	}
 

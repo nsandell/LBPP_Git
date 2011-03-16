@@ -1,13 +1,15 @@
 package complex.featural;
 
-public interface ProposalGenerator
+import complex.IParentProcess;
+
+public interface ProposalGenerator<ChildProcess extends IFeaturalChild,ParentProcess extends IParentProcess>
 {
-	public Proposal generate(FeaturalModelController cont);
+	public Proposal<ChildProcess,ParentProcess> generate(FeaturalModelController<ChildProcess,ParentProcess> cont);
 	public String name();
 	
-	public static class Proposal
+	public static class Proposal<ChildProcess extends IFeaturalChild,ParentProcess extends IParentProcess>
 	{
-		public Proposal(double fp, double bp, ProposalAction act)
+		public Proposal(double fp, double bp, ProposalAction<ChildProcess,ParentProcess>act)
 		{
 			this.fp = fp;
 			this.bp = bp;
@@ -22,12 +24,12 @@ public interface ProposalGenerator
 		{
 			return this.bp;
 		}
-		ProposalAction action()
+		ProposalAction<ChildProcess,ParentProcess> action()
 		{
 			return this.act;
 		}
 		
 		private double fp, bp;
-		private ProposalAction act;
+		private ProposalAction<ChildProcess,ParentProcess> act;
 	}
 }

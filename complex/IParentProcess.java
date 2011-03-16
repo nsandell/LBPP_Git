@@ -1,4 +1,4 @@
-package complex.featural;
+package complex;
 
 import complex.metrics.FinDiscMarginalDivergence.FinDiscMarginalHolder;
 

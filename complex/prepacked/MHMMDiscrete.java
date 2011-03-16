@@ -10,11 +10,9 @@ import bn.distributions.Distribution;
 import bn.dynamic.IDBNNode;
 import bn.dynamic.IDynamicBayesNet;
 import bn.dynamic.IFDiscDBNNode;
-import bn.messages.FiniteDiscreteMessage;
-
 import complex.CMException;
-import complex.featural.IParentProcess;
-import complex.mixture.controllers.MHMMController.MHMMChild;
+import complex.IParentProcess;
+import complex.mixture.controllers.MHMMChild;
 import complex.prepacked.MHMM.MHMMChildFactory;
 
 public class MHMMDiscrete
@@ -103,40 +101,17 @@ public class MHMMDiscrete
 		}
 
 		@Override
-		public void optimize(Vector<FiniteDiscreteMessage> chainIncPis)
+		public void optimize()
 		{
 			try {
-				int N = chainIncPis.get(0).getCardinality();
-				int M = this.node.getCardinality();
-				double[][] stats = new double[N][M];
-				int T = this.node.getNetwork().getT();
-				for(int t = 0; t < T; t++)
-					for(int i = 0; i < N; i++)
-						stats[i][this.node.getValue(t)] += chainIncPis.get(t).getValue(i);
-				for(int i = 0; i < N; i++)
-				{
-					double rowsum = 0;
-					for(int j = 0; j < M; j++)
-						rowsum += stats[i][j];
-					for(int j = 0; j < M; j++)
-						stats[i][j] /= rowsum;
-				}
-				this.node.setAdvanceDistribution(new DiscreteCPT(stats, M));
+				this.node.optimizeParameters();
 			} catch(BNException e) {
-				System.err.println("Failed to optimize node " + this.getName() + " : " + e.toString());
+				System.err.println("Failed to optimize node " + this.getName());
 			}
 		}
 
 		@Override
-		public double evaluateP() {
-			return 1;
-		}
-
-		@Override
-		public void sampleInit() {}
-
-		@Override
-		public void samplePosterior() {}
+		public void setParent(IParentProcess rent) {}
 
 		@Override
 		public void backupParameters() throws CMException {
@@ -160,14 +135,6 @@ public class MHMMDiscrete
 		}
 		Distribution backupDist = null;
 
-		@Override
-		public void addParent(IParentProcess parent) {}
-
-		@Override
-		public void killParent(IParentProcess parent) {}
-
-		@Override
-		public void optimize() {}
 	}
 
 	public static void main(String[] args) throws BNException, CMException

@@ -13,113 +13,114 @@ import java.util.Vector;
 import util.MathUtil;
 
 import complex.CMException;
+import complex.IParentProcess;
 
-public abstract class FeaturalModelController extends complex.ModelController
+public abstract class FeaturalModelController<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> extends complex.ModelController
 {
 	
-	public FeaturalModelController(Collection<? extends IChildProcess> children)
+	public FeaturalModelController(Collection<? extends ChildProcess> children)
 	{
-		for(IChildProcess child : children)
+		for(ChildProcess child : children)
 		{
-			this.parents.put(child, new HashSet<IParentProcess>());
+			this.parents.put(child, new HashSet<ParentProcess>());
 		}
 	}
 	
-	public IParentProcess newLatentModel() throws CMException
+	public ParentProcess newLatentModel() throws CMException
 	{
-		IParentProcess newl = this.newLatentModelI();
+		ParentProcess newl = this.newLatentModelI();
 		this.latents.add(newl);
-		this.children.put(newl, new HashSet<IChildProcess>());
+		this.children.put(newl, new HashSet<ChildProcess>());
 		return newl;
 	}
 
-	public void killLatentModel(IParentProcess node) throws CMException
+	public void killLatentModel(ParentProcess node) throws CMException
 	{
 		this.killLatentModelI(node);
-		for(IChildProcess child : this.children.get(node))
+		for(ChildProcess child : this.children.get(node))
 			this.parents.get(child).remove(node);
 		this.children.get(node).clear();
 		this.latents.remove(node);
 		this.children.remove(node);
 	}
 
-	public LatentBackup backupAndRemoveLatentModel(IParentProcess latent) throws CMException
+	public LatentBackup<ChildProcess,ParentProcess> backupAndRemoveLatentModel(ParentProcess latent) throws CMException
 	{
-		LatentBackup backup = new LatentBackup(this, latent);
+		LatentBackup<ChildProcess,ParentProcess> backup = new LatentBackup<ChildProcess,ParentProcess>(this, latent);
 		this.killLatentModel(latent);
 		return backup;
 	}
 
-	public IParentProcess restoreBackup(LatentBackup backup) throws CMException
+	public ParentProcess restoreBackup(LatentBackup<ChildProcess,ParentProcess> backup) throws CMException
 	{
-		IParentProcess latent = this.newLatentModel();
-		for(IChildProcess child : backup.children)
+		ParentProcess latent = this.newLatentModel();
+		for(ChildProcess child : backup.children)
 			this.connect(latent, child);
 		return latent;
 	}
 
-	public void connect(IParentProcess latent, IChildProcess observed) throws CMException
+	public void connect(ParentProcess latent, ChildProcess observed) throws CMException
 	{
 		this.connectI(latent,observed);
 		this.children.get(latent).add(observed);
 		this.parents.get(observed).add(latent);
 	}
 
-	public void disconnect(IParentProcess latent, IChildProcess observed) throws CMException
+	public void disconnect(ParentProcess latent, ChildProcess observed) throws CMException
 	{
 		this.disconnectI(latent, observed);
 		this.children.get(latent).remove(observed);
 		this.parents.get(observed).remove(latent);
 	}
 
-	public HashSet<IChildProcess> getChildren(IParentProcess latent)
+	public HashSet<ChildProcess> getChildren(ParentProcess latent)
 	{
 		return this.children.get(latent);
 	}
 	
-	public HashSet<IParentProcess> getParents(IChildProcess obs)
+	public HashSet<ParentProcess> getParents(ChildProcess obs)
 	{
 		return this.parents.get(obs);
 	}
 	
 
-	public static class LatentPair
+	public static class LatentPair<ChildProcess extends IFeaturalChild,ParentProcess extends IParentProcess>
 	{
-		public LatentPair(IParentProcess l1, IParentProcess l2){this.l1 = l1; this.l2 = l2;}
-		public IParentProcess l1, l2;
+		public LatentPair(ParentProcess l1, ParentProcess l2){this.l1 = l1; this.l2 = l2;}
+		public ParentProcess l1, l2;
 	}
 	
-	public LatentPair randomLatentPair()
+	public LatentPair<ChildProcess,ParentProcess> randomLatentPair()
 	{
 		if(this.latents.size() < 2)
 			return null;
 		if(this.latents.size()==2)
-			return new LatentPair(this.latents.get(0), this.latents.get(1));
+			return new LatentPair<ChildProcess,ParentProcess>(this.latents.get(0), this.latents.get(1));
 		
 		int i1 = MathUtil.rand.nextInt(this.latents.size());
 		int i2 = MathUtil.rand.nextInt(this.latents.size()-1);
 		if(i2>=i1)
 			i2++;
 		
-		return new LatentPair(this.latents.get(i1), this.latents.get(i2));
+		return new LatentPair<ChildProcess,ParentProcess>(this.latents.get(i1), this.latents.get(i2));
 	}
 	
-	public IParentProcess randomLatent()
+	public ParentProcess randomLatent()
 	{
 		return this.latents.get(MathUtil.rand.nextInt(this.latents.size()));
 	}
 	
-	public static class LatentBackup
+	public static class LatentBackup<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess>
 	{
-		public LatentBackup(FeaturalModelController cont, IParentProcess node)
+		public LatentBackup(FeaturalModelController<ChildProcess,ParentProcess> cont, ParentProcess node)
 		{
-			this.children =  new HashSet<IChildProcess>(cont.getChildren(node));
+			this.children =  new HashSet<ChildProcess>(cont.getChildren(node));
 		}
-		public HashSet<IChildProcess> children;
+		public HashSet<ChildProcess> children;
 	}
 	
-	public Vector<IParentProcess> getLatentNodes(){return this.latents;}
-	public Vector<IChildProcess> getObservedNodes(){return this.observables;}
+	public Vector<ParentProcess> getLatentNodes(){return this.latents;}
+	public Vector<ChildProcess> getObservedNodes(){return this.observables;}
 	
 	public void saveBest(String mainDir,double ll) throws CMException
 	{
@@ -180,15 +181,15 @@ public abstract class FeaturalModelController extends complex.ModelController
 		return this.network.getT();
 	}
 	
-	protected abstract void killLatentModelI(IParentProcess node) throws CMException;
-	protected abstract IParentProcess newLatentModelI() throws CMException;
+	protected abstract void killLatentModelI(ParentProcess node) throws CMException;
+	protected abstract ParentProcess newLatentModelI() throws CMException;
 	
-	protected abstract void disconnectI(IParentProcess latent, IChildProcess observed) throws CMException;
-	protected abstract void connectI(IParentProcess latent, IChildProcess observed) throws CMException;
+	protected abstract void disconnectI(ParentProcess latent, ChildProcess observed) throws CMException;
+	protected abstract void connectI(ParentProcess latent, ChildProcess observed) throws CMException;
 	
 	//protected IDynamicBayesNet network;
-	protected Vector<IParentProcess> latents = new Vector<IParentProcess>();
-	protected Vector<IChildProcess> observables = new Vector<IChildProcess>();
-	private HashMap<IParentProcess, HashSet<IChildProcess>> children = new HashMap<IParentProcess, HashSet<IChildProcess>>();
-	private HashMap<IChildProcess, HashSet<IParentProcess>> parents = new HashMap<IChildProcess, HashSet<IParentProcess>>();
+	protected Vector<ParentProcess> latents = new Vector<ParentProcess>();
+	protected Vector<ChildProcess> observables = new Vector<ChildProcess>();
+	private HashMap<ParentProcess, HashSet<ChildProcess>> children = new HashMap<ParentProcess, HashSet<ChildProcess>>();
+	private HashMap<ChildProcess, HashSet<ParentProcess>> parents = new HashMap<ChildProcess, HashSet<ParentProcess>>();
 }

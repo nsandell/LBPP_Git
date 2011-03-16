@@ -7,17 +7,18 @@ import java.util.Map;
 import java.util.Vector;
 
 import complex.CMException;
+import complex.IParentProcess;
 
 import complex.featural.ProposalAction.UniqueParentAddAction;
 import complex.featural.ProposalGenerator.Proposal;
 
 import util.MathUtil;
 
-public class IBPMixture {
+public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extends IParentProcess> {
 	
-	public IBPMixture(ProposalGenerator[] generators, double[] p_gens, double[] p) throws CMException
+	public IBPMixture(Vector<ProposalGenerator<ChildProcess,ParentProcess>> generators, double[] p_gens, double[] p) throws CMException
 	{
-		if(generators.length!=p_gens.length)
+		if(generators.size()!=p_gens.length)
 			throw new CMException("Provided different number of generators from generator probabilities");
 		double sum = 0;
 		for(double dub : p_gens)
@@ -27,15 +28,15 @@ public class IBPMixture {
 		if(Math.abs(p[0]+p[1]+p[2]-1) > 1e-12)
 			throw new CMException("Provided move vs verticle vs horizontal distribution not summing to one!");
 		
-		this.accepted_genprops = new int[generators.length];
+		this.accepted_genprops = new int[generators.size()];
 		this.generators = generators;
 		this.generator_probs = p_gens;
 		this.main_probs = p;
 	}
 	
-	public static class IBPMModelOptions
+	public static class IBPMModelOptions<ChildProcess extends IFeaturalChild,ParentProcess extends IParentProcess>
 	{
-		public IBPMModelOptions(FeaturalModelController controller, boolean[][] initAssign)
+		public IBPMModelOptions(FeaturalModelController<ChildProcess,ParentProcess> controller, boolean[][] initAssign)
 		{
 			this.controller = controller;
 			this.initialAssignments = initAssign;
@@ -76,7 +77,7 @@ public class IBPMixture {
 		public int max_run_it = 30, max_learn_it = 5;
 		public double run_conv = 1e-6, learn_conv = 1e-6;
 		
-		public FeaturalModelController controller;
+		public FeaturalModelController<ChildProcess,ParentProcess> controller;
 		public boolean optimizeParameters = false;		// Optimize parameters at each time step
 		public double alpha = 1;						// Indian Buffet
 		public boolean[][] initialAssignments;			// Feature matrix initialization
@@ -96,31 +97,31 @@ public class IBPMixture {
 			}
 		}
 		
-		public ShutdownThread(IBPMixture mix)
+		public ShutdownThread(IBPMixture<?,?> mix)
 		{
 			this.mix = mix;
 		}
-		IBPMixture mix;
+		IBPMixture<?,?> mix;
 	}
 	
 	private volatile Thread workThr;
 	private volatile boolean keepGoing = true;
-	public void learn(IBPMModelOptions opts) throws CMException
+	public void learn(IBPMModelOptions<ChildProcess,ParentProcess> opts) throws CMException
 	{
 		this.keepGoing = true;
 		this.workThr = Thread.currentThread();
 		Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
-		FeaturalModelController cont = opts.controller;
+		FeaturalModelController<ChildProcess,ParentProcess> cont = opts.controller;
 		int M = opts.initialAssignments[0].length;	// The number of latent processes
 		
-		Vector<IChildProcess> obs = cont.getObservedNodes();
-		Vector<IParentProcess> lats = cont.getLatentNodes();
+		Vector<ChildProcess> obs = cont.getObservedNodes();
+		Vector<ParentProcess> lats = cont.getLatentNodes();
 	
 		for(int i = 0; i < M; i++)
 		{
-			IParentProcess latent = cont.newLatentModel();
+			ParentProcess latent = cont.newLatentModel();
 			int counter = 0;
-			for(IChildProcess child : cont.getObservedNodes())
+			for(ChildProcess child : cont.getObservedNodes())
 			{
 				if(opts.initialAssignments[counter][i])
 					cont.connect(latent, child);
@@ -144,12 +145,12 @@ public class IBPMixture {
 			if(choice==0)
 			{
 				choice = MathUtil.rand.nextInt(obs.size());
-				IChildProcess hsn = obs.get(choice);
+				ChildProcess hsn = obs.get(choice);
 				cont.log("Starting horizontal sample run for node : " + hsn.getName());
 				
-				HashSet<IParentProcess> parents = cont.getParents(hsn);
+				HashSet<ParentProcess> parents = cont.getParents(hsn);
 				
-				for(IParentProcess latNd : lats)
+				for(ParentProcess latNd : lats)
 				{
 					if(parents.contains(latNd))
 						ll = this.attemptDisconnect(latNd, hsn, cont, opts, ll);
@@ -159,7 +160,7 @@ public class IBPMixture {
 				
 				//Attempt to add unique parent
 				cont.log("Attempting to add unique parent to node " + hsn.getName());
-				UniqueParentAddAction act = new UniqueParentAddAction(hsn);
+				UniqueParentAddAction<ChildProcess,ParentProcess> act = new UniqueParentAddAction<ChildProcess,ParentProcess>(hsn);
 				act.perform(cont);
 				double newLL = cont.run(opts.max_run_it, opts.run_conv) + structureLL(cont,opts);
 				if(accept(newLL,this.main_probs[0],ll,this.main_probs[0]+this.main_probs[1],cont))
@@ -170,12 +171,12 @@ public class IBPMixture {
 			else if(choice==1 && lats.size() > 0)
 			{
 				choice = MathUtil.rand.nextInt(lats.size());
-				IParentProcess vsn = lats.get(choice);
+				ParentProcess vsn = lats.get(choice);
 				cont.log("Starting vertical sample run for node : " + vsn.getName());
 
-				HashSet<IChildProcess> children = cont.getChildren(vsn);
+				HashSet<ChildProcess> children = cont.getChildren(vsn);
 
-				for(IChildProcess obsNode : obs)
+				for(ChildProcess obsNode : obs)
 				{
 					if(children.contains(obsNode))
 						ll = this.attemptDisconnect(vsn, obsNode, cont, opts, ll);
@@ -187,7 +188,7 @@ public class IBPMixture {
 			else
 			{
 				choice = MathUtil.discreteSample(this.generator_probs);
-				Proposal proposal = generators[choice].generate(cont);
+				Proposal<ChildProcess,ParentProcess> proposal = generators.get(choice).generate(cont);
 				
 				
 				if(proposal==null)
@@ -223,9 +224,9 @@ public class IBPMixture {
 		}
 		
 		System.out.println("Accepted moves:");
-		for(int i = 0; i < this.generators.length; i++)
+		for(int i = 0; i < this.generators.size(); i++)
 		{
-			System.out.println("\t"+this.generators[i].name()+ " : " + this.accepted_genprops[i]);
+			System.out.println("\t"+this.generators.get(i).name()+ " : " + this.accepted_genprops[i]);
 		}
 		System.out.println("Final LL : " + ll + "   (" + this.structureLL(cont, opts) + " structural).");
 
@@ -242,7 +243,7 @@ public class IBPMixture {
 		}
 	}
 	
-	private double attemptDisconnect(IParentProcess latent, IChildProcess observed, FeaturalModelController cont, IBPMModelOptions opts, double ll) throws CMException
+	private double attemptDisconnect(ParentProcess latent, ChildProcess observed, FeaturalModelController<ChildProcess,ParentProcess> cont, IBPMModelOptions<ChildProcess,ParentProcess> opts, double ll) throws CMException
 	{
 		if(!cont.getChildren(latent).contains(observed))
 			throw new CMException("Attempted to disconnect a latent node from an observed that was not its child!");
@@ -269,7 +270,7 @@ public class IBPMixture {
 		return ll;
 	}
 	
-	private double attemptConnect(IParentProcess latent, IChildProcess observed, FeaturalModelController cont, IBPMModelOptions opts, double ll) throws CMException
+	private double attemptConnect(ParentProcess latent, ChildProcess observed, FeaturalModelController<ChildProcess,ParentProcess> cont, IBPMModelOptions<ChildProcess,ParentProcess> opts, double ll) throws CMException
 	{
 		if(cont.getChildren(latent).contains(opts))
 			throw new CMException("Attempted to connect parent " + latent.getName() + " to child " + observed.getName() + " when they already are connected.");
@@ -296,7 +297,7 @@ public class IBPMixture {
 		return ll;
 	}
 	
-	private boolean accept(double newLL, double pf, double oldLL, double pb, FeaturalModelController cont) throws CMException
+	private boolean accept(double newLL, double pf, double oldLL, double pb, FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 	{
 		boolean ret = (MathUtil.rand.nextDouble() < Math.exp(newLL+Math.log(pb)-oldLL-Math.log(pf)));
 		if(ret)
@@ -311,7 +312,7 @@ public class IBPMixture {
 	double cachedAHN_alpha = -1;
 	int cachedAHN_id = -1;
 	
-	private double structureLL(FeaturalModelController cont, IBPMModelOptions opts)
+	private double structureLL(FeaturalModelController<ChildProcess,ParentProcess> cont, IBPMModelOptions<ChildProcess,ParentProcess> opts)
 	{
 		int N = cont.observables.size();
 		int K = cont.latents.size();
@@ -332,12 +333,12 @@ public class IBPMixture {
 		
 		double lladj = K*Math.log(opts.alpha);
 		
-		HashMap<HashSet<IChildProcess>, Integer> KNs = new HashMap<HashSet<IChildProcess>, Integer>();
+		HashMap<HashSet<ChildProcess>, Integer> KNs = new HashMap<HashSet<ChildProcess>, Integer>();
 		for(int i = 0; i < K; i++)
 		{
-			HashSet<IChildProcess> set = cont.getChildren(cont.getLatentNodes().get(i));
+			HashSet<ChildProcess> set = cont.getChildren(cont.getLatentNodes().get(i));
 			boolean dupe = false;
-			for(HashSet<IChildProcess> otherSet : KNs.keySet())
+			for(HashSet<ChildProcess> otherSet : KNs.keySet())
 			{
 				if(otherSet.containsAll(set) && set.containsAll(otherSet))
 				{
@@ -349,7 +350,7 @@ public class IBPMixture {
 			if(!dupe)
 				KNs.put(set, 1);
 		}
-		for(Map.Entry<HashSet<IChildProcess>, Integer> ent : KNs.entrySet())
+		for(Map.Entry<HashSet<ChildProcess>, Integer> ent : KNs.entrySet())
 			lladj -= (ent.getValue() > 1 ? Math.log(ent.getValue()) : 0);
 		
 		lladj -= cachedAHN;
@@ -369,26 +370,9 @@ public class IBPMixture {
 			this.structureLL(cont, opts);
 		}
 		return lladj;
-		/*
-		double lladj = -opts.alpha*cont.latents.size()*Math.log(opts.alpha);
-		for(int i = 1; i <= cont.latents.size(); i++)
-			lladj -= Math.log(i);
-		for(IParentProcess parent : cont.latents)
-		{
-			if(cont.getChildren(parent).size() > 1)
-			{
-				for(int i = 1; i <= cont.getChildren(parent).size(); i++)
-					lladj += Math.log(i);
-				for(int i = 1; i <= cont.observables.size()-cont.getChildren(parent).size(); i++)
-					lladj += Math.log(i);
-				for(int i = 2; i <= cont.observables.size(); i++)
-					lladj -= Math.log(i);
-			}
-		}
-		return lladj;*/
 	}
 	
-	private ProposalGenerator[] generators;
+	private Vector<ProposalGenerator<ChildProcess,ParentProcess>> generators;
 	private double[] generator_probs;
 	private int[] accepted_genprops;
 	private double[] main_probs;

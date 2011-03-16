@@ -5,14 +5,14 @@ import java.util.Vector;
 
 import util.MathUtil;
 
-import complex.featural.IChildProcess;
-import complex.featural.IParentProcess;
+import complex.IParentProcess;
 import complex.featural.FeaturalModelController;
+import complex.featural.IFeaturalChild;
 import complex.featural.ProposalAction;
 import complex.featural.ProposalGenerator;
 import complex.metrics.Coherence;
 
-public class CoherenceAdder implements ProposalGenerator {
+public class CoherenceAdder<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> implements ProposalGenerator<ChildProcess,ParentProcess> {
 	
 	public CoherenceAdder(double pcspl, double prspl, double prmerge, double pdmerge)
 	{
@@ -21,15 +21,15 @@ public class CoherenceAdder implements ProposalGenerator {
 	double pcspl; double prspl; double prmerge; double pdmerge;
 
 	@Override
-	public Proposal generate(FeaturalModelController cont) {
-		Vector<IParentProcess> latents = cont.getLatentNodes();
+	public Proposal<ChildProcess,ParentProcess> generate(FeaturalModelController<ChildProcess,ParentProcess> cont) {
+		Vector<ParentProcess> latents = cont.getLatentNodes();
 		if(latents.size()==0)
 			return null;
 		double[] coherence = new double[latents.size()];
 		double sum = 0;
 		for(int i = 0; i < latents.size(); i++)
 		{
-			Vector<IChildProcess> children = new Vector<IChildProcess>(cont.getChildren(latents.get(i)));
+			Vector<ChildProcess> children = new Vector<ChildProcess>(cont.getChildren(latents.get(i)));
 			coherence[i] = smoothness + Coherence.coherence(children,cont.getT());
 			sum += coherence[i];
 		}
@@ -44,15 +44,15 @@ public class CoherenceAdder implements ProposalGenerator {
 		double fp = this.pcspl*coherence[selection] + this.prspl/coherence.length;
 		double bp = this.prmerge/coherence.length/(coherence.length+1); //TODO determine if we want to exactly determine reverse move probability
 		                                 
-		Vector<IChildProcess> children = new Vector<IChildProcess>(cont.getChildren(latents.get(selection)));
+		Vector<ChildProcess> children = new Vector<ChildProcess>(cont.getChildren(latents.get(selection)));
 		boolean[] membership = Coherence.partition(children, cont.getT());
 		
-		HashSet<IChildProcess> movers = new HashSet<IChildProcess>();
+		HashSet<ChildProcess> movers = new HashSet<ChildProcess>();
 		for(int i = 0; i < membership.length; i++)
 			if(membership[i])
 				movers.add(children.get(i));
 		
-		return new Proposal(fp,bp,new ProposalAction.MultiUniqueParentAddAction(movers));
+		return new Proposal<ChildProcess,ParentProcess>(fp,bp,new ProposalAction.MultiUniqueParentAddAction<ChildProcess,ParentProcess>(movers));
 	}
 
 	@Override

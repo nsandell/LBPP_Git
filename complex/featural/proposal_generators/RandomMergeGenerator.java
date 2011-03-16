@@ -1,13 +1,14 @@
 package complex.featural.proposal_generators;
 
+import complex.IParentProcess;
 import complex.featural.FeaturalModelController;
+import complex.featural.IFeaturalChild;
 import complex.featural.FeaturalModelController.LatentPair;
 import complex.featural.ProposalGenerator;
 import complex.featural.ProposalAction.MergeAction;
 
-public class RandomMergeGenerator implements ProposalGenerator
+public class RandomMergeGenerator<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> implements ProposalGenerator<ChildProcess,ParentProcess>
 {
-
 	public RandomMergeGenerator(double pmerge, double psplit)
 	{
 		this.pmerge = pmerge;
@@ -19,12 +20,12 @@ public class RandomMergeGenerator implements ProposalGenerator
 		return "Random merges";
 	}
 	
-	public Proposal generate(FeaturalModelController cont)
+	public Proposal<ChildProcess,ParentProcess> generate(FeaturalModelController<ChildProcess,ParentProcess> cont)
 	{
 		int N = cont.getLatentNodes().size();
 		if(N < 2)
 			return null;
-		LatentPair pair = cont.randomLatentPair();
+		LatentPair<ChildProcess,ParentProcess> pair = cont.randomLatentPair();
 		if(pair==null)
 			return null;
 		
@@ -33,7 +34,7 @@ public class RandomMergeGenerator implements ProposalGenerator
 		double fp = this.pmerge/((double)(N*(N-1)));
 		double bp = this.psplit/((double)(N-1));		//Really rough but eh
 		
-		return new Proposal(fp, bp, new MergeAction(pair.l1,pair.l2));
+		return new Proposal<ChildProcess,ParentProcess>(fp, bp, new MergeAction<ChildProcess,ParentProcess>(pair.l1,pair.l2));
 	}
 
 	

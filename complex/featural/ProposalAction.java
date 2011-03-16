@@ -6,61 +6,62 @@ import java.util.HashSet;
 import java.util.Vector;
 
 import complex.CMException;
+import complex.IParentProcess;
 import complex.featural.FeaturalModelController.LatentBackup;
 
-public abstract class ProposalAction
+public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentProcess extends IParentProcess>
 {
 	public double forward;
 	public double backward;
 
-	public abstract void perform(FeaturalModelController cont) throws CMException;
-	public abstract void undo(FeaturalModelController cont) throws CMException;
+	public abstract void perform(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException;
+	public abstract void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException;
 
-	public static class SplitAction extends ProposalAction
+	public static class SplitAction<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> extends ProposalAction<ChildProcess,ParentProcess>
 	{
-		public SplitAction(IParentProcess latent, HashSet<IChildProcess> movers)
+		public SplitAction(ParentProcess latent, HashSet<ChildProcess> movers)
 		{
 			this.latentFeature = latent;
 			this.movers = movers;
 		}
 
-		public void perform(FeaturalModelController cont) throws CMException
+		public void perform(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
 			this.newFeature = cont.newLatentModel();
-			for(IChildProcess child : this.movers)
+			for(ChildProcess child : this.movers)
 			{
 				cont.disconnect(latentFeature, child);
 				cont.connect(this.newFeature,child);
 			}
 		}
 
-		public void undo(FeaturalModelController cont) throws CMException
+		public void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
-			for(IChildProcess child : this.movers)
+			for(ChildProcess child : this.movers)
 				cont.connect(latentFeature,child);
 			cont.killLatentModel(this.newFeature);
 		}
 
-		private IParentProcess latentFeature;
-		private IParentProcess newFeature;
-		private HashSet<IChildProcess> movers;
+		private ParentProcess latentFeature;
+		private ParentProcess newFeature;
+		private HashSet<ChildProcess> movers;
 	}
 
-	public static class MergeAction extends ProposalAction
+	public static class MergeAction<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> extends ProposalAction<ChildProcess,ParentProcess>
 	{
 
-		public MergeAction(IParentProcess l1, IParentProcess l2)
+		public MergeAction(ParentProcess l1, ParentProcess l2)
 		{
 			this.latent1 = l1;
 			this.latent2 = l2;
 		}
 
-		public void perform(FeaturalModelController cont) throws CMException
+		public void perform(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
 			this.latent2Backup = cont.backupAndRemoveLatentModel(latent2);
-			this.newl1Children = new HashSet<IChildProcess>();
-			HashSet<IChildProcess> l1Children = cont.getChildren(this.latent1);
-			for(IChildProcess child : this.latent2Backup.children)
+			this.newl1Children = new HashSet<ChildProcess>();
+			HashSet<ChildProcess> l1Children = cont.getChildren(this.latent1);
+			for(ChildProcess child : this.latent2Backup.children)
 			{
 				if(!l1Children.contains(child))
 				{
@@ -70,137 +71,137 @@ public abstract class ProposalAction
 			}
 		}
 
-		public void undo(FeaturalModelController cont) throws CMException
+		public void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
 			this.latent2 = cont.restoreBackup(this.latent2Backup);
-			for(IChildProcess child : this.newl1Children)
+			for(ChildProcess child : this.newl1Children)
 				cont.disconnect(this.latent1,child);
 		}
-		private IParentProcess latent1, latent2;
-		private LatentBackup latent2Backup;
-		private HashSet<IChildProcess> newl1Children;
+		private ParentProcess latent1, latent2;
+		private LatentBackup<ChildProcess,ParentProcess> latent2Backup;
+		private HashSet<ChildProcess> newl1Children;
 	}
 
-	public static class SwitchAction extends ProposalAction
+	public static class SwitchAction<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> extends ProposalAction<ChildProcess,ParentProcess>
 	{
-		public SwitchAction(IParentProcess from, IParentProcess to, Vector<IChildProcess> switches)
+		public SwitchAction(ParentProcess from, ParentProcess to, Vector<ChildProcess> switches)
 		{
 			this.lfrom = from; this.lto = to; this.switches = switches;
 		}
 
-		public void perform(FeaturalModelController cont) throws CMException
+		public void perform(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
 			// It is assumed anything switching wasn't already in the to node.
-			for(IChildProcess child : this.switches)
+			for(ChildProcess child : this.switches)
 			{
 				cont.disconnect(lfrom, child);
 				cont.connect(lto, child);
 			}
 		}
 
-		public void undo(FeaturalModelController cont) throws CMException
+		public void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
-			for(IChildProcess child : this.switches)
+			for(ChildProcess child : this.switches)
 			{
 				cont.disconnect(lto, child);
 				cont.connect(lfrom, child);
 			}
 		}
 
-		private IParentProcess lfrom, lto;
-		private Vector<IChildProcess> switches;
+		private ParentProcess lfrom, lto;
+		private Vector<ChildProcess> switches;
 	}
 
-	public static class DisconnectAction extends ProposalAction
+	public static class DisconnectAction<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> extends ProposalAction<ChildProcess,ParentProcess>
 	{
-		public DisconnectAction(IParentProcess latent, Collection<IChildProcess> discons)
+		public DisconnectAction(ParentProcess latent, Collection<ChildProcess> discons)
 		{
 			this.latent = latent;
 			this.disconnects = discons;
 		}
 
-		public void perform(FeaturalModelController cont) throws CMException
+		public void perform(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
-			for(IChildProcess child : this.disconnects)
+			for(ChildProcess child : this.disconnects)
 				cont.disconnect(this.latent, child);
 		}
 
-		public void undo(FeaturalModelController cont) throws CMException
+		public void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
-			for(IChildProcess child : this.disconnects)
+			for(ChildProcess child : this.disconnects)
 				cont.connect(this.latent, child);
 		}
 
-		private IParentProcess latent;
-		private Collection<IChildProcess> disconnects;
+		private ParentProcess latent;
+		private Collection<ChildProcess> disconnects;
 	}
 	
-	public static class MultiUniqueParentAddAction extends ProposalAction
+	public static class MultiUniqueParentAddAction<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> extends ProposalAction<ChildProcess,ParentProcess>
 	{
-		public MultiUniqueParentAddAction(Collection<IChildProcess> cps)
+		public MultiUniqueParentAddAction(Collection<ChildProcess> cps)
 		{
 			this.cps = cps;
 		}
 
 		@Override
-		public void perform(FeaturalModelController cont) throws CMException {
+		public void perform(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException {
 			this.uniqParent = cont.newLatentModel();
-			for(IChildProcess cp : this.cps)
+			for(ChildProcess cp : this.cps)
 				cont.connect(uniqParent,cp);
 		}
 
 		@Override
-		public void undo(FeaturalModelController cont) throws CMException {
+		public void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException {
 			cont.killLatentModel(this.uniqParent);
 		}
 		
-		IParentProcess uniqParent;
-		Collection<IChildProcess> cps;
+		ParentProcess uniqParent;
+		Collection<ChildProcess> cps;
 	}
 	
-	public static class UniqueParentAddAction extends ProposalAction
+	public static class UniqueParentAddAction<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> extends ProposalAction<ChildProcess,ParentProcess> 
 	{
-		public UniqueParentAddAction(IChildProcess cp)
+		public UniqueParentAddAction(ChildProcess cp)
 		{
 			this.cp = cp;
 		}
 
 		@Override
-		public void perform(FeaturalModelController cont) throws CMException {
+		public void perform(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException {
 			this.uniqParent = cont.newLatentModel();
 			cont.connect(uniqParent,cp);
 		}
 
 		@Override
-		public void undo(FeaturalModelController cont) throws CMException {
+		public void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException {
 			cont.killLatentModel(this.uniqParent);
 		}
 		
-		IParentProcess uniqParent;
-		IChildProcess cp;
+		ParentProcess uniqParent;
+		ChildProcess cp;
 	}
 
-	public static class ConnectAction extends ProposalAction
+	public static class ConnectAction<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> extends ProposalAction<ChildProcess,ParentProcess>
 	{
-		public ConnectAction(IParentProcess latent, Collection<IChildProcess> cons)
+		public ConnectAction(ParentProcess latent, Collection<ChildProcess> cons)
 		{
 			this.latent = latent;
 			this.connects = cons;
 		}
 
-		public void perform(FeaturalModelController cont) throws CMException
+		public void perform(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
-			for(IChildProcess child : this.connects)
+			for(ChildProcess child : this.connects)
 				cont.connect(this.latent, child);
 		}
 
-		public void undo(FeaturalModelController cont) throws CMException
+		public void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
-			for(IChildProcess child : this.connects)
+			for(ChildProcess child : this.connects)
 				cont.disconnect(this.latent, child);
 		}
 
-		private IParentProcess latent;
-		private Collection<IChildProcess> connects;
+		private ParentProcess latent;
+		private Collection<ChildProcess> connects;
 	}
 }

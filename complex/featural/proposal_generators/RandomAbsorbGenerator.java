@@ -2,13 +2,14 @@ package complex.featural.proposal_generators;
 
 import java.util.Vector;
 
+import complex.IParentProcess;
 import complex.featural.FeaturalModelController;
 import complex.featural.FeaturalModelController.LatentPair;
-import complex.featural.IChildProcess;
+import complex.featural.IFeaturalChild;
 import complex.featural.ProposalAction;
 import complex.featural.ProposalGenerator;
 
-public class RandomAbsorbGenerator implements ProposalGenerator
+public class RandomAbsorbGenerator<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> implements ProposalGenerator<ChildProcess,ParentProcess>
 {
 	public RandomAbsorbGenerator(double pabs, double pexp)
 	{
@@ -21,21 +22,21 @@ public class RandomAbsorbGenerator implements ProposalGenerator
 		return "Random Absorbs";
 	}
 	
-	public Proposal generate(FeaturalModelController cont)
+	public Proposal<ChildProcess,ParentProcess> generate(FeaturalModelController<ChildProcess,ParentProcess> cont)
 	{
 		int N = cont.getLatentNodes().size();
 		if(N < 2)
 			return null;
 		
-		LatentPair pair = cont.randomLatentPair();
+		LatentPair<ChildProcess,ParentProcess> pair = cont.randomLatentPair();
 		
 		if(pair==null)
 			return null;
 		
 		cont.log("Proposing that node " + pair.l1.getName() + " adds all the children of node " + pair.l2.getName());
 		
-		Vector<IChildProcess> newNds = new Vector<IChildProcess>();
-		for(IChildProcess child : cont.getChildren(pair.l2))
+		Vector<ChildProcess> newNds = new Vector<ChildProcess>();
+		for(ChildProcess child : cont.getChildren(pair.l2))
 			if(!cont.getChildren(pair.l1).contains(child))
 				newNds.add(child);
 		
@@ -47,7 +48,7 @@ public class RandomAbsorbGenerator implements ProposalGenerator
 		double fp = this.pabs/((double)(N-1)*N);
 		double bp = this.pexp/((double)(N-1)*N);
 		
-		return new Proposal(fp,bp,new ProposalAction.ConnectAction(pair.l1, newNds));
+		return new Proposal<ChildProcess,ParentProcess>(fp,bp,new ProposalAction.ConnectAction<ChildProcess,ParentProcess>(pair.l1, newNds));
 	}
 	
 	double pabs, pexp;

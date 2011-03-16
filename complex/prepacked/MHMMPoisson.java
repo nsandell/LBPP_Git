@@ -17,11 +17,9 @@ import bn.dynamic.IDBNNode;
 import bn.dynamic.IDynamicBayesNet;
 import bn.dynamic.IFDiscDBNNode;
 import bn.dynamic.IInfDiscEvDBNNode;
-import bn.messages.FiniteDiscreteMessage;
-
 import complex.CMException;
-import complex.featural.IParentProcess;
-import complex.mixture.controllers.MHMMController.MHMMChild;
+import complex.IParentProcess;
+import complex.mixture.controllers.MHMMChild;
 import complex.prepacked.MHMM.MHMMChildFactory;
 
 public class MHMMPoisson
@@ -128,6 +126,7 @@ public class MHMMPoisson
 		
 		InfiniteDiscreteDistribution poissBackup = null;
 		DiscreteFiniteDistribution stateBackup = null;
+		
 		@Override
 		public void backupParameters() throws CMException {
 			try {
@@ -137,6 +136,7 @@ public class MHMMPoisson
 				throw new CMException("Error backing up parameters.. this shouldn't happen: " + e.toString());
 			}
 		}
+		
 		@Override
 		public void restoreParameters() throws CMException {
 			try {
@@ -146,16 +146,19 @@ public class MHMMPoisson
 				throw new CMException("Error storing parameters.. this shouldn't happen: " + e.toString());
 			}
 		}
+		
 		@Override
 		public double getDisagreement(int t) {
 			return 0;
 		}
+		
 		@Override
 		public IDBNNode hook() {
 			return this.evnode;
 		}
+		
 		@Override
-		public void optimize(Vector<FiniteDiscreteMessage> incPis)
+		public void optimize()
 		{
 			try {
 
@@ -170,27 +173,14 @@ public class MHMMPoisson
 				System.err.println("Failed to optimized for node " + this.getName());
 			}
 		}
-		@Override
-		public double evaluateP() {
-			return 1;
-		}
-		@Override
-		public void sampleInit() {}
-		@Override
-		public void samplePosterior() {}
+		
 		@Override
 		public Collection<String> constituentNodeNames() {
 			return this.nodeNames;
 		}
-		
-		@Override
-		public void addParent(IParentProcess parent) {}
 
 		@Override
-		public void killParent(IParentProcess parent) {}
-
-		@Override
-		public void optimize() {}
+		public void setParent(IParentProcess rent) {}
 	}
 	
 	
@@ -272,8 +262,9 @@ public class MHMMPoisson
 		}
 		
 		@Override
-		public void optimize(Vector<FiniteDiscreteMessage> incPis) {
+		public void optimize() {
 			try {
+
 				this.net.run(this.nnset, 20, 1e-8);
 				
 				this.arnode.optimizeParameters();
@@ -285,29 +276,12 @@ public class MHMMPoisson
 		}
 		
 		@Override
-		public double evaluateP() {
-			return 1;
-		}
-		
-		@Override
-		public void sampleInit() {}
-		
-		@Override
-		public void samplePosterior() {}
-		
-		@Override
-		public void addParent(IParentProcess parent) {}
-
-		@Override
-		public void killParent(IParentProcess parent) {}
-
-		@Override
-		public void optimize() {}
-		
-		@Override
 		public Collection<String> constituentNodeNames() {
 			return this.nnset;
 		}
+
+		@Override
+		public void setParent(IParentProcess rent) {}
 	}
 	
 	private static class BasicPoissChild implements MHMMChild
@@ -341,45 +315,14 @@ public class MHMMPoisson
 		}
 
 		@Override
-		public void optimize(Vector<FiniteDiscreteMessage> chainIncPis)
+		public void optimize()
 		{
 			try {
-				int N = chainIncPis.get(0).getCardinality();
-				
-				double[] sums = new double[N];
-				double[] times = new double[N];
-				int T = this.node.getNetwork().getT();
-				for(int t = 0; t < T; t++) {
-					for(int i = 0; i < N; i++) {
-						sums[i] += ((double)this.node.getValue(t))*chainIncPis.get(t).getValue(i);
-						times[i] += chainIncPis.get(t).getValue(i);
-					}
-				}
-				
-				double[] means = new double[N];
-				for(int i = 0; i < N; i++)
-				{
-					if(times[i]==0)
-						continue;
-					means[i] = sums[i]/times[i];
-				}
-
-				this.node.setAdvanceDistribution(new SwitchingPoisson(means));
+				this.node.optimizeParameters();
 			} catch(BNException e) {
-				System.err.println("Failed to optimize node " + this.getName() + " : " + e.toString());
+				System.err.println("Failed to optimize node " + this.getName() + ":" + e.toString());
 			}
 		}
-
-		@Override
-		public double evaluateP() {
-			return 1;
-		}
-
-		@Override
-		public void sampleInit() {}
-
-		@Override
-		public void samplePosterior() {}
 
 		@Override
 		public void backupParameters() throws CMException{
@@ -401,18 +344,11 @@ public class MHMMPoisson
 				}
 			}
 		}
-		
+	
 		@Override
-		public void addParent(IParentProcess parent) {}
-
-		@Override
-		public void killParent(IParentProcess parent) {}
-
-		@Override
-		public void optimize() {}
+		public void setParent(IParentProcess rent) {}
 		
 		Distribution backupDist = null;
-		
 	}
 
 	public static void main(String[] args) throws BNException, CMException

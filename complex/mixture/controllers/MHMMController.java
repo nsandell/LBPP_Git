@@ -1,24 +1,21 @@
 package complex.mixture.controllers;
 
-import java.util.Collection;
 import java.util.HashMap;
+
 import java.util.HashSet;
 import java.util.Vector;
 
 import bn.BNException;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
-import bn.dynamic.IDBNNode;
 import bn.dynamic.IDynamicBayesNet;
 import bn.dynamic.IFDiscDBNNode;
-import bn.messages.FiniteDiscreteMessage;
 import complex.CMException;
-import complex.featural.IChildProcess;
-import complex.featural.IParentProcess;
 import complex.mixture.MixtureModelController;
 
-public class MHMMController extends MixtureModelController {
+public class MHMMController extends MixtureModelController<MHMMChild,MHMMX> {
 	
+
 	public MHMMController(IDynamicBayesNet network, Vector<MHMMChild> children, MHMMParameterPrior priors, int ns)
 	{
 		super(children);
@@ -26,47 +23,12 @@ public class MHMMController extends MixtureModelController {
 		this.priors = priors;
 		this.ns = ns;
 	}
-	
-	public static interface MHMMChild extends IChildProcess
-	{
-		IDBNNode hook();
-		
-		void optimize(Vector<FiniteDiscreteMessage> incPis);
-		double evaluateP();
-		void sampleInit();
-		void samplePosterior();
-		Collection<String> constituentNodeNames();
-	}
-	
-	private static class MHMMX implements IParentProcess
-	{
-		MHMMX(IFDiscDBNNode xnd,int ID)
-		{
-			this.xnd = xnd;
-			this.ID = ID;
-		}
-		public String getName()
-		{
-			return this.xnd.getName();
-		}
-		public FiniteDiscreteMessage marginal(int t)
-		{
-			try {
-				return this.xnd.getMarginal(t);
-			} catch(BNException e) {
-				System.err.println("Error : " + e.toString());
-				return null;
-			}
-		}
-		int ID;
-		IFDiscDBNNode xnd;
-	}
-	
+
 	public static interface MHMMParameterPrior
 	{
 		public double evaluate(DiscreteCPT A);
 		public double evaluate(DiscreteCPTUC pi);
-		
+
 		public DiscreteCPT initialSampleA();
 		public DiscreteCPTUC initialSamplePi();
 		public DiscreteCPT posteriorSampleA(DiscreteCPT A);
@@ -74,7 +36,7 @@ public class MHMMController extends MixtureModelController {
 	}
 
 	@Override
-	protected void deleteParentI(IParentProcess parent) throws CMException
+	protected void deleteParentI(MHMMX parent) throws CMException
 	{
 		if(this.getChildren(parent).size()!=0)
 			throw new CMException("Cannot have an orphaned observation sequence in an mHMM!");
@@ -87,7 +49,7 @@ public class MHMMController extends MixtureModelController {
 	}
 
 	@Override
-	protected IParentProcess newParentI() throws CMException {
+	protected MHMMX newParentI() throws CMException {
 		try {
 			int id = this.nextID();
 			IFDiscDBNNode newp = network.addDiscreteNode("X"+id, this.ns);
@@ -103,27 +65,22 @@ public class MHMMController extends MixtureModelController {
 	}
 
 	@Override
-	protected void setParentI(IChildProcess child, IParentProcess parent)
-			throws CMException
+	protected void setParentI(MHMMChild child, MHMMX parent)
+	throws CMException
 	{
-		if(child instanceof MHMMChild && parent instanceof MHMMX)
-		{
-			try {
-				MHMMChild mchild = (MHMMChild)child;
-				MHMMX mp = (MHMMX)parent;
-				
-				if(parents.containsKey(mchild))
-					this.network.removeIntraEdge(parents.get(mchild).xnd.getName(),mchild.hook().getName());
-				this.network.addIntraEdge(mp.xnd.getName(), mchild.hook().getName());
-				this.parents.put(mchild,mp);
-			} catch(BNException e) {
-				throw new CMException("Error changing parent for node " + child.getName() + " : " + e.toString());
-			}
+		try {
+			MHMMChild mchild = (MHMMChild)child;
+			MHMMX mp = (MHMMX)parent;
+
+			if(parents.containsKey(mchild))
+				this.network.removeIntraEdge(parents.get(mchild).xnd.getName(),mchild.hook().getName());
+			this.network.addIntraEdge(mp.xnd.getName(), mchild.hook().getName());
+			this.parents.put(mchild,mp);
+		} catch(BNException e) {
+			throw new CMException("Error changing parent for node " + child.getName() + " : " + e.toString());
 		}
-		else
-			throw new CMException("Attempted to change parent of non-MHMM observation process.");
 	}
-	
+
 	@Override
 	public double learn(int max_learn_it, double learn_conv, int max_run_it, double run_conv) throws CMException
 	{
@@ -134,19 +91,17 @@ public class MHMMController extends MixtureModelController {
 			throw new CMException("Error optimizing the model : " + e.toString());
 		}
 	}
-	
+
 	@Override
 	public double run(int max_it, double conv) throws CMException
 	{
 		try {
 			this.network.run_subsets_parallel(this.parentNames, max_it, conv);
-			//this.network.run(max_it,conv);
 			double ll = this.network.getLogLikelihood();
 			if(Double.isNaN(ll) || ll > 0)
 			{
 				System.out.println("Resetting to try to recover..");
 				this.network.resetMessages();
-				//this.network.run_subsets_parallel(this.parentNames, max_it, conv);
 				this.network.run(max_it,conv);
 				ll = this.network.getLogLikelihood();
 				if(Double.isNaN(ll) || ll > 0)
@@ -162,70 +117,45 @@ public class MHMMController extends MixtureModelController {
 		}
 	}
 
-	private HashMap<MHMMChild,MHMMX> parents = new HashMap<MHMMController.MHMMChild, MHMMController.MHMMX>();
+	private HashMap<MHMMChild,MHMMX> parents = new HashMap<MHMMChild, MHMMX>();
 	private Vector<String> parentNames = new Vector<String>();
 
 	@Override
-	public void optimizeChildParameters(IChildProcess child)
-	throws CMException {
-		if(child instanceof MHMMChild)
-		{
-			try {
-				MHMMChild mchild = (MHMMChild)child;
-				MHMMX parent = (MHMMX)this.getParent(child);
-				Vector<FiniteDiscreteMessage> pis = new Vector<FiniteDiscreteMessage>();
-				for(int t = 0; t < this.network.getT(); t++)
-					pis.add(parent.xnd.getMarginal(t));
-				mchild.optimize(pis);
-			} catch(BNException e) {
-				throw new CMException("Failed to optimize child node...");
-			}
-		}
-		else throw new CMException("Attempted to optimize non-mHMM observation process.");
-	}
-	
-	public double runChain(IParentProcess proc, int maxit, double conv) throws CMException
+	public void optimizeChildParameters(MHMMChild child)
 	{
-		if(proc instanceof MHMMX)
-		{
-			MHMMX procx = (MHMMX)proc;
-			
-			Vector<String> nodes = new Vector<String>();
-			nodes.add(procx.xnd.getName());
-			Vector<IChildProcess> children = this.getChildren(proc);
-			for(IChildProcess child : children)
+		child.optimize();
+	}
+
+	public double runChain(MHMMX proc, int maxit, double conv) throws CMException
+	{
+		Vector<String> nodes = new Vector<String>();
+		nodes.add(proc.xnd.getName());
+		Vector<MHMMChild> children = this.getChildren(proc);
+		for(MHMMChild child : children)
+			nodes.addAll(child.constituentNodeNames());
+
+		try {
+			this.network.run_parallel_block(nodes,maxit,conv);
+			double ll = this.network.getLogLikelihood();
+
+			if(Double.isNaN(ll) || ll > 0)
 			{
-				if(child instanceof MHMMChild)
-					nodes.addAll(((MHMMChild)child).constituentNodeNames());
-				else
-					throw new CMException("MHMM model has non MHMM child process...");
-			}
-			
-			try {
-				this.network.run_parallel_block(nodes,maxit,conv);
-				double ll = this.network.getLogLikelihood();
-				
+				this.network.resetMessages();
+				this.network.run_parallel_block(maxit,conv);
+				ll = this.network.getLogLikelihood();
 				if(Double.isNaN(ll) || ll > 0)
 				{
-					this.network.resetMessages();
-					this.network.run_parallel_block(maxit,conv);
-					ll = this.network.getLogLikelihood();
-					if(Double.isNaN(ll) || ll > 0)
-					{
-						this.log("NAN LIKELIHOOD");
-						this.log(this.network.toString());
-						throw new CMException("Model returns NaN/Greater than 0 log likelihood!");
-					}
+					this.log("NAN LIKELIHOOD");
+					this.log(this.network.toString());
+					throw new CMException("Model returns NaN/Greater than 0 log likelihood!");
 				}
-				return ll;
-			} catch(BNException e) {
-				throw new CMException(e.toString());
 			}
+			return ll;
+		} catch(BNException e) {
+			throw new CMException(e.toString());
 		}
-		else
-			throw new CMException("MHMM model has non MHMM latent process...");
 	}
-	
+
 	private int nextID()
 	{
 		int ret = this.minimum_available_id;
@@ -238,15 +168,15 @@ public class MHMMController extends MixtureModelController {
 		}
 		return ret;
 	}
-	
-	
+
+
 	private void killID(int id)
 	{
 		this.usedIDs.remove(id);
 		if(id < this.minimum_available_id)
 			this.minimum_available_id = id;
 	}
-	
+
 	private int ns;
 	private HashSet<Integer> usedIDs = new HashSet<Integer>();
 	private int minimum_available_id = 0;

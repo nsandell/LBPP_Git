@@ -5,27 +5,28 @@ import java.util.HashMap;
 import java.util.Vector;
 
 import complex.CMException;
-import complex.featural.IChildProcess;
-import complex.featural.IParentProcess;
+import complex.IChildProcess;
+import complex.IParentProcess;
+import complex.ModelController;
 
-public abstract class MixtureModelController extends complex.ModelController{
+public abstract class MixtureModelController<ChildType extends IChildProcess, ParentType extends IParentProcess> extends ModelController {
 	
-	public MixtureModelController(Collection<? extends IChildProcess> children)
+	public MixtureModelController(Collection<ChildType> children)
 	{
-		this.allChildren = new Vector<IChildProcess>(children);
+		this.allChildren = new Vector<ChildType>(children);
 	}
 	
-	public IParentProcess getParent(IChildProcess child)
+	public ParentType getParent(ChildType child)
 	{
 		return this.parents.get(child);
 	}
 	
-	public Vector<IChildProcess> getChildren(IParentProcess parent)
+	public Vector<ChildType> getChildren(ParentType parent)
 	{
 		return this.children.get(parent);
 	}
 	
-	public void setParent(IChildProcess child, IParentProcess parent) throws CMException
+	public void setParent(ChildType child, ParentType parent) throws CMException
 	{
 		this.setParentI(child, parent);
 		if(parents.get(child)!=null)
@@ -34,43 +35,43 @@ public abstract class MixtureModelController extends complex.ModelController{
 		this.parents.put(child, parent);
 	}
 	
-	public Vector<IChildProcess> getAllChildren()
+	public Vector<ChildType> getAllChildren()
 	{
 		return this.allChildren;
 	}
 	
-	public Vector<IParentProcess> getAllParents()
+	public Vector<ParentType> getAllParents()
 	{
 		return this.allParents;
 	}
 	
-	public abstract double runChain(IParentProcess proc, int maxit, double conv) throws CMException;
+	public abstract double runChain(ParentType proc, int maxit, double conv) throws CMException;
 	
-	public abstract void optimizeChildParameters(IChildProcess child) throws CMException;
+	public abstract void optimizeChildParameters(ChildType child) throws CMException;
 	
-	public void deleteParent(IParentProcess parent) throws CMException
+	public void deleteParent(ParentType parent) throws CMException
 	{
 		this.deleteParentI(parent);
-		for(IChildProcess child : this.children.get(parent))
+		for(ChildType child : this.children.get(parent))
 			this.parents.put(child, null);
 		this.parents.remove(parent);
 		this.allParents.remove(parent);
 	}
 	
-	public IParentProcess newParent() throws CMException
+	public ParentType newParent() throws CMException
 	{
-		IParentProcess proc = this.newParentI();
+		ParentType proc = this.newParentI();
 		this.allParents.add(proc);
-		this.children.put(proc, new Vector<IChildProcess>());
+		this.children.put(proc, new Vector<ChildType>());
 		return proc;
 	}
 	
-	protected abstract void deleteParentI(IParentProcess parent) throws CMException;
-	protected abstract IParentProcess newParentI() throws CMException;
-	protected abstract void setParentI(IChildProcess child, IParentProcess parent) throws CMException;
+	protected abstract void deleteParentI(ParentType parent) throws CMException;
+	protected abstract ParentType newParentI() throws CMException;
+	protected abstract void setParentI(ChildType child, ParentType parent) throws CMException;
 
-	private Vector<IChildProcess> allChildren;
-	private Vector<IParentProcess> allParents = new Vector<IParentProcess>();
-	private HashMap<IParentProcess, Vector<IChildProcess>> children = new HashMap<IParentProcess, Vector<IChildProcess>>();
-	private HashMap<IChildProcess, IParentProcess> parents = new HashMap<IChildProcess, IParentProcess>();
+	private Vector<ChildType> allChildren;
+	private Vector<ParentType> allParents = new Vector<ParentType>();
+	private HashMap<ParentType, Vector<ChildType>> children = new HashMap<ParentType, Vector<ChildType>>();
+	private HashMap<ChildType, ParentType> parents = new HashMap<ChildType, ParentType>();
 }

@@ -1,6 +1,7 @@
 package complex.prepacked;
 
 import java.io.BufferedReader;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -27,15 +28,15 @@ import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.distributions.Distribution;
 import bn.dynamic.IDynamicBayesNet;
-import bn.impl.BayesianNetwork;
 import bn.impl.dynbn.DynamicNetworkFactory;
 
 import complex.CMException;
 import complex.mixture.FixedMixture;
 import complex.mixture.FixedMixture.FMModelOptions;
 import complex.mixture.controllers.MHMMController;
-import complex.mixture.controllers.MHMMController.MHMMChild;
+import complex.mixture.controllers.MHMMChild;
 import complex.mixture.controllers.MHMMController.MHMMParameterPrior;
+import complex.mixture.controllers.MHMMX;
 
 public class MHMM
 {
@@ -227,7 +228,7 @@ public class MHMM
 			priors = new Priors(Ns);
 
 		MHMMController cont = new MHMMController(network, children, priors, Ns);
-		FMModelOptions opts = new FMModelOptions(cont, N);
+		FMModelOptions<MHMMChild,MHMMX> opts = new FMModelOptions<MHMMChild,MHMMX>(cont, N);
 
 		String cno = "";
 		try

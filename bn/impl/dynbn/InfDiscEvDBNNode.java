@@ -3,7 +3,6 @@ package bn.impl.dynbn;
 import java.io.PrintStream;
 
 import bn.BNException;
-import bn.Optimizable;
 import bn.distributions.DiscreteDistribution.InfDiscDistSufficientStat;
 import bn.distributions.Distribution;
 import bn.distributions.DiscreteDistribution.InfiniteDiscreteDistribution;
@@ -16,7 +15,7 @@ import bn.messages.FiniteDiscreteMessage.FDiscMessageInterfaceSet;
 import bn.messages.MessageSet;
 import bn.messages.Message.MessageInterfaceSet;
 
-public class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode, Optimizable {
+public class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode {
 	
 	public InfDiscEvDBNNode(DynamicBayesianNetwork net, String name, int[] values) throws BNException
 	{
@@ -257,7 +256,7 @@ public class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode, Opti
 	}
 	
 	@Override
-	public double optimizeParameters(SufficientStatistic stat) throws BNException
+	protected double optimizeParametersI(SufficientStatistic stat) throws BNException
 	{
 		if(!(stat instanceof TwoSliceStatistics<?>))
 			throw new BNException("Attempted to optimize dynamic node with static statistic.");
@@ -272,7 +271,7 @@ public class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode, Opti
 	}
 	
 	@Override 
-	public double optimizeParameters() throws BNException
+	protected double optimizeParametersI() throws BNException
 	{
 		return this.optimizeParameters(this.getSufficientStatistic());
 	}
@@ -280,8 +279,8 @@ public class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode, Opti
 	@Override
 	public double conditionalLL(int t)
 	{
-		return t==0? this.init.computeBethePotential(this.parentMessages.getIncomingPis(0), this.values[0]) :
-					 this.advance.computeBethePotential(this.parentMessages.getIncomingPis(t), this.values[t]);
+		return t==0 && this.init!=null ? this.init.computeBethePotential(this.parentMessages.getIncomingPis(0), this.values[0]) :
+					 					 this.advance.computeBethePotential(this.parentMessages.getIncomingPis(t), this.values[t]);
 	}
 
 	private DynamicContextManager.DynamicParentManager<FiniteDiscreteMessage> parentMessages;

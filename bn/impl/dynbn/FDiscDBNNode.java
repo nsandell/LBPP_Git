@@ -6,8 +6,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 
 import bn.BNException;
-import bn.Optimizable;
-import bn.distributions.DiscreteDistribution;
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.distributions.Distribution;
 import bn.distributions.DiscreteDistribution.DiscreteSufficientStatistic;
@@ -23,7 +21,7 @@ import bn.impl.dynbn.DynamicContextManager.DynamicMessageIndex;
 import bn.impl.dynbn.DynamicContextManager.DynamicMessageSet;
 import bn.impl.dynbn.DynamicContextManager.DynamicParentManager;
 
-public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable {
+public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode {
 	
 	public FDiscDBNNode(DynamicBayesianNetwork net, String name, int cardinality) throws BNException
 	{
@@ -162,10 +160,10 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 		this.values[t] = value;
 	}   
 
-	public DiscreteDistribution getAdvanceDistribution() {
+	public DiscreteFiniteDistribution getAdvanceDistribution() {
 		return this.advanceDist;
 	}
-	public DiscreteDistribution getInitialDistribution() {
+	public DiscreteFiniteDistribution getInitialDistribution() {
 		return this.initialDist;
 	}
 	public void setInitialDistribution(DiscreteFiniteDistribution dist)
@@ -331,7 +329,7 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 		}
 	}
 	
-	public double optimizeParameters() throws BNException
+	protected double optimizeParametersI() throws BNException
 	{
 		TwoSliceStatistics<DiscreteSufficientStatistic> tss = this.getSufficientStatistic();
 		if(this.initialDist!=null)
@@ -343,19 +341,8 @@ public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode, Optimizable 
 		else
 			return this.advanceDist.optimize(tss.advanceStat);
 	}
-	public double optimizeParameters(TwoSliceStatistics<DiscreteSufficientStatistic> tss) throws BNException
-	{
-		if((this.initialDist!=null && tss.initialStat==null) || tss.advanceStat==null)
-			throw new BNException("Attempted to optimize node without providing proper amount of statistics.");
-		if(this.initialDist!=null)
-		{
-			double err = this.initialDist.optimize(tss.initialStat);
-			return Math.max(err,this.advanceDist.optimize(tss.advanceStat));
-		}
-		else
-			return this.advanceDist.optimize(tss.advanceStat);
-	}
-	public double optimizeParameters(SufficientStatistic stat) throws BNException
+	
+	protected double optimizeParametersI(SufficientStatistic stat) throws BNException
 	{
 		if(!(stat instanceof TwoSliceStatistics<?>))
 			throw new BNException("Attempted to optimize dynamic node with static statistic.");

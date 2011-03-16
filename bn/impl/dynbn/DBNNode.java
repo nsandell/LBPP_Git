@@ -11,6 +11,7 @@ import java.util.Vector;
 
 import bn.BNException;
 import bn.IBayesNode;
+import bn.distributions.Distribution.SufficientStatistic;
 import bn.dynamic.IDBNNode;
 import bn.impl.InternalIBayesNode;
 import bn.impl.dynbn.DynamicContextManager.DynamicMessageIndex;
@@ -318,7 +319,34 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 
 	public abstract void printDistributionInfo(PrintStream ps);
 	
-
+	public void lockParameters()
+	{
+		this.parametersLocked = true;
+	}
+	public void unlockParameters()
+	{
+		this.parametersLocked = false;
+	}
+	
+	public final double optimizeParameters() throws BNException
+	{
+		if(this.parametersLocked)
+			return 0;
+		else
+			return this.optimizeParametersI();
+	}
+	public final double optimizeParameters(SufficientStatistic stat) throws BNException
+	{
+		if(this.parametersLocked)
+			return 0;
+		else
+			return this.optimizeParametersI(stat);
+	}
+	
+	protected abstract double optimizeParametersI() throws BNException;
+	protected abstract double optimizeParametersI(SufficientStatistic stat) throws BNException;
+	
+	protected boolean parametersLocked = false;
 	private boolean lastPassBackward = true;
 
 	protected DynamicBayesianNetwork bayesNet;

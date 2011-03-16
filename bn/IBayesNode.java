@@ -1,11 +1,17 @@
 package bn;
 
+import bn.distributions.Distribution.SufficientStatistic;
+
 /**
  * Basic Bayesian node interface.  Methods held by static and dynamic nodes
  * @author Nils F. Sandell
  * 
  */
 public interface IBayesNode {
+	
+	public SufficientStatistic getSufficientStatistic() throws BNException;
+	public double optimizeParameters(SufficientStatistic stat) throws BNException;
+	public double optimizeParameters() throws BNException;
 	
 	/**
 	 * Get the name of this node.
@@ -47,4 +53,7 @@ public interface IBayesNode {
 	 * @throws BNException If the node is not well formed.
 	 */
 	void validate() throws BNException;
+	
+	void lockParameters();
+	void unlockParameters();
 }

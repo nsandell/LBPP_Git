@@ -125,8 +125,6 @@ public abstract class DiscreteDistribution implements Distribution {
 	{
 		int cinc = 1;
 		int index = 0;
-		//TODO TEST THIS FOR CHRISTSAKE
-		//for(int i = indices.length-1; i >= 0; i--)
 		for(int i = 0; i < indices.length; i++)
 		{
 			if(indices[i] >= dimSizes[i] || indices[i] < 0)
@@ -181,8 +179,6 @@ public abstract class DiscreteDistribution implements Distribution {
 	 */
 	public final static int[] incrementIndices(int[] indices, int[] dimSizes)
 	{
-		//TODO TESTTESTTEST
-		//for(int i = indices.length-1; i >= 0; i--)
 		for(int i = 0; i < indices.length; i++)
 		{
 			if(indices[i]==(dimSizes[i]-1))

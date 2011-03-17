@@ -485,7 +485,7 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 		clampedLearn = on;
 	}
 	
-	private static boolean clampedLearn = false;
+	private static boolean clampedLearn = true;
 	private static double clampPct = 1e-15;
 	
 	private int dimprod;

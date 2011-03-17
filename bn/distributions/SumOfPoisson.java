@@ -4,14 +4,10 @@ import java.io.PrintStream;
 
 import util.MathUtil;
 
-import cern.colt.matrix.DoubleMatrix1D;
-import cern.colt.matrix.DoubleMatrix2D;
-import cern.colt.matrix.impl.DenseDoubleMatrix1D;
-import cern.colt.matrix.impl.DenseDoubleMatrix2D;
-import cern.colt.matrix.linalg.Algebra;
 import cern.jet.random.Poisson;
 import cern.jet.random.engine.DRand;
 
+import Jama.Matrix;
 import bn.BNException;
 import bn.distributions.DiscreteDistribution.InfiniteDiscreteDistribution;
 import bn.messages.FiniteDiscreteMessage;
@@ -24,12 +20,14 @@ import bn.messages.MessageSet;
 public class SumOfPoisson extends InfiniteDiscreteDistribution
 {
 	
-	public static double minimumMean = 1e-8;
+	public static double minimumMean = 1;
+	public static double minimumAll0Mean = 1e-8;
 	
 	
 	public SumOfPoisson(double[] means)
 	{
-		this.all0mean = minimumMean;
+		this.all0mean = minimumAll0Mean;
+		this.all0MeanLocked = true;
 		this.means = means.clone();
 		for(int i = 0; i < means.length; i++)
 			this.means[i] = Math.max(this.means[i],minimumMean);
@@ -76,34 +74,48 @@ public class SumOfPoisson extends InfiniteDiscreteDistribution
 			SumOfPoissonStat stat = (SumOfPoissonStat)obj;
 			if(stat.weight_sums.length!=(int)Math.pow(2,this.means.length))
 				throw new BNException("Invalidly sized additive poisson statistic!");
-	
-			DoubleMatrix2D mat = new DenseDoubleMatrix2D(stat.weight_sums.length-1,this.means.length);
-			DoubleMatrix1D vec = new DenseDoubleMatrix1D(stat.weight_sums.length-1);
-			int[] indices = initialIndices(this.means.length);
-			indices = binaryIndicesIncrement(indices);
-			int absindex = 1;
-			do 
-			{
-				vec.set(absindex-1, stat.weighted_sums[absindex]/stat.weight_sums[absindex]);
-				for(int i = 0; i < this.means.length; i++)
-					mat.set(absindex-1, i, indices[i]);
-				absindex++;
-			} while((indices = binaryIndicesIncrement(indices))!=null);
-			
-			Algebra alg = new Algebra();
-			DoubleMatrix1D newmeans = new DenseDoubleMatrix1D(this.means.length);
-			alg.inverse(mat).zMult(vec, newmeans);
-			
+
 			double maxdiff = 0;
-			for(int i = 0; i < newmeans.size(); i++)
+			
+			if(this.means.length > 0)
 			{
-				maxdiff = Math.max(Math.abs(this.means[i]-newmeans.get(i)),maxdiff);
-				this.means[i] = newmeans.get(i);
+
+				Matrix B = new Matrix(stat.weight_sums.length-1,this.means.length);
+				Matrix WB = new Matrix(stat.weight_sums.length-1,this.means.length);
+				Matrix lambdasums = new Matrix(1,stat.weight_sums.length-1);
+				
+				int[] indices = initialIndices(this.means.length);
+				indices = binaryIndicesIncrement(indices);
+				int absindex = 1;
+				do 
+				{
+					if(stat.weight_sums[absindex]==0)
+						continue;
+					lambdasums.set(0, absindex-1, stat.weighted_sums[absindex]/stat.weight_sums[absindex]);
+					for(int i = 0; i < this.means.length; i++)
+					{
+						B.set(absindex-1, i, indices[i]);
+						WB.set(absindex-1, i, indices[i]*stat.weight_sums[absindex]);
+					}
+					
+					absindex++;
+				} while((indices = binaryIndicesIncrement(indices))!=null);
+
+				Matrix inv = MathUtil.pseudoInverse(B.transpose().times(WB));
+				Matrix newmeans = lambdasums.times(WB).times(inv);
+
+				for(int i = 0; i < newmeans.getColumnDimension(); i++)
+				{
+					if(stat.weighted_sums[i]==0)
+						continue;
+					maxdiff = Math.max(Math.abs(this.means[i]-newmeans.get(0,i)),maxdiff);
+					this.means[i] = Math.max(newmeans.get(0,i),minimumMean);
+				}
 			}
 			
 			if(!this.all0MeanLocked)
 			{
-				double n0m = stat.weighted_sums[0]/stat.weight_sums[0];
+				double n0m = Math.max(stat.weighted_sums[0]/stat.weight_sums[0],minimumAll0Mean);
 				maxdiff = Math.max(Math.abs(this.all0mean-n0m),maxdiff);
 				this.all0mean = n0m;
 			}
@@ -235,39 +247,47 @@ public class SumOfPoisson extends InfiniteDiscreteDistribution
 				throw new BNException("Attempted to update switching poisson statistic with invalid pi vector set.");
 			int[] indices = initialIndices(this.dist.means.length);
 			Poisson poiss = new Poisson(0.0, new DRand());
-			
+
 			double weights[] = new double[this.weight_sums.length];
 			double weightsums = 0;
-			
-			int index = 0;
-			double valued = value;
-			do
+
+			if(this.weight_sums.length > 1)
 			{
-				double weight = 1;
-				for(int i = 0; i < indices.length; i++)
-					weight *= incPis.get(i).getValue(indices[i]);
-				
-				double mean = 0;
-				if(index==0)
-					mean = this.dist.all0mean;
-				else
+				int index = 0;
+				double valued = value;
+				do
 				{
-					for(int i = 0; i < this.dist.means.length; i++)
-						if(indices[i]==1)
-							mean += this.dist.means[i];
+					double weight = 1;
+					for(int i = 0; i < indices.length; i++)
+						weight *= incPis.get(i).getValue(indices[i]);
+
+					double mean = 0;
+					if(index==0)
+						mean = this.dist.all0mean;
+					else
+					{
+						for(int i = 0; i < this.dist.means.length; i++)
+							if(indices[i]==1)
+								mean += this.dist.means[i];
+					}
+					poiss.setMean(mean);
+
+					weight *= poiss.pdf(value);
+					weights[index] = weight;
+					weightsums += weight;
+					index++;
+				} while((indices = binaryIndicesIncrement(indices))!=null);
+
+				for(int i = 0; i < weight_sums.length; i++)
+				{
+					this.weight_sums[i] += weights[i]/weightsums;
+					this.weighted_sums[i] += weights[i]/weightsums*valued;
 				}
-				poiss.setMean(mean);
-				
-				weight *= poiss.pdf(value);
-				weights[index] = weight;
-				weightsums += weight;
-				index++;
-			} while((indices = binaryIndicesIncrement(indices))!=null);
-			
-			for(int i = 0; i < weight_sums.length; i++)
+			}
+			else
 			{
-				this.weight_sums[i] += weights[i]/weightsums;
-				this.weighted_sums[i] += weights[i]/weightsums*valued;
+				this.weight_sums[0]++;
+				this.weighted_sums[0] += value;
 			}
 			return this;
 		}
@@ -375,6 +395,7 @@ public class SumOfPoisson extends InfiniteDiscreteDistribution
 				E -= pun*Math.log(poiss.pdf(value));
 				H1 += pun*Math.log(pun);
 			}
+			index++;
 		}
 		while((indices = binaryIndicesIncrement(indices))!=null);
 

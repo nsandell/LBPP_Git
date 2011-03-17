@@ -31,6 +31,8 @@ public interface InternalIBayesNode
 	
 	public Iterable<? extends InternalIBayesNode> getParentsI();
 	
+	public Iterable<? extends InternalIBayesNode> getNeighborsI();
+	
 	public double betheFreeEnergy() throws BNException;
 	
 	public SufficientStatistic getSufficientStatistic() throws BNException;

@@ -3,6 +3,7 @@ package bn.impl.staticbn;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Vector;
 
@@ -47,6 +48,8 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
 				StaticMessageIndex ci = child.addParentInterface(mi);
 				this.children.put(child, pi);
 				child.parents.put(this,  ci);
+				this.neighbors.add(child);
+				child.neighbors.add(this);
 			} catch(BNException e) {
 				this.removeChildInterface(pi);
 				throw new BNException(e);
@@ -66,6 +69,8 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
 
 		child.removeParentInterface(rent_idx);
 		this.removeChildInterface(child_idx);
+		this.neighbors.remove(child);
+		child.neighbors.remove(this);
 	}
 	
 	public final void removeAllChildren() throws BNException
@@ -80,6 +85,11 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
 		Vector<BNNode> parentsCopy = new Vector<BNNode>(this.parents.keySet());
 		for(BNNode parent : parentsCopy)
 			parent.removeChild(this);
+	}
+	
+	public Iterable<BNNode> getNeighborsI()
+	{
+		return this.neighbors;
 	}
 	
 	protected abstract MessageInterface<?> newChildInterface() throws BNException;
@@ -150,6 +160,10 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
     {
     	this.parametersLocked = false;
     }
+    public boolean isLocked()
+    {
+    	return this.parametersLocked;
+    }
     
 	protected abstract double optimizeParametersI(SufficientStatistic stat) throws BNException;
 	protected abstract double optimizeParametersI() throws BNException;
@@ -190,6 +204,7 @@ abstract class BNNode implements InternalIBayesNode, IBNNode
 	protected StaticBayesianNetwork bnet;
 	private String name;
 	
+	protected HashSet<BNNode> neighbors = new HashSet<BNNode>();
 	protected HashMap<BNNode, StaticMessageIndex> parents = new HashMap<BNNode, StaticMessageIndex>();
 	protected HashMap<BNNode, StaticMessageIndex> children = new HashMap<BNNode, StaticMessageIndex>();
 }

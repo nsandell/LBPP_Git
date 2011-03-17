@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map.Entry;
 import java.util.Vector;
 
@@ -121,6 +122,9 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 				DynamicMessageIndex ci = child.addInterParentInterface(mi);
 				this.interChildren.put(child, pi);
 				child.interParents.put(this, ci);
+				
+				this.neighbors.add(child);
+				child.neighbors.add(this);
 			} catch(BNException e) {
 				this.removeInterChildInterface(pi);
 				throw new BNException(e);
@@ -143,6 +147,9 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 				DynamicMessageIndex ci = child.addIntraParentInterface(mi);
 				this.intraChildren.put(child, pi);
 				child.intraParents.put(this, ci);
+				
+				this.neighbors.add(child);
+				child.neighbors.add(this);
 			} catch(BNException e) {
 				this.removeIntraChildInterface(pi);
 				throw new BNException(e);
@@ -167,6 +174,11 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 		this.removeInterChildInterface(pi);
 		child.removeInterParentInterface(ci);
 		child.interParents.remove(this);
+		if(!this.intraChildren.containsKey(child))
+		{
+			this.neighbors.remove(child);
+			child.neighbors.remove(this);
+		}
 	}
 	public void removeIntraChild(DBNNode child) throws BNException
 	{
@@ -179,6 +191,16 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 		this.removeIntraChildInterface(pi);
 		child.removeIntraParentInterface(ci);
 		child.intraParents.remove(this);
+		if(!this.interChildren.containsKey(child))
+		{
+			this.neighbors.remove(child);
+			child.neighbors.remove(this);
+		}
+	}
+	
+	public Iterable<DBNNode> getNeighborsI()
+	{
+		return this.neighbors;
 	}
 	
 	public final void removeAllChildren() throws BNException
@@ -327,6 +349,10 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 	{
 		this.parametersLocked = false;
 	}
+	public boolean isLocked()
+	{
+		return this.parametersLocked;
+	}
 	
 	public final double optimizeParameters() throws BNException
 	{
@@ -351,7 +377,9 @@ abstract class DBNNode implements InternalIBayesNode, IDBNNode
 
 	protected DynamicBayesianNetwork bayesNet;
 	protected String name;
+	
 
+	protected HashSet<DBNNode> neighbors = new HashSet<DBNNode>();
 	protected HashMap<DBNNode,DynamicMessageIndex> interChildren = new HashMap<DBNNode, DynamicMessageIndex>();
 	protected HashMap<DBNNode,DynamicMessageIndex> intraChildren = new HashMap<DBNNode, DynamicMessageIndex>();
 	protected HashMap<DBNNode,DynamicMessageIndex> interParents = new HashMap<DBNNode, DynamicMessageIndex>();

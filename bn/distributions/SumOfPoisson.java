@@ -20,9 +20,8 @@ import bn.messages.MessageSet;
 public class SumOfPoisson extends InfiniteDiscreteDistribution
 {
 	
-	public static double minimumMean = 1;
+	public static double minimumMean = 3;
 	public static double minimumAll0Mean = 1e-8;
-	
 	
 	public SumOfPoisson(double[] means)
 	{

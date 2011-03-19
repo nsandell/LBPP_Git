@@ -21,7 +21,7 @@ import bn.impl.dynbn.DynamicContextManager.DynamicMessageIndex;
 import bn.impl.dynbn.DynamicContextManager.DynamicMessageSet;
 import bn.impl.dynbn.DynamicContextManager.DynamicParentManager;
 
-public class FDiscDBNNode extends DBNNode implements IFDiscDBNNode {
+class FDiscDBNNode extends DBNNode implements IFDiscDBNNode {
 	
 	public FDiscDBNNode(DynamicBayesianNetwork net, String name, int cardinality) throws BNException
 	{

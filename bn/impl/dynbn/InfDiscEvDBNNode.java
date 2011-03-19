@@ -15,7 +15,7 @@ import bn.messages.FiniteDiscreteMessage.FDiscMessageInterfaceSet;
 import bn.messages.MessageSet;
 import bn.messages.Message.MessageInterfaceSet;
 
-public class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode {
+class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode {
 	
 	public InfDiscEvDBNNode(DynamicBayesianNetwork net, String name, int[] values) throws BNException
 	{

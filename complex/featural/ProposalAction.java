@@ -30,6 +30,7 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 			this.newFeature = cont.newLatentModel();
 			for(ChildProcess child : this.movers)
 			{
+				child.backupParameters();
 				cont.disconnect(latentFeature, child);
 				cont.connect(this.newFeature,child);
 			}
@@ -37,9 +38,12 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 
 		public void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
-			for(ChildProcess child : this.movers)
-				cont.connect(latentFeature,child);
 			cont.killLatentModel(this.newFeature);
+			for(ChildProcess child : this.movers)
+			{
+				cont.connect(latentFeature,child);
+				child.restoreParameters();
+			}
 		}
 
 		private ParentProcess latentFeature;
@@ -58,25 +62,39 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 
 		public void perform(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
-			this.latent2Backup = cont.backupAndRemoveLatentModel(latent2);
-			this.newl1Children = new HashSet<ChildProcess>();
 			HashSet<ChildProcess> l1Children = cont.getChildren(this.latent1);
-			for(ChildProcess child : this.latent2Backup.children)
+			this.newl1Children = new HashSet<ChildProcess>();
+			this.latent1.backupParameters();
+			
+			for(ChildProcess child : l1Children)
+				child.backupParameters();
+			
+			for(ChildProcess child : cont.getChildren(this.latent2))
 			{
+				child.backupParameters();
 				if(!l1Children.contains(child))
 				{
 					this.newl1Children.add(child);
 					cont.connect(latent1, child);
 				}
 			}
+		
+			this.latent2Backup = cont.backupAndRemoveLatentModel(latent2);
 		}
 
 		public void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
 			this.latent2 = cont.restoreBackup(this.latent2Backup);
+			this.latent1.restoreParameters();
 			for(ChildProcess child : this.newl1Children)
+			{
 				cont.disconnect(this.latent1,child);
+				child.restoreParameters();
+			}
+			for(ChildProcess child : cont.getChildren(this.latent1))
+				child.restoreParameters();
 		}
+		
 		private ParentProcess latent1, latent2;
 		private LatentBackup<ChildProcess,ParentProcess> latent2Backup;
 		private HashSet<ChildProcess> newl1Children;
@@ -94,9 +112,12 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 			// It is assumed anything switching wasn't already in the to node.
 			for(ChildProcess child : this.switches)
 			{
+				child.backupParameters();
 				cont.disconnect(lfrom, child);
 				cont.connect(lto, child);
 			}
+			this.lfrom.backupParameters();
+			this.lto.backupParameters();
 		}
 
 		public void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
@@ -105,7 +126,10 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 			{
 				cont.disconnect(lto, child);
 				cont.connect(lfrom, child);
+				child.restoreParameters();
 			}
+			this.lfrom.restoreParameters();
+			this.lto.restoreParameters();
 		}
 
 		private ParentProcess lfrom, lto;
@@ -123,13 +147,21 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 		public void perform(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
 			for(ChildProcess child : this.disconnects)
+			{
+				child.backupParameters();
 				cont.disconnect(this.latent, child);
+			}
+			this.latent.backupParameters();
 		}
 
 		public void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
 			for(ChildProcess child : this.disconnects)
+			{
 				cont.connect(this.latent, child);
+				child.restoreParameters();
+			}
+			this.latent.restoreParameters();
 		}
 
 		private ParentProcess latent;
@@ -147,12 +179,17 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 		public void perform(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException {
 			this.uniqParent = cont.newLatentModel();
 			for(ChildProcess cp : this.cps)
+			{
+				cp.backupParameters();
 				cont.connect(uniqParent,cp);
+			}
 		}
 
 		@Override
 		public void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException {
 			cont.killLatentModel(this.uniqParent);
+			for(ChildProcess cp : this.cps)
+				cp.restoreParameters();
 		}
 		
 		ParentProcess uniqParent;
@@ -169,12 +206,14 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 		@Override
 		public void perform(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException {
 			this.uniqParent = cont.newLatentModel();
+			this.cp.backupParameters();
 			cont.connect(uniqParent,cp);
 		}
 
 		@Override
 		public void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException {
 			cont.killLatentModel(this.uniqParent);
+			this.cp.restoreParameters();
 		}
 		
 		ParentProcess uniqParent;
@@ -192,13 +231,19 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 		public void perform(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
 			for(ChildProcess child : this.connects)
+			{
+				child.backupParameters();
 				cont.connect(this.latent, child);
+			}
 		}
 
 		public void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException
 		{
 			for(ChildProcess child : this.connects)
+			{
 				cont.disconnect(this.latent, child);
+				child.restoreParameters();
+			}
 		}
 
 		private ParentProcess latent;

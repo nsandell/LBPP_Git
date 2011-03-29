@@ -96,13 +96,14 @@ public class MHMMPoisson
 		public Twitter(IDynamicBayesNet net, int id, int[] obs) throws BNException
 		{
 			this.evnode = net.addDiscreteEvidenceNode("YEV"+id, obs);
-			SwitchingPoisson dist = new SwitchingPoisson(new double[]{0.0,0.0,1.0,10.0},new int[]{2,2});
+			SwitchingPoisson dist = new SwitchingPoisson(new double[]{0.0,1.0,0.0,10.0},new int[]{2,2});
 			dist.lockMean(new int[]{0,0}, true);
 			dist.lockMean(new int[]{0,1}, true);
 			this.evnode.setAdvanceDistribution(dist);
 			
 			this.state = net.addDiscreteNode("YS"+id, 2);
 			this.state.setAdvanceDistribution(new DiscreteCPTUC(new double[]{.5,.5}));
+			//this.state.lockParameters();//TODO Note I just unlocked this.
 
 			this.net = net;
 			
@@ -125,13 +126,11 @@ public class MHMMPoisson
 		}
 		
 		InfiniteDiscreteDistribution poissBackup = null;
-		DiscreteFiniteDistribution stateBackup = null;
 		
 		@Override
 		public void backupParameters() throws CMException {
 			try {
 				this.poissBackup = evnode.getAdvanceDistribution().copy();
-				this.stateBackup = state.getAdvanceDistribution().copy();
 			} catch(BNException e) {
 				throw new CMException("Error backing up parameters.. this shouldn't happen: " + e.toString());
 			}
@@ -141,7 +140,6 @@ public class MHMMPoisson
 		public void restoreParameters() throws CMException {
 			try {
 				this.evnode.setAdvanceDistribution(this.poissBackup);
-				this.state.setAdvanceDistribution(this.stateBackup);
 			} catch(BNException e) {
 				throw new CMException("Error storing parameters.. this shouldn't happen: " + e.toString());
 			}

@@ -102,7 +102,7 @@ public class MHMM
 		}
 
 		@Override
-		public DiscreteCPT posteriorSampleA(DiscreteCPT A) {
+		public DiscreteCPT posteriorSampleA(DiscreteCPT A, int T) {
 			return A;
 		}
 

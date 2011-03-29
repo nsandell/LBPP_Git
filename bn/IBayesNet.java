@@ -83,6 +83,7 @@ public interface IBayesNet<BaseInterface> {
 	 * @throws BNException
 	 */
 	public RunResults optimize(int learnIt, double learnErr, int runIt, double runErr) throws BNException;
+	public RunResults optimize_parallel_queue(int learnIt, double learnErr, int runIt, double runErr) throws BNException;
 	
 	/**
 	 * Validate that this Bayesian Network is properly formed.  An exception would be thrown if,
@@ -104,6 +105,9 @@ public interface IBayesNet<BaseInterface> {
 		public double error;
 	}
 	
+	public RunResults run_parallel_queue(int maxit, double conv) throws BNException;
+	public RunResults run_parallel_queue(int maxit, double conv,Iterable<String> nodes) throws BNException;
+	
 	
 	public void print();
 	public void print(PrintStream ps);
@@ -122,6 +126,8 @@ public interface IBayesNet<BaseInterface> {
 	 */
 	public RunResults run(int maxit, double convergence) throws BNException;
 	public RunResults run(Iterable<String> nodes, int maxit, double convergence) throws BNException;
+	
+	public void sample();
 	
 	/**
 	 * Run belief propagation on the network, using default parameters.

@@ -56,4 +56,5 @@ public interface IBayesNode {
 	
 	void lockParameters();
 	void unlockParameters();
+	boolean isLocked();
 }

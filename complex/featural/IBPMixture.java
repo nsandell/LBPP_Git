@@ -26,7 +26,7 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 		if(Math.abs(sum-1) > 1e-12)
 			throw new CMException("Provided generator probability distribution not summing to one!");
 		if(Math.abs(p[0]+p[1]+p[2]-1) > 1e-12)
-			throw new CMException("Provided move vs verticle vs horizontal distribution not summing to one!");
+			throw new CMException("Provided move vs vertical vs horizontal distribution not summing to one!");
 		
 		this.accepted_genprops = new int[generators.size()];
 		this.generators = generators;
@@ -78,7 +78,7 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 		public double run_conv = 1e-6, learn_conv = 1e-6;
 		
 		public FeaturalModelController<ChildProcess,ParentProcess> controller;
-		public boolean optimizeParameters = false;		// Optimize parameters at each time step
+
 		public double alpha = 1;						// Indian Buffet
 		public boolean[][] initialAssignments;			// Feature matrix initialization
 		public int maxIterations = Integer.MAX_VALUE;   // maximum possible number of iterations
@@ -129,14 +129,9 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 			}
 		}
 		
-		cont.validate();
-		
-		if(opts.optimizeParameters)
-			cont.learn(opts.max_learn_it, opts.learn_conv, opts.max_run_it,opts.run_conv);
-		double ll = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont,opts);
+		double ll = cont.learn(opts.max_learn_it, opts.learn_conv, opts.max_run_it,opts.run_conv) + structureLL(cont,opts);
 		double bestLL = ll;
 		cont.saveInfo(opts.savePath + "/initial_iteration",ll);
-		
 		cont.log("Learning run started: Initial Log Likelihood = " + ll + "   (" + this.structureLL(cont, opts) + " structural).");
 		
 		for(int iteration = 0; iteration < opts.maxIterations && keepGoing; iteration++)
@@ -159,14 +154,18 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 				}
 				
 				//Attempt to add unique parent
-				cont.log("Attempting to add unique parent to node " + hsn.getName());
-				UniqueParentAddAction<ChildProcess,ParentProcess> act = new UniqueParentAddAction<ChildProcess,ParentProcess>(hsn);
-				act.perform(cont);
-				double newLL = cont.run(opts.max_run_it, opts.run_conv) + structureLL(cont,opts);
-				if(accept(newLL,this.main_probs[0],ll,this.main_probs[0]+this.main_probs[1],cont))
-					ll = newLL;
-				else
-					act.undo(cont);
+				if(MathUtil.rand.nextDouble() < 1)
+				{	
+					cont.log("Attempting to add unique parent to node " + hsn.getName());
+					UniqueParentAddAction<ChildProcess,ParentProcess> act = new UniqueParentAddAction<ChildProcess,ParentProcess>(hsn);
+					act.perform(cont);
+					//double newLL = cont.run(opts.max_run_it, opts.run_conv) + structureLL(cont,opts);
+					double newLL = cont.learn(opts.max_learn_it,opts.learn_conv,opts.max_run_it, opts.run_conv) + structureLL(cont,opts);
+					if(accept(newLL,this.main_probs[0],ll,this.main_probs[0]+this.main_probs[1],cont))
+						ll = newLL;
+					else
+						act.undo(cont);
+				}
 			}
 			else if(choice==1 && lats.size() > 0)
 			{
@@ -183,7 +182,6 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 					else
 						ll = this.attemptConnect(vsn, obsNode, cont, opts, ll);
 				}
-				
 			}
 			else
 			{
@@ -196,7 +194,7 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 				
 				proposal.action().perform(cont);
 				double newSLL = structureLL(cont,opts);
-				double newLL = cont.run(opts.max_run_it,opts.run_conv) + newSLL;
+				double newLL = cont.learn(opts.max_learn_it, opts.learn_conv, opts.max_run_it, opts.run_conv) + newSLL;
 				
 				if(accept(newLL,proposal.forwardP(),ll,proposal.backwardP(),cont))
 				{
@@ -212,6 +210,8 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 				if(cont.getChildren(lats.get(i)).size()==0)
 					cont.killLatentModel(lats.get(i));
 			}
+			
+			ll = cont.learn(opts.max_learn_it, opts.learn_conv, opts.max_run_it, opts.run_conv) + structureLL(cont, opts);
 	
 			if(opts.savePath!=null)
 			{
@@ -249,22 +249,17 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 			throw new CMException("Attempted to disconnect a latent node from an observed that was not its child!");
 		cont.log("Attempting to disconnect observation " + observed.getName() + " from latent sequence " + latent.getName());
 		
-		if(opts.optimizeParameters)
-			observed.backupParameters();
-		
+		observed.backupParameters();
 		cont.disconnect(latent, observed);
-	
-		if(opts.optimizeParameters)
-			observed.optimize();
+		observed.optimize();
 		
 		double newLL = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont,opts);
 		if(accept(newLL,this.main_probs[1]+this.main_probs[0],ll,this.main_probs[1]+this.main_probs[0],cont))
 			ll = newLL;
 		else
 		{
-			if(opts.optimizeParameters)
-				observed.restoreParameters();
 			cont.connect(latent, observed);
+			observed.restoreParameters();
 		}
 		
 		return ll;
@@ -276,22 +271,17 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 			throw new CMException("Attempted to connect parent " + latent.getName() + " to child " + observed.getName() + " when they already are connected.");
 		cont.log("Attempting to connect observation " + observed.getName() + " to latent sequence " + latent.getName());
 		
-		if(opts.optimizeParameters)
-			observed.backupParameters();
-		
+		observed.backupParameters();
 		cont.connect(latent, observed);
-	
-		if(opts.optimizeParameters)
-			observed.optimize();
+		observed.optimize();
 		
 		double newLL = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont,opts);
 		if(accept(newLL,this.main_probs[1]+this.main_probs[0],ll,this.main_probs[1]+this.main_probs[0],cont))
 			ll = newLL;
 		else
 		{
-			if(opts.optimizeParameters)
-				observed.restoreParameters();
 			cont.disconnect(latent, observed);
+			observed.restoreParameters();
 		}
 		
 		return ll;

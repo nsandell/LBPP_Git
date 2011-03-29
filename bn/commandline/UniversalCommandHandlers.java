@@ -154,6 +154,38 @@ public class UniversalCommandHandlers {
 		private static int[] groups = new int[]{1,3};
 	}
 	
+	static class BNQPRunner extends MethodWrapperHandler<Object>
+	{
+		BNQPRunner(IBayesNet<?> net) throws Exception
+		{
+			super(net,IBayesNet.class.getMethod("run_parallel_queue",
+					new Class[]{int.class, double.class}),
+					new String[]{"Number of iterations","Convergence tolerance"},
+					null);
+		}
+	
+		public String name(){return "runpq";}
+		public String description(){return "Run belief propagation over the network that has been created.  Two parameters are to be used, " +
+				"the first dictates the maximum number of iterations of belief propagation are run.  The second is a convergence condition" +
+				" for early termination.  This condition is met when the change in all values of every marginal distribution is under the " +
+				"specified value.  For example, run(100,1e-8) will run the network until marginal value changes are under 1e-8 or 100 iterations," +
+				" whichever comes first.";}
+		
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+		
+		@Override
+		protected void handleReturn(PrintStream ps)
+		{
+			RunResults res = (RunResults)this.retObj;
+			ps.println("Converged after " + res.numIts + " iterations with an error of " + res.error + " in " + res.timeElapsed + " seconds.");
+		}
+		
+		private static Pattern patt = Pattern.compile("^\\s*runpq\\(\\s*(\\d+)\\s*(,\\s*([\\.0-9\\+\\-e]+)\\s*)?\\s*\\)\\s*$");
+		private static int[] groups = new int[]{1,3};
+	}
+	
 	static class BNRunnerDefault extends MethodWrapperHandler<Object>
 	{
 		BNRunnerDefault(IBayesNet<?> net) throws Exception

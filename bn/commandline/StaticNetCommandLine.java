@@ -48,6 +48,7 @@ public class StaticNetCommandLine
 			parser.addHandler(new StaticCommandHandlers.StaticEdgeRemover(bn));
 			parser.addHandler(new UniversalCommandHandlers.BNResetter(bn));
 			parser.addHandler(new UniversalCommandHandlers.BNSaver(bn));
+			parser.addHandler(new UniversalCommandHandlers.BNQPRunner(bn));
 			
 			return parser;
 		} catch(Exception e) {

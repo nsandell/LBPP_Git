@@ -51,6 +51,7 @@ public class DynamicCommandLine
 			parser.addHandler(new UniversalCommandHandlers.NodeRemover(bn));
 			parser.addHandler(new UniversalCommandHandlers.BNResetter(bn));
 			parser.addHandler(new UniversalCommandHandlers.BNSaver(bn));
+			parser.addHandler(new UniversalCommandHandlers.BNQPRunner(bn));
 			parser.addHandler(new UniversalCommandHandlers.EvidenceClearer(bn));
 		
 			return parser;

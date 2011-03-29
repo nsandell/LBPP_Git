@@ -9,7 +9,6 @@ import complex.featural.FeaturalModelController;
 import complex.featural.IFeaturalChild;
 import complex.featural.ProposalAction;
 import complex.featural.ProposalGenerator;
-import complex.metrics.Coherence;
 
 public class CoherenceUniqueParenter<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> implements ProposalGenerator<ChildProcess,ParentProcess> {
 	

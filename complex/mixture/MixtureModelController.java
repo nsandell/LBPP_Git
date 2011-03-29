@@ -45,7 +45,20 @@ public abstract class MixtureModelController<ChildType extends IChildProcess, Pa
 		return this.allParents;
 	}
 	
+	public void backupChildrenParameters(ParentType chain) throws CMException
+	{
+		for(ChildType child : this.children.get(chain))
+			child.backupParameters();
+	}
+	
+	public void restoreChildrenParameters(ParentType chain) throws CMException
+	{
+		for(ChildType child : this.children.get(chain))
+			child.restoreParameters();
+	}
+	
 	public abstract double runChain(ParentType proc, int maxit, double conv) throws CMException;
+	public abstract double learnChain(ParentType proc, int runmaxit, double runconv, int learnmaxit, double learnconv) throws CMException;
 	
 	public abstract void optimizeChildParameters(ChildType child) throws CMException;
 	

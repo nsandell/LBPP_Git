@@ -40,7 +40,7 @@ public class MFHMMController extends FeaturalModelController<IFeaturalChild, FHM
 	protected void killLatentModelI(FHMMX node) throws CMException {
 		try {
 			this.network.removeNode(node.getName());
-			this.killID(((FHMMX)node).ID);
+			this.killID(node.ID);
 		} catch(BNException e) { throw new CMException(e.getMessage()); }
 		catch(ClassCastException e) {throw new CMException("MFHMM Controller got invalid state ... really shouldn't happen.");}
 	}
@@ -99,9 +99,30 @@ public class MFHMMController extends FeaturalModelController<IFeaturalChild, FHM
 			this.minimum_available_id = id;
 	}
 	
+	@Override
+	protected void backupLatentModelParameters(FHMMX latent, LatentBackup<IFeaturalChild, FHMMX> backup) {
+		try {
+			backup.advance = latent.xnd.getAdvanceDistribution().copy();
+			backup.init = latent.xnd.getInitialDistribution().copy();
+		} catch(BNException e) {
+			System.err.println("Failed to backup parameters for latent node " + latent.getName());
+		}
+	}
+
+	@Override
+	protected void restoreLatentModelParameters(FHMMX latent, LatentBackup<IFeaturalChild, FHMMX> backup) {
+		try {
+			latent.xnd.setAdvanceDistribution(backup.advance);
+			latent.xnd.setInitialDistribution(backup.init);
+		} catch(BNException e) {
+			System.err.println("Failed to backup parameters for latent node " + latent.getName());
+		}
+	}
+	
 	private boolean lockXParameters = false;
 	private HashSet<Integer> usedIDs = new HashSet<Integer>();
 	private int minimum_available_id = 0;
 	private int ns;
 	private MFHMMInitialParamGenerator paramgen;
+	
 }

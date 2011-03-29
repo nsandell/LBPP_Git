@@ -1,18 +1,20 @@
 package tests;
 
 import java.io.File;
-import java.util.ArrayList;
+
 import java.util.Scanner;
 import java.util.Vector;
-
-import util.MathUtil;
 
 import bn.BNException;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
-import bn.distributions.SumOfPoisson;
+import bn.distributions.DiscreteDistribution;
+import bn.distributions.SwitchingPoisson;
+import bn.distributions.TrueOr;
+import bn.distributions.DiscreteDistribution.InfiniteDiscreteDistribution;
 import bn.dynamic.IDBNNode;
 import bn.dynamic.IDynamicBayesNet;
+import bn.dynamic.IFDiscDBNNode;
 import bn.dynamic.IInfDiscEvDBNNode;
 import bn.impl.dynbn.DynamicNetworkFactory;
 
@@ -32,30 +34,41 @@ import complex.featural.proposal_generators.RandomMergeGenerator;
 import complex.featural.proposal_generators.RandomSplitGenerator;
 import complex.featural.proposal_generators.SimilarityMerger;
 
-public class TwitterMFHMM {
+public class TwitterMFHMM2 {
 	
 	public static class YTwitterWrapper implements IFeaturalChild
 	{
 		public YTwitterWrapper(String name, int[] values, IDynamicBayesNet net) throws BNException
 		{
+			this.ontwitter = net.addDiscreteNode("PRESENT"+name, 2);
+			this.ontwitter.setAdvanceDistribution(new DiscreteCPTUC(new double[]{.5, .5}));
+			this.ontwitter.lockParameters();
+			this.event = net.addDiscreteNode("EV"+name, 2);
+			this.event.setAdvanceDistribution(TrueOr.getInstance());
 			this.y = net.addDiscreteEvidenceNode(name, values);
-			this.y.setAdvanceDistribution(new SumOfPoisson(new double[]{},3.0));
-			this.sop = (SumOfPoisson)this.y.getAdvanceDistribution();
+			SwitchingPoisson dist = new SwitchingPoisson(new double[]{0.0,3.0,0.0,10.0},new int[]{2,2});
+			dist.lockMean(new int[]{0,0}, true);
+			dist.lockMean(new int[]{0,1}, true);
+			this.y.setAdvanceDistribution(dist);
+			
+			net.addIntraEdge(this.ontwitter, this.y);
+			net.addIntraEdge(this.event, this.y);
 		}
 		
 		public void backupParameters(){
 			try {
-				backup = sop.copy();
+				this.ydistbackup = this.y.getAdvanceDistribution().copy();
+				this.ontwitterdistbackup = this.ontwitter.getAdvanceDistribution().copy();
 			} catch(BNException e) {
 				System.err.println(e.toString());
 			}
 		}
 		public void restoreParameters(){
-			if(backup!=null)
+			if(this.ydistbackup!=null)
 			{
 				try {
-					this.y.setAdvanceDistribution(backup);
-					this.sop = (SumOfPoisson)this.y.getAdvanceDistribution();
+					this.y.setAdvanceDistribution(this.ydistbackup);
+					//this.ontwitter.setAdvanceDistribution(this.ontwitterdistbackup);
 				} catch(BNException e) {
 					System.err.println(e.toString());
 				}
@@ -74,51 +87,36 @@ public class TwitterMFHMM {
 		
 		public IDBNNode hook()
 		{
-			return this.y;
+			return this.event;
 		}
 
 		@Override
-		public void addParent(IParentProcess p) {
-			this.rents.add(p);
-			this.sop.newParent(MathUtil.rand.nextDouble()*15);
-		}
+		public void addParent(IParentProcess p) {  }
 
 		@Override
-		public void killParent(IParentProcess p) {
-			int index = -1;
-			for(int i = 0; i < rents.size(); i++)
-				if(rents.get(i).equals(p))
-					index = i;
-			try {
-				if(index!=-1)
-				{
-					this.rents.remove(index);
-					this.sop.killParent(index);
-				}
-				else
-					System.err.println("Attempted to remove parent that was not attached.");
-			} catch(BNException e) {
-				System.err.println("Attempted to remove parent that was not attached.");
-			}
-		}
+		public void killParent(IParentProcess p) {	}
 		
 		@Override
 		public void optimize()
 		{
 			Vector<String> thisv = new Vector<String>();
 			thisv.add(this.y.getName());
+			thisv.add(this.event.getName());
+			thisv.add(this.ontwitter.getName());
 			try {
 				this.y.getNetwork().run(thisv, 10, 1e-8);
 				this.y.optimizeParameters();
+				this.ontwitter.optimizeParameters();
 			} catch(BNException e) 
 			{
 				System.err.println("Failed to optimize node " + this.y.getName() + ", " + e.toString());
 			}
 		}
 
-		ArrayList<IParentProcess> rents = new ArrayList<IParentProcess>();
-		SumOfPoisson sop, backup = null;
+		DiscreteDistribution ontwitterdistbackup;
+		InfiniteDiscreteDistribution ydistbackup;
 		IInfDiscEvDBNNode y;
+		IFDiscDBNNode event, ontwitter;
 	}
 	
 	public static class ParamGen implements MFHMMInitialParamGenerator
@@ -127,7 +125,7 @@ public class TwitterMFHMM {
 		public DiscreteCPT getInitialA() {
 			try
 			{
-				return new DiscreteCPT(new double[][]{{.6,.4},{.4,.6}}, 2);
+				return new DiscreteCPT(new double[][]{{.8,.2},{.5,.5}}, 2);
 			} catch(BNException e){return null;}
 		}
 		
@@ -223,7 +221,7 @@ public class TwitterMFHMM {
 		opts.maxIterations = 50000; 
 		opts.alpha = 1;
 		opts.learn_conv = 1e-5;
-		opts.max_learn_it = 2;
+		opts.max_learn_it = 10;
 		opts.run_conv = 1e-5;
 		opts.max_run_it = 20;
 		opts.savePath = out;

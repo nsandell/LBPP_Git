@@ -6,6 +6,11 @@ import java.util.Iterator;
 
 import java.util.Vector;
 
+import util.MathUtil;
+
+import cern.jet.random.Beta;
+import cern.jet.random.engine.DRand;
+
 import bn.BNException;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
@@ -15,35 +20,50 @@ import bn.dynamic.IFDiscDBNNode;
 import bn.impl.dynbn.DynamicNetworkFactory;
 import bn.messages.FiniteDiscreteMessage;
 import bn.messages.MessageSet;
-import complex.CMException;
 import complex.IParentProcess;
-import complex.mixture.FixedMixture;
-import complex.mixture.FixedMixture.FMModelOptions;
+import complex.mixture.DirichletMixture;
+import complex.mixture.DirichletMixture.DMModelOptions;
 import complex.mixture.controllers.MHMMController;
 import complex.mixture.controllers.MHMMChild;
 import complex.mixture.controllers.MHMMX;
 import complex.mixture.controllers.MHMMController.MHMMParameterPrior;
 
-public class MHMMTestLearn {
+public class DMHMMTestLearn {
 	
-	private static class Priors implements MHMMParameterPrior
+	private static class BetaPrior implements MHMMParameterPrior
 	{
+		
+		public BetaPrior(double base, double stbias)
+		{
+			this.alpha = base+stbias;
+			this.beta =  base;
+			this.betadist = new Beta(base+stbias,base, new DRand(MathUtil.rand.nextInt()));
+		}
 
 		@Override
 		public double evaluate(DiscreteCPT A) {
-			return 1;
+			try {
+				double ll = 0;
+				ll += betadist.pdf(A.evaluate(new int[]{0}, 0));
+				ll += betadist.pdf(A.evaluate(new int[]{1}, 1));
+				return ll;
+			} catch(BNException e) {
+				System.err.println("Error evluating CPT");
+				return Double.NaN;
+			}
 		}
 
 		@Override
 		public double evaluate(DiscreteCPTUC pi) {
-			// TODO Auto-generated method stub
 			return 1;
 		}
 
 		@Override
 		public DiscreteCPT initialSampleA() {
 			try {
-				return new DiscreteCPT(new double[][]{{.9,.1},{.1,.9}}, 2);
+				double a11 = betadist.nextDouble();
+				double a22 = betadist.nextDouble();
+				return new DiscreteCPT(new double[][]{{a11,1-a11},{1-a22,a22}}, 2);
 			} catch(BNException e) {
 				System.err.println("Error sampling A matrix!");
 				return null;
@@ -61,15 +81,24 @@ public class MHMMTestLearn {
 		}
 
 		@Override
-		public DiscreteCPT posteriorSampleA(DiscreteCPT A, int T) {
-			return A;
+		public DiscreteCPT posteriorSampleA(DiscreteCPT A,int T) {
+			try {
+				double a11 = betadist.nextDouble(this.alpha+A.evaluate(new int[]{0},0)*T,this.beta+A.evaluate(new int[]{0}, 1));
+				double a22 = betadist.nextDouble(this.alpha+A.evaluate(new int[]{1},1)*T,this.beta+A.evaluate(new int[]{1}, 0));
+				return new DiscreteCPT(new double[][]{{a11,1-a11},{1-a22,a11}}, 2);
+			} catch(BNException e) {
+				System.err.println("Error sampling A matrix!");
+				return null;
+			}
 		}
 
 		@Override
 		public DiscreteCPTUC posteriorSamplePi(DiscreteCPTUC pi) {
 			return pi;
 		}
-		
+	
+		double alpha, beta;
+		Beta betadist;
 	}
 	
 	private static class SingularFDMS implements MessageSet<FiniteDiscreteMessage>
@@ -183,21 +212,10 @@ public class MHMMTestLearn {
 	/**
 	 * @param args
 	 */
-	public static void main(String[] args) throws BNException, CMException {
-		IDynamicBayesNet network = DynamicNetworkFactory.newDynamicBayesNet(600);
+	public static void main(String[] args) throws Exception {
 		
-		int[][] o = new int[][]{
-				{0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				{0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				{0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				{0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				{0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-				{0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0},
-				{0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0},
-				{0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0},
-				{0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0},
-				{0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0}
-		};
+		int[][] o = MFHMMLearnText.loadData(args[0]);
+		IDynamicBayesNet network = DynamicNetworkFactory.newDynamicBayesNet(o[0].length);
 		
 		Vector<MHMMChild> children = new Vector<MHMMChild>();
 		for(int i = 0; i < o.length; i++)
@@ -207,10 +225,14 @@ public class MHMMTestLearn {
 			nd.setValue(o[i], 0);
 			children.add(new MHMMCTest(nd));
 		}
-		MHMMController controller = new MHMMController(network, children, new Priors(), 2);
-		FMModelOptions<MHMMChild,MHMMX> opts = new FMModelOptions<MHMMChild,MHMMX>(controller,6);
+		MHMMController controller = new MHMMController(network, children, new BetaPrior(1.0, 2.0), 2);
+		DMModelOptions<MHMMChild,MHMMX> opts = new DMModelOptions<MHMMChild, MHMMX>(controller, 1.0);
 		opts.controller.setLogger(System.out);
-		FixedMixture.learnFixedMixture(opts);
+		
+
+		//opts.initialAssignment = new int[]{0,0,0,0,1,2,2,2,2,2,3,3,3,3,3,4,4,4,4,4,5,5,5,5,5,6,6,6,6,6};
+		
+		DirichletMixture.learnDirichletMixture(opts);
 	}
 
 }

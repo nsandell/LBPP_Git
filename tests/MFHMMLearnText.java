@@ -4,11 +4,11 @@ import java.io.File;
 import java.util.Scanner;
 import java.util.Vector;
 
-
 import bn.BNException;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.distributions.TrueOr;
+import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.dynamic.IFDiscDBNNode;
 import bn.dynamic.IDynamicBayesNet;
 import bn.impl.dynbn.DynamicNetworkFactory;
@@ -22,7 +22,9 @@ import complex.featural.controllers.MFHMMController;
 import complex.featural.controllers.MFHMMController.MFHMMInitialParamGenerator;
 import complex.featural.proposal_generators.CoherenceAdder;
 import complex.featural.proposal_generators.CoherenceSplitter;
+import complex.featural.proposal_generators.CoherenceUniqueParenter;
 import complex.featural.proposal_generators.RandomAbsorbGenerator;
+import complex.featural.proposal_generators.RandomAdderGenerator;
 import complex.featural.proposal_generators.RandomExpungeGenerator;
 import complex.featural.proposal_generators.RandomMergeGenerator;
 import complex.featural.proposal_generators.RandomSplitGenerator;
@@ -35,6 +37,7 @@ public class MFHMMLearnText {
 		public YWrapper(IFDiscDBNNode ynd)
 		{
 			this.ynd = ynd;
+			this.ynd.lockParameters();
 		}
 		
 		public String getName()
@@ -70,6 +73,76 @@ public class MFHMMLearnText {
 		IFDiscDBNNode ynd;
 	}
 	
+	public static class YORWrapper implements IFeaturalChild
+	{
+		public YORWrapper(String name, IDynamicBayesNet net) throws BNException
+		{
+			this.y = net.addDiscreteNode(name, 2);
+			this.yor = net.addDiscreteNode(name+"_OR",2);
+			net.addIntraEdge(this.yor, this.y);
+			this.yor.setAdvanceDistribution(TrueOr.getInstance());
+			this.y.setAdvanceDistribution(new DiscreteCPT(new double[][]{{.9,.1},{.1,.9}},2));
+			this.backup = this.y.getAdvanceDistribution().copy();
+		}
+	
+		DiscreteFiniteDistribution backup = null;
+		public void backupParameters()
+		{
+			try {
+				this.backup = this.y.getAdvanceDistribution().copy();
+			} catch(BNException e) {
+				System.err.println("Failure to backup parameters");
+			}
+		}
+		public void restoreParameters()
+		{
+			try
+			{
+				if(this.backup!=null)
+					this.y.setAdvanceDistribution(this.backup);
+			} catch(BNException e) {
+				System.err.println("Failure to backup parameters");
+			}
+		}
+		
+		public double getDisagreement(int t)
+		{
+			return this.y.conditionalLL(t);
+		}
+		
+		public String getName()
+		{
+			return y.getName();
+		}
+		
+		public IFDiscDBNNode hook()
+		{
+			return this.yor;
+		}
+		
+		@Override
+		public void addParent(IParentProcess p) {}
+
+		@Override
+		public void killParent(IParentProcess p) {}
+			
+		@Override
+		public void optimize()
+		{
+			try {
+				Vector<String> nodes = new Vector<String>();
+				nodes.add(y.getName());
+				nodes.add(yor.getName());
+				y.getNetwork().run_parallel_block(nodes, 2, 0);
+				y.optimizeParameters();
+			} catch(BNException e) {
+				System.err.println("Failure to potimize");
+			}
+		}
+
+		IFDiscDBNNode y, yor;
+	}
+	
 	public static class YORFWrapper implements IFeaturalChild
 	{
 		public YORFWrapper(String name, IDynamicBayesNet net) throws BNException
@@ -79,9 +152,10 @@ public class MFHMMLearnText {
 			net.addIntraEdge(this.yor, this.y);
 			net.addInterEdge(this.y, this.y);
 			this.yor.setAdvanceDistribution(TrueOr.getInstance());
-			//this.y.setAdvanceDistribution(new DiscreteCPT(new int[]{2,2},2,new double[][]{{.97, .03},{.9, .1},{.5, .5},{.3, .7}}));
 			this.y.setAdvanceDistribution(new DiscreteCPT(new int[]{2,2},2,new double[][]{{.97, .03},{.9, .1},{.5, .5},{.3, .7}}));
 			this.y.setInitialDistribution(new DiscreteCPT(new double[][]{{.9, .1},{.2, .8}}, 2));
+			this.y.lockParameters();
+			this.yor.lockParameters();
 		}
 		
 		public void backupParameters(){}
@@ -120,7 +194,7 @@ public class MFHMMLearnText {
 		public DiscreteCPT getInitialA() {
 			try
 			{
-				return new DiscreteCPT(new double[][]{{.7,.3},{.3,.7}}, 2);
+				return new DiscreteCPT(new double[][]{{.8,.2},{.8,.2}}, 2);
 			} catch(BNException e){return null;}
 		}
 		
@@ -154,7 +228,7 @@ public class MFHMMLearnText {
 					{0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,1,1,1,0}};
 			for(int i = 0; i < 9; i++)
 			{
-				YORFWrapper child = new YORFWrapper("Y"+i, net);
+				YORWrapper child = new YORWrapper("Y"+i, net);
 				child.y.setValue(o[i], 0);
 				children.add(child);
 			}
@@ -187,7 +261,7 @@ public class MFHMMLearnText {
 			net = DynamicNetworkFactory.newDynamicBayesNet(o[0].length);
 			for(int i = 0; i < o.length; i++)
 			{
-				YORFWrapper child = new YORFWrapper("Y"+i, net);
+				YORWrapper child = new YORWrapper("Y"+i, net);
 				child.y.setValue(o[i], 0);
 				children.add(child);
 			}
@@ -203,12 +277,15 @@ public class MFHMMLearnText {
 		gens.add(new RandomExpungeGenerator<IFeaturalChild,FHMMX>(.05, .05));
 		gens.add(new RandomMergeGenerator<IFeaturalChild,FHMMX>(.1, .1));
 		gens.add(new RandomSplitGenerator<IFeaturalChild,FHMMX>(.1, .1));
+		gens.add(new RandomAdderGenerator<IFeaturalChild,FHMMX>(.1, .1));
 		gens.add(new CoherenceSplitter<IFeaturalChild,FHMMX>(.35, .1, .1, .35));
 		gens.add(new SimilarityMerger<IFeaturalChild,FHMMX>(.35, .1, .35, .1));
 		gens.add(new CoherenceAdder<IFeaturalChild,FHMMX>(.35, .1, .1, .35));
+		gens.add(new CoherenceUniqueParenter<IFeaturalChild,FHMMX>(.35, .1, .1, .35));
 		IBPMixture<IFeaturalChild,FHMMX> mix = new IBPMixture<IFeaturalChild,FHMMX>(gens,
-				new double[] {.05,.05,.1,.1,.2,.15,.35},
-				new double[]{.7, 0, .3});
+				//new double[] {.05,.05,.1,.1,.2,.15,.35},
+				new double[] {0,0,.35,.35,.3,0,0,0,0},
+				new double[]{.05, .05, .9});
 		cont.setLogger(System.out);
 
 		IBPMModelOptions<IFeaturalChild,FHMMX> opts = new IBPMModelOptions<IFeaturalChild,FHMMX>(cont, ass);

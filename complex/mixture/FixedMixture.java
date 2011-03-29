@@ -110,7 +110,9 @@ public class FixedMixture
 						continue;
 					opts.controller.setParent(cchild, parent);
 					opts.controller.optimizeChildParameters(cchild);
-					double tmp = opts.controller.run(opts.maxRunIterations, opts.runConv);
+					//double tmp = opts.controller.run(opts.maxRunIterations, opts.runConv);
+					opts.controller.runChain(originalParent, opts.maxRunIterations, opts.runConv);
+					double tmp = opts.controller.runChain(parent, opts.maxRunIterations, opts.runConv);
 					if(tmp > bestLL)
 					{
 						bestParent = parent;
@@ -125,7 +127,11 @@ public class FixedMixture
 				
 				ll = opts.controller.run(opts.maxRunIterations, opts.runConv);
 				if(bestParent!=originalParent)
-					ll = opts.controller.learn(opts.maxLearnIterations, opts.learnConv, opts.maxRunIterations, opts.runConv);
+				{
+					opts.controller.learnChain(originalParent, opts.maxLearnIterations, opts.learnConv, opts.maxRunIterations, opts.runConv);
+					ll = opts.controller.learnChain(bestParent, opts.maxLearnIterations, opts.learnConv, opts.maxRunIterations, opts.runConv);
+					//ll = opts.controller.learn(opts.maxLearnIterations, opts.learnConv, opts.maxRunIterations, opts.runConv);
+				}
 
 				if(bestParent!=originalParent)
 				{

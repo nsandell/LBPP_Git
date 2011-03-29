@@ -35,6 +35,7 @@ class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode {
 			bfe += this.advance.computeBethePotential(this.parentMessages.getIncomingPis(0), this.values[0]);
 		for(int t = 1; t < this.bayesNet.T; t++)
 			bfe += this.advance.computeBethePotential(this.parentMessages.getIncomingPis(t), this.values[t]);
+		
 		return bfe;
 	}
 
@@ -201,6 +202,13 @@ class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode {
 			throw new BNException("Requested out of range value at t="+t);
 		}
 	}
+	
+	//These do nothing for evidence nodes.
+	@Override
+	public final void setSample(boolean sample){}
+	@Override
+	public final void sample(){}
+	
 
 	@Override
 	public void setAdvanceDistribution(InfiniteDiscreteDistribution dist)

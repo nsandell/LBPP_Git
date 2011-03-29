@@ -162,6 +162,8 @@ public interface IDynamicBayesNet extends IBayesNet<IDBNNode>
 	public Distribution getInitialDistribution(String name) throws BNException;
 	public Distribution getAdvanceDistribution(String name) throws BNException;
 	
+	RunResults optimize_parallel(int maxLearnIt, double learnErrConvergence, int maxInfIt, double infErrConvergence,Iterable<String> nodes) throws BNException;
+	
 	/**
 	 * Callback interface for calling parallel inference.
 	 * @author Nils F. Sandell

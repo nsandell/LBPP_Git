@@ -62,6 +62,10 @@ public class InfDiscEvBNNode extends BNNode implements IInfDiscEvBNNode
 	public InfiniteDiscreteDistribution getDistribution() {
 		return this.dist;
 	}
+	
+	// This does not do anything for evidence nodes.
+	public void sample(){}
+	public void setSample(boolean bool){}
 
 	@Override
 	public void setDistribution(Distribution dist) throws BNException {

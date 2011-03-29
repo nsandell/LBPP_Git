@@ -114,6 +114,25 @@ class FDiscBNNode extends BNNode implements IFDiscBNNode
 		this.cpt = dist.copy();
 	}
 	
+	@Override
+	public final void setSample(boolean sample)
+	{
+		this.sample = sample;
+	}
+	boolean sample = true;
+	
+	@Override
+	public final void sample()
+	{
+		if(this.sample)
+			this.sampleI();
+	}
+	
+	protected void sampleI()
+	{
+		//TODO Uh, how do I get parent values...
+	}
+	
 	public void setDistribution(Distribution dist) throws BNException
 	{
 		if(dist instanceof DiscreteFiniteDistribution)

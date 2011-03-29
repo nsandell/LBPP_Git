@@ -144,8 +144,9 @@ class FDiscDBNNode extends DBNNode implements IFDiscDBNNode {
 	private double betheFreeEnergy(int i) throws BNException
 	{
 		DiscreteFiniteDistribution dist = (i==0 && this.initialDist!=null) ? this.initialDist : this.advanceDist;
-		return dist.computeBethePotential(this.parentMessages.getIncomingPis(i), localLambda.get(i), 
+		double a = dist.computeBethePotential(this.parentMessages.getIncomingPis(i), localLambda.get(i), 
 				this.marginal.get(i), values==null ? null : values[i], this.childrenMessages.getIncomingLambdas(i).size()); 
+		return a;
 	}
 	
 	public void clearEvidence()
@@ -183,6 +184,25 @@ class FDiscDBNNode extends DBNNode implements IFDiscDBNNode {
 	throws BNException {
 		if(dist instanceof DiscreteFiniteDistribution)
 			this.advanceDist = (DiscreteFiniteDistribution)dist.copy();
+	}
+	
+	@Override
+	public final void setSample(boolean sample)
+	{
+		this.sample = sample;
+	}
+	boolean sample = true;
+	
+	@Override
+	public final void sample()
+	{
+		if(this.sample)
+			this.sampleI();
+	}
+	
+	protected void sampleI()
+	{
+		//TODO Uh, how do I get parent values...
 	}
 	
 	public void setValue(int t, int value) throws BNException {

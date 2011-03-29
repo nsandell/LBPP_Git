@@ -5,6 +5,8 @@ import java.io.PrintStream;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Vector;
+
 import bn.BNException;
 import bn.IBayesNode;
 import bn.impl.InternalIBayesNode;
@@ -109,6 +111,24 @@ public abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		return new RunResults(i, ((double)(System.currentTimeMillis()-startTime))/1000.0, learnErr);
 	}
 	
+	public RunResults optimize_parallel_queue(int maxLearnIt, double learnErrConvergence, int maxInfIt, double infErrConvergence) throws BNException
+	{
+		long startTime = System.currentTimeMillis();
+		int i = 0;
+		double learnErr = 0;
+		while(i < maxLearnIt)
+		{
+			learnErr = 0;
+			this.run_parallel_queue(maxInfIt, infErrConvergence);
+			for(BaseNodeType node : this.nodes.values())
+				learnErr = Math.max(node.optimizeParameters(), learnErr);
+			if(learnErr <= learnErrConvergence)
+				break;
+			i++;
+		}
+		return new RunResults(i, ((double)(System.currentTimeMillis()-startTime))/1000.0, learnErr);
+	}
+	
 	private void dfs_cycle_detect(HashSet<InternalIBayesNode> marks, HashSet<InternalIBayesNode> ancestors, InternalIBayesNode current) throws BNException
 	{
 		ancestors.add(current);
@@ -184,6 +204,166 @@ public abstract class BayesianNetwork<BaseNodeType extends InternalIBayesNode> {
 		}
 		long end_time = System.currentTimeMillis();
 		return new RunResults(i, ((double)(end_time-start_time))/1000.0, err);
+	}
+	
+	public RunResults run_parallel_queue(int maxit, double conv) throws BNException
+	{
+		long t0 = System.currentTimeMillis();
+		double error = Double.POSITIVE_INFINITY;
+		int i;
+		for(i = 1; i <= maxit && error > conv; i++)
+		{
+			NodeRunnerSync sync = new NodeRunnerSync(this.nodes.values());
+			synchronized (sync) {
+				sync.go();
+				try {
+				sync.wait();
+				} catch(InterruptedException e){throw new BNException("Error, interrupted during run: " + e.toString());}
+				error = sync.error;
+			}
+		}
+		long tf = System.currentTimeMillis();
+		return new RunResults(i, ((double)(tf-t0))/1000.0, error);
+	}
+	
+	public RunResults run_parallel_queue(int maxit, double conv,Iterable<String> nodeNames) throws BNException
+	{
+		Vector<BaseNodeType> nodes = new Vector<BaseNodeType>();
+		for(String nodeName : nodeNames)
+			nodes.add(this.getNode(nodeName));
+		long t0 = System.currentTimeMillis();
+		double error = Double.POSITIVE_INFINITY;
+		int i;
+		for(i = 1; i <= maxit && error > conv; i++)
+		{
+			NodeRunnerSync sync = new NodeRunnerSync(nodes);
+			synchronized (sync) {
+				sync.go();
+				try {
+				sync.wait();
+				} catch(InterruptedException e){throw new BNException("Error, interrupted during run: " + e.toString());}
+				error = sync.error;
+			}
+		}
+		long tf = System.currentTimeMillis();
+		return new RunResults(i, ((double)(tf-t0))/1000.0, error);
+	}
+	
+	private class NodeRunner extends Thread
+	{
+		NodeRunner(NodeRunnerSync sync)
+		{
+			this.sync = sync;
+		}
+		
+		public void run()
+		{
+			InternalIBayesNode nd = sync.nextNode(null,0.0);
+			try 
+			{
+				while(nd!=null)
+					nd = sync.nextNode(nd, nd.updateMessages());
+				sync.finish();
+			} catch(BNException e) {
+				this.sync.fault(e.toString());
+			}
+		}
+		NodeRunnerSync sync;
+	}
+	// This is both a thread pool and keeps track of which nodes have neighbors in progress 
+	private class NodeRunnerSync
+	{
+		NodeRunnerSync(Iterable<BaseNodeType> nodesit)
+		{
+			for(BaseNodeType nd : nodesit)
+			{
+				this.blocks.put(nd, 0);
+				this.remainingNodes.add(nd);
+			}
+		}
+
+		synchronized void go()
+		{
+			for(int i = 0; i < this.numThreads; i++)
+			{
+				this.activeThreads++;
+				//System.err.println("Spawning, " + this.activeThreads + " threads active.");
+				(new NodeRunner(this)).start();
+			}
+		}
+		
+		synchronized void finish()
+		{
+			this.activeThreads--;
+			//System.err.println("Done, " + this.activeThreads + " remaining.");
+			if(this.activeThreads==0)
+				this.notify();
+		}
+
+		synchronized void fault(String errMsg)
+		{
+			this.fault = true;
+			this.faultString = errMsg;
+			synchronized(this.remainingNodes) {
+				this.remainingNodes.clear();
+			}
+			this.notify();
+		}
+		
+		InternalIBayesNode nextNode(InternalIBayesNode finishedNode, double err)
+		{
+			synchronized (this.remainingNodes) {
+				
+				this.error = Math.max(this.error,err);
+				
+				// Clear the locks from the finished node
+				if(finishedNode!=null)
+				{
+					//System.err.println("Node " + finishedNode.getName() + " finished!");
+					for(InternalIBayesNode neighbor : finishedNode.getNeighborsI())
+						if(this.blocks.containsKey(neighbor))
+							this.blocks.put(neighbor,this.blocks.get(neighbor)-1);
+				}
+	
+				// Let any waiting threads know that blocks have been lifted
+				this.remainingNodes.notifyAll();
+				
+				// Find the next available node.
+				while(remainingNodes.size() > 0)
+				{
+					for(InternalIBayesNode nd : this.remainingNodes)
+					{
+						if(blocks.get(nd)==0)
+						{
+							for(InternalIBayesNode neighbor : nd.getNeighborsI())
+								this.blocks.put(neighbor,this.blocks.get(neighbor)+1);
+							this.remainingNodes.remove(nd);
+							//System.err.println("Dispatching node " + nd.getName());
+							return nd;
+						}
+					}
+					try {
+						//System.err.println("No available nodes found, waiting.");
+						this.remainingNodes.wait();
+					} catch(InterruptedException e) {}
+				}
+				return null;
+			}
+		}
+
+		int numThreads = Runtime.getRuntime().availableProcessors();
+		Integer activeThreads = 0;
+		boolean fault = false;
+		String faultString = null;
+		HashSet<InternalIBayesNode> remainingNodes =  new HashSet<InternalIBayesNode>();
+		HashMap<InternalIBayesNode, Integer> blocks = new HashMap<InternalIBayesNode, Integer>();
+		Double error = 0.0;
+	}
+	
+	public void sample()
+	{
+		for(BaseNodeType nd : this.getNodes())
+			nd.sample();
 	}
 	
 	public RunResults run(Iterable<String> nodeNames, int maxit, double conv) throws BNException

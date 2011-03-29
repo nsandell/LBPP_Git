@@ -42,6 +42,9 @@ public interface InternalIBayesNode
 	public String getNodeDefinition();
 	public String getEdgeDefinition();
 	
+	public void sample();
+	public void setSample(boolean sample);
+	
 	/**
 	 * Clear the observation this node holds.
 	 */

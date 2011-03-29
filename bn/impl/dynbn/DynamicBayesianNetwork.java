@@ -260,7 +260,8 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynami
 		while(i < maxLearnIt)
 		{
 			learnErr = 0;
-			this.run_parallel_block(maxInfIt, infErrConvergence);
+			//this.run_parallel_block(nodes, maxInfIt, infErrConvergence);
+			this.run_parallel_queue(maxInfIt, infErrConvergence, nodes);
 			for(String nodename : nodes)
 			{
 				if(this.getNode(nodename)!=null)

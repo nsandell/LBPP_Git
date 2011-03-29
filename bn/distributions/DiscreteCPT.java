@@ -98,6 +98,34 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 	}
 	
 	/**
+	 * Gibbs sample this node
+	 */
+	@Override
+	public int sample(ValueSet<Integer> parents, FiniteDiscreteMessage lambda) throws BNException
+	{
+		int prod = 1;
+		for(int i = 0; i < parents.length(); i++)
+			prod *= parents.getValue(i);
+		double val =  MathUtil.rand.nextDouble();
+		double[] dist = this.values[prod].clone();
+		double distsum = 0;
+		for(int i = 0; i < dist.length; i++)
+		{
+			dist[i] *= lambda.getValue(i);
+			distsum += dist[i];
+		}
+		double sum = 0;
+		for(int i = 0; i < dist.length; i++)
+		{
+			double pval = dist[i]/distsum;
+			sum += pval;
+			if(val < sum)
+				return i;
+		}
+		return dist.length-1;
+	}
+	
+	/**
 	 * Validate this CPT
 	 */
 	private void validate() throws BNException

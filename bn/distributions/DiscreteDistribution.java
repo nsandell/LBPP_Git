@@ -43,6 +43,14 @@ public abstract class DiscreteDistribution implements Distribution {
 				MessageSet<FiniteDiscreteMessage> incoming_pis) throws BNException;
 
 		/**
+		 * Sample this distribution given a set of parent values.
+		 * @param parentVals Parent values
+		 * @return An appropriate sample from this distribution.
+		 * @throws BNException If the parentvals are bad.
+		 */
+		public abstract int sample(ValueSet<Integer> parentVals, FiniteDiscreteMessage localLambda) throws BNException;
+
+		/**
 		 * Compute outgoing lambda messages for a node with this as its CPD given the incoming pi messages, and
 		 * the local lambda message, and (optionally) the value of the node.
 		 * @param lambdas_out Message vector for storing the output outgoing lamdba messages
@@ -63,6 +71,8 @@ public abstract class DiscreteDistribution implements Distribution {
 	
 	public static abstract class InfiniteDiscreteDistribution extends DiscreteDistribution
 	{
+
+		
 		@Override
 		public abstract InfDiscDistSufficientStat getSufficientStatisticObj();
 		@Override
@@ -82,6 +92,10 @@ public abstract class DiscreteDistribution implements Distribution {
 	 */
 	protected DiscreteDistribution(){}
 	
+	@Override
+	public abstract DiscreteDistribution copy() throws BNException;
+	
+	
 	/**
 	 * Sample this distribution given a set of parent values.
 	 * @param parentVals Parent values
@@ -89,10 +103,6 @@ public abstract class DiscreteDistribution implements Distribution {
 	 * @throws BNException If the parentvals are bad.
 	 */
 	public abstract int sample(ValueSet<Integer> parentVals) throws BNException;
-	
-	
-	@Override
-	public abstract DiscreteDistribution copy() throws BNException;
 
 	/**
 	 * Evaluate the probability of a given value of the variable of interested

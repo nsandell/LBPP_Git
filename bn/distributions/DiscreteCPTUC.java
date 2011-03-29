@@ -60,6 +60,28 @@ public class DiscreteCPTUC extends DiscreteFiniteDistribution
 	}
 	
 	@Override
+	public int sample(ValueSet<Integer> parents, FiniteDiscreteMessage lambda) throws BNException
+	{
+		double val = MathUtil.rand.nextDouble();
+		double distsum = 0;
+		double [] adjdist = this.dist.clone();
+		for(int i = 0; i < adjdist.length; i++)
+		{
+			adjdist[i] *= lambda.getValue(i);
+			distsum += adjdist[i];
+		}
+		double sum = 0;
+		for(int i = 0; i < dist.length; i++)
+		{
+			double pval = adjdist[i]/distsum;
+			sum += pval;
+			if(val < sum)
+				return i;
+		}
+		return dist.length-1;
+	}
+	
+	@Override
 	public DiscreteCPTUC copy() throws BNException
 	{
 		double[] newdist = new double[this.dist.length];

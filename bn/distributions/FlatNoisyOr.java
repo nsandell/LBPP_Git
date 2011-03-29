@@ -53,9 +53,28 @@ public class FlatNoisyOr extends DiscreteFiniteDistribution {
 		else
 			return 0;
 	}
-
-
-
+	
+	@Override
+	public int sample(ValueSet<Integer> parentVals, FiniteDiscreteMessage lambda) throws BNException {
+		boolean parentActive = false;
+		for(int i = 0; i < parentVals.length(); i++)
+		{
+			if(parentVals.getValue(i)==1)
+			{
+				parentActive = true;
+				break;
+			}
+		}
+		if(parentActive)
+		{
+			double pact = this.c*lambda.getValue(1);
+			pact = pact/(pact+(1-this.c)*lambda.getValue(0));
+			return (Math.random() < pact) ? 1 : 0;
+		}
+		else
+			return 0;
+	}
+	
 	@Override
 	public DiscreteSufficientStatistic getSufficientStatisticObj() {
 		// TODO Auto-generated method stub

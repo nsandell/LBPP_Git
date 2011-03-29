@@ -39,6 +39,11 @@ public class TrueAnd extends DiscreteFiniteDistribution {
 				return 0;
 		return 1;
 	}
+	
+	@Override
+	public int sample(ValueSet<Integer> parentVals,FiniteDiscreteMessage lambda) throws BNException {
+		return this.sample(parentVals);
+	}
 
 	@Override
 	public DiscreteSufficientStatistic getSufficientStatisticObj() {

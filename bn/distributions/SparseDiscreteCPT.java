@@ -57,6 +57,13 @@ public class SparseDiscreteCPT extends DiscreteFiniteDistribution
 		return lastint;
 	}
 	
+	@Override
+	public int sample(ValueSet<Integer> parents, FiniteDiscreteMessage lambda) throws BNException
+	{
+		//TODO Implement
+		throw new BNException("Not implemented yet.");
+	}
+	
 	public void print(PrintStream ps)
 	{
 		ps.print("SparseCPT(" + dimSizes[0]);

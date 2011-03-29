@@ -39,6 +39,11 @@ public class TrueOr extends DiscreteFiniteDistribution {
 				return 1;
 		return 0;
 	}
+	
+	@Override
+	public int sample(ValueSet<Integer> parentVals, FiniteDiscreteMessage lambda) throws BNException {
+		return this.sample(parentVals);
+	}
 
 	@Override
 	public DiscreteSufficientStatistic getSufficientStatisticObj() {
@@ -167,11 +172,7 @@ public class TrueOr extends DiscreteFiniteDistribution {
 		double C = pAll0*local_lambda.getValue(0) + (1-pAll0)*local_lambda.getValue(1);
 		double ll0 = local_lambda.getValue(0);
 		double ll1 = local_lambda.getValue(1);
-		if(ll0==1 && pAll0==0)
-			return Double.NaN;
-		else if(ll1==1 && pAll0==1)
-			return Double.NaN;
-
+	
 		H1 = -HX;
 		if(pAll0 > 0)
 			H1 -= pAll0*Math.log(pAll0);
@@ -180,7 +181,6 @@ public class TrueOr extends DiscreteFiniteDistribution {
 		H1 *= ll1/C;
 		if(pAll0*ll0 > 0)
 			H1 += pAll0*ll0/C*Math.log(pAll0*ll0/C);
-		
 		return H1;
 	}
 	

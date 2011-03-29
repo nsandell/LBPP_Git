@@ -50,6 +50,11 @@ public class Rules
 		if(val==null) throw new BNException("Attempted to sample rules for parent values that there is no rule for..");
 		return val;
 	}
+	
+	public int sample(Distribution.ValueSet<Integer> parentVals,FiniteDiscreteMessage lambda) throws BNException {
+		throw new BNException("Not implemented yet.");
+		//TODO Implement
+	}
 
 	public double evaluate(int[] indices, int value) throws BNException {
 		return this.rules.get(new IndexWrapper(indices))==value ? 1.0 : 0.0;
@@ -213,6 +218,11 @@ public class Rules
 		@Override
 		public int sample(ValueSet<Integer> parentVals) throws BNException {
 			return this.rules.sample(parentVals);
+		}
+		
+		@Override
+		public int sample(ValueSet<Integer> parentVals,FiniteDiscreteMessage lambda) throws BNException {
+			return this.rules.sample(parentVals,lambda);
 		}
 
 		@Override

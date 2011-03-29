@@ -56,6 +56,23 @@ public class ScalarNoisyOr extends DiscreteFiniteDistribution
 		return (MathUtil.rand.nextDouble() < getProbability1(num1)) ? 1 : 0;
 	}
 	
+	@Override
+	public int sample(ValueSet<Integer> parents, FiniteDiscreteMessage lambda)  throws BNException
+	{
+		int num1 = 0;
+		for(int i= 0; i < parents.length(); i++)
+			if(parents.getValue(i)==1)
+				num1++;
+		
+		double pact = getProbability1(num1)*lambda.getValue(1);
+		double pnact = (1-getProbability1(num1))*lambda.getValue(0);
+		
+		pact = pact/(pact+pnact);
+		
+		
+		return (MathUtil.rand.nextDouble() < pact) ? 1 : 0;
+	}
+	
 	/**
 	 * Get the probability this node is active given the number of active parents.
 	 * @param numActiveParents the number of active parents.

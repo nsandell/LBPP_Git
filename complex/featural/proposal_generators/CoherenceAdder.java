@@ -57,7 +57,7 @@ public class CoherenceAdder<ChildProcess extends IFeaturalChild, ParentProcess e
 
 	@Override
 	public String name() {
-		return "Coherence-based splitter";
+		return "Coherence-based co-parent adder";
 	}
 
 	public double smoothness = 0;

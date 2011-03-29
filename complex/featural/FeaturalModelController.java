@@ -10,6 +10,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Vector;
 
+import bn.distributions.Distribution;
+
 import util.MathUtil;
 
 import complex.CMException;
@@ -38,7 +40,10 @@ public abstract class FeaturalModelController<ChildProcess extends IFeaturalChil
 	{
 		this.killLatentModelI(node);
 		for(ChildProcess child : this.children.get(node))
+		{
 			this.parents.get(child).remove(node);
+			child.killParent(node);
+		}
 		this.children.get(node).clear();
 		this.latents.remove(node);
 		this.children.remove(node);
@@ -47,23 +52,28 @@ public abstract class FeaturalModelController<ChildProcess extends IFeaturalChil
 	public LatentBackup<ChildProcess,ParentProcess> backupAndRemoveLatentModel(ParentProcess latent) throws CMException
 	{
 		LatentBackup<ChildProcess,ParentProcess> backup = new LatentBackup<ChildProcess,ParentProcess>(this, latent);
+		this.backupLatentModelParameters(latent, backup);
 		this.killLatentModel(latent);
 		return backup;
 	}
+	protected abstract void backupLatentModelParameters(ParentProcess latent, LatentBackup<ChildProcess, ParentProcess> backup);
 
 	public ParentProcess restoreBackup(LatentBackup<ChildProcess,ParentProcess> backup) throws CMException
 	{
 		ParentProcess latent = this.newLatentModel();
+		this.restoreLatentModelParameters(latent, backup);
 		for(ChildProcess child : backup.children)
 			this.connect(latent, child);
 		return latent;
 	}
+	protected abstract void restoreLatentModelParameters(ParentProcess latent, LatentBackup<ChildProcess, ParentProcess> backup);
 
 	public void connect(ParentProcess latent, ChildProcess observed) throws CMException
 	{
 		this.connectI(latent,observed);
 		this.children.get(latent).add(observed);
 		this.parents.get(observed).add(latent);
+		observed.addParent(latent);
 	}
 
 	public void disconnect(ParentProcess latent, ChildProcess observed) throws CMException
@@ -71,6 +81,7 @@ public abstract class FeaturalModelController<ChildProcess extends IFeaturalChil
 		this.disconnectI(latent, observed);
 		this.children.get(latent).remove(observed);
 		this.parents.get(observed).remove(latent);
+		observed.killParent(latent);
 	}
 
 	public HashSet<ChildProcess> getChildren(ParentProcess latent)
@@ -117,6 +128,7 @@ public abstract class FeaturalModelController<ChildProcess extends IFeaturalChil
 			this.children =  new HashSet<ChildProcess>(cont.getChildren(node));
 		}
 		public HashSet<ChildProcess> children;
+		public Distribution advance, init;
 	}
 	
 	public Vector<ParentProcess> getLatentNodes(){return this.latents;}

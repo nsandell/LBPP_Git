@@ -5,6 +5,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Random;
 
+import Jama.Matrix;
+import Jama.SingularValueDecomposition;
+
 /**
  * Generic math and random number generation utilities.
  * @author Nils F. Sandell
@@ -38,6 +41,18 @@ public class MathUtil
 		for(int i = 0; i < input.length; i++)
 			input[i] = entries.get(i);
 		return input;
+	}
+	
+	public static Matrix pseudoInverse(Matrix mat)
+	{
+		SingularValueDecomposition svd = mat.svd();
+		Matrix sig = svd.getS();
+		for(int i = 0; i < sig.getColumnDimension(); i++)
+			if(sig.get(i,i)> 1e-32)
+				sig.set(i, i, 1/sig.get(i, i));
+			else
+				sig.set(i, i, 0);
+		return svd.getV().times(sig).times(svd.getU().transpose());
 	}
 	
 	private static class LOFCOLComparer implements Comparator<boolean[]>

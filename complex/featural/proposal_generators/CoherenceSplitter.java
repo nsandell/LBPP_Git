@@ -41,8 +41,8 @@ public class CoherenceSplitter<ChildProcess extends IFeaturalChild, ParentProces
 		if(cont.getChildren(latents.get(selection)).size()<2)
 			return null;
 		System.out.println("Attempting to split node " + latents.get(selection).getName() + " based on incoherence.");
-		double fp = this.pcspl*coherence[selection] + this.prspl/coherence.length;
-		double bp = this.prmerge/coherence.length/(coherence.length+1); //TODO determine if we want to exactly determine reverse move probability
+		double fp = 1;//this.pcspl*coherence[selection] + this.prspl/coherence.length;
+		double bp = 1;//this.prmerge/coherence.length/(coherence.length+1); //TODO determine if we want to exactly determine reverse move probability
 		                                 
 		Vector<ChildProcess> children = new Vector<ChildProcess>(cont.getChildren(latents.get(selection)));
 		boolean[] membership = Coherence.partition(children, cont.getT());
@@ -52,7 +52,7 @@ public class CoherenceSplitter<ChildProcess extends IFeaturalChild, ParentProces
 			if(membership[i])
 				movers.add(children.get(i));
 		
-		return new Proposal<ChildProcess,ParentProcess>(fp,bp,new ProposalAction.SplitAction<ChildProcess,ParentProcess>(latents.get(selection),movers));
+		return new Proposal<ChildProcess,ParentProcess>(fp,bp,new ProposalAction.SplitAction<ChildProcess,ParentProcess>(latents.get(selection),movers,true));
 	}
 
 	@Override

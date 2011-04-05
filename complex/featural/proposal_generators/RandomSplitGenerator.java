@@ -37,12 +37,12 @@ public class RandomSplitGenerator<ChildProcess extends IFeaturalChild, ParentPro
 		if(splits.size()==0 || splits.size()==children.size())
 			return null;
 		
-		double fp = this.psplit*Math.pow(.5, splits.size())/((double)N);
+		double fp = 2*this.psplit*Math.pow(.5, splits.size())/((double)N);
 		double bp = this.pmerge/((double)(N*(N-1)));
 		
 		cont.log("Proposing split of node " + lat.getName());
 		
-		return new Proposal<ChildProcess,ParentProcess>(fp, bp, new SplitAction<ChildProcess,ParentProcess>(lat,splits));
+		return new Proposal<ChildProcess,ParentProcess>(fp, bp, new SplitAction<ChildProcess,ParentProcess>(lat,splits,true));
 	}
 
 	

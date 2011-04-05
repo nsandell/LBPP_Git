@@ -1,5 +1,7 @@
 package complex.featural.proposal_generators;
 
+import java.util.HashSet;
+
 import complex.IParentProcess;
 import complex.featural.FeaturalModelController;
 import complex.featural.IFeaturalChild;
@@ -31,12 +33,15 @@ public class RandomMergeGenerator<ChildProcess extends IFeaturalChild, ParentPro
 		
 		cont.log("Proposing the merge of nodes " + pair.l1.getName() + " and " + pair.l2.getName());
 		
-		double fp = this.pmerge/((double)(N*(N-1)));
-		double bp = this.psplit/((double)(N-1));		//Really rough but eh
+		HashSet<ChildProcess> totalChildren = new HashSet<ChildProcess>();
+		totalChildren.addAll(cont.getChildren(pair.l1));
+		totalChildren.addAll(cont.getChildren(pair.l2));
 		
-		return new Proposal<ChildProcess,ParentProcess>(fp, bp, new MergeAction<ChildProcess,ParentProcess>(pair.l1,pair.l2));
+		double fp = this.pmerge/((double)(N*(N-1)));
+		double bp = 2*Math.pow(.5,totalChildren.size())*this.psplit/((double)(N-1));		//Really rough but eh
+		
+		return new Proposal<ChildProcess,ParentProcess>(fp, bp, new MergeAction<ChildProcess,ParentProcess>(pair.l1,pair.l2,true));
 	}
-
 	
 	double pmerge, psplit;
 }

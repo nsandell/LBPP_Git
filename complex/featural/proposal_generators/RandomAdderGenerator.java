@@ -42,7 +42,7 @@ public class RandomAdderGenerator<ChildProcess extends IFeaturalChild, ParentPro
 		
 		cont.log("Proposing adding coparent to node " + lat.getName());
 		
-		return new Proposal<ChildProcess,ParentProcess>(fp, bp, new ProposalAction.MultiUniqueParentAddAction<ChildProcess,ParentProcess>(splits));
+		return new Proposal<ChildProcess,ParentProcess>(fp, bp, new ProposalAction.MultiUniqueParentAddAction<ChildProcess,ParentProcess>(splits,true));
 	}
 
 	

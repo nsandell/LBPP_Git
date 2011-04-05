@@ -54,10 +54,10 @@ public class SimilarityMerger<ChildProcess extends IFeaturalChild, ParentProcess
 		
 		System.out.println("Proposing the merge of latent processes " + latents.get(row).getName() + " and " + latents.get(col).getName() + " based on similarity");
 		
-		double fp = this.smp*rowsum[row]*divergences[row][col] + this.rmp/latents.size()/(latents.size()-1);
-		double bp = this.rsp/(latents.size()+1)/latents.size(); //TODO decide whether we want exact backwards probabilities
+		double fp = 1;//this.smp*rowsum[row]*divergences[row][col] + this.rmp/latents.size()/(latents.size()-1);
+		double bp = 1;//this.rsp/(latents.size()+1)/latents.size(); //TODO decide whether we want exact backwards probabilities
 		
-		return new Proposal<ChildProcess,ParentProcess>(fp, bp, new ProposalAction.MergeAction<ChildProcess,ParentProcess>(latents.get(row),latents.get(col)));
+		return new Proposal<ChildProcess,ParentProcess>(fp, bp, new ProposalAction.MergeAction<ChildProcess,ParentProcess>(latents.get(row),latents.get(col),true));
 	}
 
 	public static double smoother = 0;

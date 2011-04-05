@@ -37,10 +37,10 @@ public class CoherenceUniqueParenter<ChildProcess extends IFeaturalChild, Parent
 		
 		int selection = MathUtil.discreteSample(coherence);
 		System.out.println("Attempting to give " + children.get(selection).getName() + " a unique parent based on incoherence.");
-		double fp = this.pcspl*coherence[selection] + this.prspl/coherence.length;
-		double bp = this.prmerge/coherence.length/(coherence.length+1); //TODO determine if we want to exactly determine reverse move probability
+		double fp = 1;//this.pcspl*coherence[selection] + this.prspl/coherence.length;
+		double bp = 1;//this.prmerge/coherence.length/(coherence.length+1); //TODO determine if we want to exactly determine reverse move probability
 	
-		return new Proposal<ChildProcess,ParentProcess>(fp,bp,new ProposalAction.UniqueParentAddAction<ChildProcess, ParentProcess>(children.get(selection)));
+		return new Proposal<ChildProcess,ParentProcess>(fp,bp,new ProposalAction.UniqueParentAddAction<ChildProcess, ParentProcess>(children.get(selection),true));
 	}
 
 	@Override

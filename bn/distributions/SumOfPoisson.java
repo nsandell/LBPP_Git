@@ -66,6 +66,16 @@ public class SumOfPoisson extends InfiniteDiscreteDistribution
 		this.means = newmeans;
 	}
 	
+	public int numParents()
+	{
+		return this.means.length;
+	}
+	
+	public double getMean(int i)
+	{
+		return this.means[i];
+	}
+	
 	@Override
 	public double optimize(SufficientStatistic obj) throws BNException {
 		if(obj instanceof SumOfPoissonStat)

@@ -48,6 +48,22 @@ public abstract class FeaturalModelController<ChildProcess extends IFeaturalChil
 		this.latents.remove(node);
 		this.children.remove(node);
 	}
+	
+	public void backupParameters() throws CMException
+	{
+		for(ChildProcess child : this.observables)
+			child.backupParameters();
+		for(ParentProcess parent : this.latents)
+			parent.backupParameters();
+	}
+	
+	public void restoreParameters() throws CMException
+	{
+		for(ChildProcess child : this.observables)
+			child.restoreParameters();
+		for(ParentProcess parent : this.latents)
+			parent.restoreParameters();
+	}
 
 	public LatentBackup<ChildProcess,ParentProcess> backupAndRemoveLatentModel(ParentProcess latent) throws CMException
 	{
@@ -182,11 +198,16 @@ public abstract class FeaturalModelController<ChildProcess extends IFeaturalChil
 						info.print("\t0");
 				}
 				info.println();
-			}		
+			}
+
+			File state_dir = new File(directory+"/state/");
+			state_dir.mkdir();
+			this.saveStates(directory+"/state/");
 		} catch(FileNotFoundException e) {
 			throw new CMException(e.toString());
 		}
 	}
+	public abstract void saveStates(String directory) throws CMException;
 	
 	public int getT()
 	{

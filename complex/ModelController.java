@@ -32,6 +32,7 @@ public abstract class ModelController
 		try {
 			outfile = new PrintStream(new File(filename));
 			this.network.print(outfile);
+			outfile.close();
 		} catch(FileNotFoundException e) {
 			System.err.println("Couldn't write to output file " + filename);
 		}
@@ -40,14 +41,12 @@ public abstract class ModelController
 	public double run(int max_it, double conv)  throws CMException
 	{
 		try {
-			this.network.resetMessages();//TODO REMOVE THIS
-			//this.network.run_parallel_block(max_it, conv);
-			this.network.run(max_it,conv);
+			this.network.run_parallel_block(max_it, conv);
 			double ll = this.network.getLogLikelihood();
 			if(Double.isNaN(ll) || ll > 0)
 			{
+				System.err.println("Resetting messages, found NAN");
 				this.network.resetMessages();
-//				this.network.run_parallel_block(max_it,conv);
 				this.network.run(max_it,conv);
 				ll = this.network.getLogLikelihood();
 				if(Double.isNaN(ll) || ll > 0)
@@ -66,8 +65,7 @@ public abstract class ModelController
 	public double learn(int max_learn_it, double learn_conv, int max_run_it, double run_conv) throws CMException
 	{
 		try {
-			//this.network.optimize_parallel(max_learn_it, learn_conv, max_run_it, run_conv);
-			this.network.optimize(max_learn_it, learn_conv, max_run_it, run_conv);
+			this.network.optimize_parallel(max_learn_it, learn_conv, max_run_it, run_conv);
 			return this.run(max_run_it,run_conv);
 		} catch(BNException e) {
 			throw new CMException("Error optimizing the model : " + e.toString());
@@ -85,6 +83,11 @@ public abstract class ModelController
 		this.logger = log;
 	}
 	
+	public void resetMessages()
+	{
+		this.network.resetMessages();
+	}
+	
 	public void trace(String msg)
 	{
 		if(this.tracer!=null)
@@ -95,6 +98,8 @@ public abstract class ModelController
 	{
 		this.tracer = tracer;
 	}
+	
+	public abstract double parameterPosteriorLL();
 	
 	protected PrintStream logger = null, tracer = null;
 	protected IDynamicBayesNet network;

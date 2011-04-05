@@ -11,16 +11,36 @@ import complex.featural.FeaturalModelController.LatentBackup;
 
 public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentProcess extends IParentProcess>
 {
+	
+	public ProposalAction(boolean suggest_samples)
+	{
+		this.suggest_samples = suggest_samples;
+	}
+	
+	protected boolean suggest_samples;
+	
 	public double forward;
 	public double backward;
 
 	public abstract void perform(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException;
 	public abstract void undo(FeaturalModelController<ChildProcess,ParentProcess> cont) throws CMException;
+	
+	public Vector<ChildProcess> getChangedChildren()
+	{
+		return this.changedChildren;
+	}
+	public Vector<ParentProcess> getChangedParents()
+	{
+		return this.changedParents;
+	}
+	protected Vector<ChildProcess> changedChildren = new Vector<ChildProcess>();
+	protected Vector<ParentProcess> changedParents = new Vector<ParentProcess>();
 
 	public static class SplitAction<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> extends ProposalAction<ChildProcess,ParentProcess>
 	{
-		public SplitAction(ParentProcess latent, HashSet<ChildProcess> movers)
+		public SplitAction(ParentProcess latent, HashSet<ChildProcess> movers,boolean suggest_samples)
 		{
+			super(suggest_samples);
 			this.latentFeature = latent;
 			this.movers = movers;
 		}
@@ -33,6 +53,11 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 				child.backupParameters();
 				cont.disconnect(latentFeature, child);
 				cont.connect(this.newFeature,child);
+			}
+			if(this.suggest_samples)
+			{
+				this.changedParents.add(newFeature);
+				this.changedParents.add(latentFeature);
 			}
 		}
 
@@ -54,8 +79,9 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 	public static class MergeAction<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> extends ProposalAction<ChildProcess,ParentProcess>
 	{
 
-		public MergeAction(ParentProcess l1, ParentProcess l2)
+		public MergeAction(ParentProcess l1, ParentProcess l2,boolean suggest_samples)
 		{
+			super(suggest_samples);
 			this.latent1 = l1;
 			this.latent2 = l2;
 		}
@@ -104,6 +130,7 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 	{
 		public SwitchAction(ParentProcess from, ParentProcess to, Vector<ChildProcess> switches)
 		{
+			super(false);
 			this.lfrom = from; this.lto = to; this.switches = switches;
 		}
 
@@ -140,6 +167,7 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 	{
 		public DisconnectAction(ParentProcess latent, Collection<ChildProcess> discons)
 		{
+			super(false);
 			this.latent = latent;
 			this.disconnects = discons;
 		}
@@ -170,8 +198,9 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 	
 	public static class MultiUniqueParentAddAction<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> extends ProposalAction<ChildProcess,ParentProcess>
 	{
-		public MultiUniqueParentAddAction(Collection<ChildProcess> cps)
+		public MultiUniqueParentAddAction(Collection<ChildProcess> cps,boolean suggest_samples)
 		{
+			super(suggest_samples);
 			this.cps = cps;
 		}
 
@@ -183,6 +212,9 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 				cp.backupParameters();
 				cont.connect(uniqParent,cp);
 			}
+			if(this.suggest_samples)
+				this.changedParents.add(uniqParent);
+			cont.resetMessages(); //Because of the nature of this action  this helps
 		}
 
 		@Override
@@ -198,8 +230,9 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 	
 	public static class UniqueParentAddAction<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> extends ProposalAction<ChildProcess,ParentProcess> 
 	{
-		public UniqueParentAddAction(ChildProcess cp)
+		public UniqueParentAddAction(ChildProcess cp,boolean suggest_smples)
 		{
+			super(suggest_smples);
 			this.cp = cp;
 		}
 
@@ -208,6 +241,9 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 			this.uniqParent = cont.newLatentModel();
 			this.cp.backupParameters();
 			cont.connect(uniqParent,cp);
+			if(this.suggest_samples)
+				this.changedParents.add(uniqParent);
+			cont.resetMessages();
 		}
 
 		@Override
@@ -224,6 +260,7 @@ public abstract class ProposalAction<ChildProcess extends IFeaturalChild,ParentP
 	{
 		public ConnectAction(ParentProcess latent, Collection<ChildProcess> cons)
 		{
+			super(false);
 			this.latent = latent;
 			this.connects = cons;
 		}

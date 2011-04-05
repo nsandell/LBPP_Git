@@ -135,6 +135,11 @@ public class MHMMDiscrete
 		}
 		Distribution backupDist = null;
 
+		@Override
+		public double parameterLL() {
+			return 0;
+		}
+
 	}
 
 	public static void main(String[] args) throws BNException, CMException

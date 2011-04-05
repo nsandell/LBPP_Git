@@ -147,7 +147,7 @@ public class MHMMPoisson
 		
 		@Override
 		public double getDisagreement(int t) {
-			return 0;
+			return this.evnode.conditionalLL(t);
 		}
 		
 		@Override
@@ -179,6 +179,11 @@ public class MHMMPoisson
 
 		@Override
 		public void setParent(IParentProcess rent) {}
+
+		@Override
+		public double parameterLL() {
+			return 0;
+		}
 	}
 	
 	
@@ -250,8 +255,7 @@ public class MHMMPoisson
 
 		@Override
 		public double getDisagreement(int t) {
-			// TODO Auto-generated method stub
-			return 0;
+			return this.evnode.conditionalLL(t);
 		}
 		
 		@Override
@@ -280,6 +284,11 @@ public class MHMMPoisson
 
 		@Override
 		public void setParent(IParentProcess rent) {}
+
+		@Override
+		public double parameterLL() {
+			return 0;
+		}
 	}
 	
 	private static class BasicPoissChild implements MHMMChild
@@ -347,6 +356,11 @@ public class MHMMPoisson
 		public void setParent(IParentProcess rent) {}
 		
 		Distribution backupDist = null;
+
+		@Override
+		public double parameterLL() {
+			return 0;
+		}
 	}
 
 	public static void main(String[] args) throws BNException, CMException

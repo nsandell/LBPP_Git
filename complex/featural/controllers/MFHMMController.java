@@ -1,5 +1,7 @@
 package complex.featural.controllers;
 
+import java.io.FileNotFoundException;
+import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Vector;
 
@@ -18,6 +20,8 @@ public class MFHMMController extends FeaturalModelController<IFeaturalChild, FHM
 	{
 		public DiscreteCPT getInitialA();
 		public DiscreteCPTUC getInitialPi();
+		public double getA_LL(DiscreteCPT A);
+		public double getPi_LL(DiscreteCPTUC pi);
 	}
 	
 	public MFHMMController(IDynamicBayesNet network, Vector<IFeaturalChild> observations, MFHMMInitialParamGenerator paramgen, int Ns) throws BNException
@@ -34,6 +38,41 @@ public class MFHMMController extends FeaturalModelController<IFeaturalChild, FHM
 	{
 		this(network,observations,paramgen,Ns);
 		this.lockXParameters = lockParameters;
+	}
+	
+	public double parameterPosteriorLL()
+	{
+		double ll = 0;
+		for(FHMMX lat : this.getLatentNodes())
+			ll += this.paramgen.getA_LL((DiscreteCPT)lat.xnd.getAdvanceDistribution())
+				+ this.paramgen.getPi_LL((DiscreteCPTUC)lat.xnd.getInitialDistribution());
+		for(IFeaturalChild child : this.getObservedNodes())
+			ll += child.parameterLL();
+		return ll;
+	}
+	
+	@Override
+	public void saveStates(String dir) throws CMException
+	{
+		for(FHMMX par : this.latents)
+		{
+			try {
+			PrintStream ps = new PrintStream(dir+"/"+par.getName()+".dat");
+			for(int j = 0; j < ns; j++)
+			{
+				ps.print(par.xnd.getMarginal(0).getValue(j));
+				for(int i = 1; i < this.network.getT(); i++)
+				{
+					ps.print(" " + par.xnd.getMarginal(i).getValue(j));
+				}
+				ps.println();
+			}
+			} catch(FileNotFoundException e) {
+				System.err.println("Failed to create state file: " + e.toString());
+			} catch(BNException e) {
+				System.err.println("Failed to create state file: " + e.toString());
+			}
+		}
 	}
 
 	@Override

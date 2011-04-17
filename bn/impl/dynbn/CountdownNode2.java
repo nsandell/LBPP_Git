@@ -9,6 +9,8 @@ import util.MathUtil;
 import bn.BNException;
 import bn.distributions.CountdownDistribution;
 import bn.distributions.CountdownDistribution.CountdownStatistic;
+import bn.distributions.CountdownDistribution.SwitchingCountdownDistribution;
+import bn.distributions.CountdownDistribution.SwitchingCountdownDistribution.SwitchingCDStat;
 import bn.distributions.Distribution;
 import bn.distributions.Distribution.SufficientStatistic;
 import bn.dynamic.ICountdownNode;
@@ -20,11 +22,12 @@ import bn.messages.FiniteDiscreteMessage.FDiscMessageInterfaceSet;
 import bn.messages.Message.MessageInterfaceSet;
 import bn.messages.MessageSet;
 
-public class CountdownNode extends DBNNode implements ICountdownNode {
+public class CountdownNode2 extends DBNNode implements ICountdownNode {
 	
+	//This node will take a single, binary parent that will switch its distribution.
 	//TODO right now this can be used to sample or infer, but not both!
 	
-	public CountdownNode(DynamicBayesianNetwork net, String name, int maxlen)
+	public CountdownNode2(DynamicBayesianNetwork net, String name, int maxlen)
 	{
 		super(net,name);
 		this.lambdas = new ArrayList<FiniteDiscreteMessage>();
@@ -48,18 +51,70 @@ public class CountdownNode extends DBNNode implements ICountdownNode {
 	}
 
 	@Override
-	public double betheFreeEnergy() throws BNException {
-		// TODO Auto-generated method stub
+	public double betheFreeEnergy() throws BNException{
+		double bfe = 0;
+		for(int t = 0; t < this.getNetwork().T; t++)
+		{
+			bfe += this.betheFreeEnergy(t);
+		}
+		return bfe;
+	}
+	
+	private double betheFreeEnergy(int t) throws BNException {
+		
+		double E = 0, H1 = 0, H2 = 0;
+	
 		return 0;
+		// For the moment, treat like a two-state variable 
+		
+		/*if(t==0)
+		{
+			for(int i = 0; i < this.truncation; i++)
+			{
+				double p = dist.distributions[0].getDist()[i];
+				E -= p*Math.log(p);
+				H2 += this.marginal.get(0).getValue(i)*Math.log(this.marginal.get(0).getValue(i));
+			}
+			H2 *= (this.intraChildren.size()+1);
+		}
+		else
+		{
+			FiniteDiscreteMessage incppi = this.interpis.get(t-1);
+			FiniteDiscreteMessage incspi = this.switchingpis.get(t-1);
+			double[][] p = new double[this.truncation][2];
+			double sum = 0;
+			for(int i = 0; i < this.truncation; i++)
+			{
+				p[i][0] = incppi.getValue(0)*incspi.getValue(0)*dist.distributions[0].getDist()[i]*this.lambdas.get(t).getValue(i);
+				p[i][1] = incppi.getValue(0)*incspi.getValue(1)*dist.distributions[1].getDist()[i]*this.lambdas.get(t).getValue(i);
+				sum += p[i][0] + p[i][1];
+			}
+			for(int i = 0; i < this.truncation; i++)
+			{
+				E -= p[i][0]*Math.log(dist.distributions[0].getDist()[i]);
+				E -= p[i][1]*Math.log(dist.distributions[1].getDist()[i]);
+				H1 += p[i][0]*Math.log(p[i][0]);
+				H1 += p[i][1]*Math.log(p[i][1]);
+			}
+			FiniteDiscreteMessage marg = this.marginal.get(t);
+			for(int i = 0; i < this.truncation; i++)
+				H2 += marg.getValue(i)*Math.log(marg.getValue(i));
+			H2*= (1+this.intraChildren.size());
+		}*/
+		
+		// For E, only uncertain terms matter, so only zt-1 = 
+		
+		//return E+H1-H2;
 	}
 
 	@Override
 	public SufficientStatistic getSufficientStatistic() throws BNException {
-		CountdownStatistic stat = this.dist.getSufficientStatisticObj();
+		
+		SwitchingCDStat stat = this.dist.getSufficientStatisticObj();
 		
 		FiniteDiscreteMessage inc_pi0 = new FiniteDiscreteMessage(this.truncation);
 		inc_pi0.setValue(0, 1.0);
-		stat.update(inc_pi0,this.lambdas.get(0));
+		stat.update(inc_pi0,this.lambdas.get(0), new double[]{1.0,0.0});
 		
 		for(int t = 1; t < this.getNetwork().getT(); t++)
 		{
@@ -78,39 +133,42 @@ public class CountdownNode extends DBNNode implements ICountdownNode {
 			for(int i = 1; i < pi_prev.getCardinality(); i++)
 				inc_pi.setValue(i, p1*pi_prev.getValue(i));
 			inc_pi.normalize();
-			stat.update(inc_pi, this.lambdas.get(t));
+			stat.update(inc_pi, this.lambdas.get(t),new double[]{this.switchingpis.get(t-1).getValue(0),this.switchingpis.get(t-1).getValue(1)});
+			//stat.stats[0].update(inc_pi, this.lambdas.get(t),this.interpis.get(t).getValue(0));
+			//stat.stats[1].update(inc_pi, this.lambdas.get(t),this.interpis.get(t).getValue(1));
 		}
 		return stat;
 	}
 
 	@Override
 	public String getNodeDefinition() {
-		String def = this.getName() + ":CountDownNode()\n";
-		def += this.getName() + " < " + this.dist.getDefinition();
+		String def = this.getName() + ":CountDownNode("+this.truncation+")\n";
+		def += this.getName() + "__DIST < " + this.dist.getDefinition() + "\n";
+		def += this.getName() + "~" + this.getName() + "__DIST\n\n";
 		return def;
 	}
 
 	@Override
 	public void sample() {
-		if(!this.sample)
-			return;
-		//Sample initial value
-		double[] dist = this.dist.getDist();
-		this.values[0] = MathUtil.discreteSample(dist);
-		int t = 0;
-		while(t < this.getNetwork().getT()-1)
-		{
-			if(values[t]==0)
-			{
-				t++;
-				values[t] = MathUtil.discreteSample(dist);
-			}
-			while(t < this.getNetwork().getT()-1 && values[t] > 0)
-			{
-				t++;
-				values[t] = values[t-1]-1;
-			}
-		}
+//		if(!this.sample) //TODO This won't work until have parent values
+//			return;
+//		//Sample initial value
+//		double[] dist = this.dist.getDist();
+//		this.values[0] = MathUtil.discreteSample(dist);
+//		int t = 0;
+//		while(t < this.getNetwork().getT()-1)
+//		{
+//			if(values[t]==0)
+//			{
+//				t++;
+//				values[t] = MathUtil.discreteSample(dist);
+//			}
+//			while(t < this.getNetwork().getT()-1 && values[t] > 0)
+//			{
+//				t++;
+//				values[t] = values[t-1]-1;
+//			}
+//		}
 	}
 
 	@Override
@@ -139,13 +197,18 @@ public class CountdownNode extends DBNNode implements ICountdownNode {
 
 	@Override
 	public void setAdvanceDistribution(Distribution dist) throws BNException {
-		if(!(dist instanceof CountdownDistribution))
+		if(!(dist instanceof SwitchingCountdownDistribution))
 			throw new BNException("Attempted to se countdown node distribution to something other than a countdown distribution.");
-		this.dist = (CountdownDistribution)dist;
+		this.dist = (SwitchingCountdownDistribution)dist;
+		if(this.dist.distributions.length!=2)
+		{
+			this.dist=null;
+			throw new BNException("Need switching countdown distribution with 2 distributions.");
+		}
 	}
 
 	@Override
-	public CountdownDistribution getAdvanceDistribution() {
+	public Distribution getAdvanceDistribution() {
 		return this.dist;
 	}
 
@@ -172,13 +235,23 @@ public class CountdownNode extends DBNNode implements ICountdownNode {
 	@Override
 	protected DynamicMessageIndex addInterParentInterface(
 			MessageInterfaceSet<?> mia) throws BNException {
-		throw new BNException("The only parent of a countdown node is itself.");
+		if(this.switchingpis!=null)
+			throw new BNException("Switching countdown already has parent.");
+		if(!(mia instanceof FDiscMessageInterfaceSet))
+				throw new BNException("Switching parent must be discrete and binary.");
+		FDiscMessageInterfaceSet set = (FDiscMessageInterfaceSet)mia;
+		if(set.lambda_v.get(0).getCardinality()!=2)
+				throw new BNException("Switching parent must be discrete and binary.");
+		this.switchingpis = new ArrayList<FiniteDiscreteMessage>(set.pi_v); 
+		this.switchingoutlambs = new ArrayList<FiniteDiscreteMessage>(set.lambda_v); 
+		return new DynamicMessageIndex(0);
 	}
 
 	@Override
 	protected DynamicMessageIndex addIntraParentInterface(
 			MessageInterfaceSet<?> mia) throws BNException {
 		throw new BNException("The only parent of a countdown node is itself.");
+
 	}
 
 	@Override
@@ -202,13 +275,11 @@ public class CountdownNode extends DBNNode implements ICountdownNode {
 	@Override
 	protected void removeInterParentInterface(DynamicMessageIndex index)
 			throws BNException {
-		throw new BNException("The only parent of a countdown node is itself.");
 	}
 
 	@Override
 	protected void removeIntraParentInterface(DynamicMessageIndex index)
 			throws BNException {
-		throw new BNException("The only parent of a countdown node is itself.");
 	}
 
 	@Override
@@ -234,6 +305,7 @@ public class CountdownNode extends DBNNode implements ICountdownNode {
 		// Update local lambda
 		if(this.values[t]==null)
 		{
+			//TODO THIS HAS PARALELLIZATION ISSUES WILL JUST GO NONPARALLEL FOR DISSERTATION
 			FiniteDiscreteMessage lambda_now = this.lambdas.get(t);
 
 			DynamicMessageSet<FiniteDiscreteMessage> incLambs = this.childrenMessages.getIncomingLambdas(t);
@@ -273,7 +345,7 @@ public class CountdownNode extends DBNNode implements ICountdownNode {
 		if(t==0)
 		{
 			FiniteDiscreteMessage pi_now = this.pis.get(t);
-			double[] dist = this.dist.getDist();
+			double[] dist = this.dist.distributions[0].getDist();
 			for(int i = 0; i < dist.length; i++)
 				pi_now.setValue(i, dist[i]);
 		}
@@ -281,31 +353,58 @@ public class CountdownNode extends DBNNode implements ICountdownNode {
 		{
 			FiniteDiscreteMessage pi_now = this.pis.get(t);
 			FiniteDiscreteMessage incomingPi = this.interpis.get(t-1);
+			FiniteDiscreteMessage incomingSwitch = this.switchingpis.get(t-1);
 			
-			double[] dist = this.dist.getDist();
+			double[] dist1 = this.dist.distributions[0].getDist();
+			double[] dist2 = this.dist.distributions[1].getDist();
 			for(int i = 0; i < this.truncation - 1; i++)
 				pi_now.setValue(i,incomingPi.getValue(i+1));
 			double p0 = incomingPi.getValue(0);
 			pi_now.setValue(this.truncation-1, 0);
 			for(int i = 0; i < this.truncation; i++)
-				pi_now.setValue(i,pi_now.getValue(i) + p0*dist[i]);
+				pi_now.setValue(i,pi_now.getValue(i) + p0*(incomingSwitch.getValue(0)*dist1[i]+incomingSwitch.getValue(1)*dist2[i]));
 			pi_now.normalize(); //Probably only necessary to take care of accumulating rounding errors..
 		}
 		
-		//Update outgoing lambda
+		//Update outgoing lambdas
 		if(t > 0)
 		{
 			FiniteDiscreteMessage outLambMe = this.interlambdas.get(t-1);
-//			FiniteDiscreteMessage localLambda = this.lambdas.get(t-1);
 			FiniteDiscreteMessage localLambda = this.lambdas.get(t);
+			FiniteDiscreteMessage incomingSwitch = this.switchingpis.get(t-1);
+			FiniteDiscreteMessage incomingPiMe = this.interpis.get(t-1);
+			FiniteDiscreteMessage outgoingSwitch = this.switchingoutlambs.get(t-1);
 		
 			for(int i = 1; i < this.truncation; i++)
 				outLambMe.setValue(i, localLambda.getValue(i-1));
 			double sum = 0;
-			double[] dist = this.dist.getDist();
+			double[] dist1 = this.dist.distributions[0].getDist();
+			double[] dist2 = this.dist.distributions[1].getDist();
+			
+			double ps0 = incomingSwitch.getValue(0);
+			double ps1 = incomingSwitch.getValue(1);
+			ps0 = ps0/(ps0+ps1);ps1 = 1-ps0;
 			for(int i = 0; i < this.truncation; i++)
-				sum += localLambda.getValue(i)*dist[i];
+				sum += localLambda.getValue(i)*(ps0*dist1[i]+ps1*dist2[i]);
 			outLambMe.setValue(0, sum);
+			
+			outgoingSwitch.empty();
+			double sum1 = 0;
+			double sum2 = 0;
+			for(int j = 0; j < this.truncation; j++)
+			{
+				sum1 += localLambda.getValue(j)*dist1[j]*incomingPiMe.getValue(0);
+				sum2 += localLambda.getValue(j)*dist2[j]*incomingPiMe.getValue(0);
+				if(j < this.truncation-1)
+				{
+					double tmp = localLambda.getValue(j)*incomingPiMe.getValue(j+1);
+					sum1 += tmp;
+					sum2 += tmp;
+				}
+			}
+			outgoingSwitch.setValue(0, sum1);
+			outgoingSwitch.setValue(1, sum2);
+			outgoingSwitch.normalize();
 		}
 		
 		//Update outgoing pis
@@ -384,10 +483,19 @@ public class CountdownNode extends DBNNode implements ICountdownNode {
 	public void resetMessages() {
 		for(int i = 0; i < this.getNetwork().T; i++)
 		{
+			this.marginal.get(i).setInitial();
 			this.lambdas.get(i).setInitial();
 			this.pis.get(i).setInitial();
 			this.childrenMessages.resetMessages();
 		}
+		for(FiniteDiscreteMessage msg : interpis)
+			msg.setInitial();
+		for(FiniteDiscreteMessage msg : interlambdas)
+			msg.setInitial();
+		for(FiniteDiscreteMessage msg : switchingpis)
+			msg.setInitial();
+		for(FiniteDiscreteMessage msg : switchingoutlambs)
+			msg.setInitial();
 	}
 
 	@Override
@@ -408,9 +516,10 @@ public class CountdownNode extends DBNNode implements ICountdownNode {
 
 	private Integer[] values;
 	private int truncation;
-	private CountdownDistribution dist;
+	private SwitchingCountdownDistribution dist;
 	private ArrayList<FiniteDiscreteMessage> lambdas, pis, marginal;
 	private ArrayList<FiniteDiscreteMessage> interlambdas, interpis;
+	private ArrayList<FiniteDiscreteMessage> switchingpis, switchingoutlambs;
+	
 	private DynamicContextManager.DynamicChildManager<FiniteDiscreteMessage> childrenMessages;
-
 }

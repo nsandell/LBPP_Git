@@ -304,7 +304,7 @@ public class Parser {
 	private boolean inputWaiting()
 	{
 		try {
-			this.input.mark(2048);
+			this.input.mark(204800);
 			int chara;
 			while((chara=this.input.read())!=-1)
 			{
@@ -317,7 +317,7 @@ public class Parser {
 			input.reset();
 			return false;
 		} catch(IOException e) {
-			System.err.println("Error trying to read input file.");
+			System.err.println("Error trying to read input file: " + e.toString());
 			return false;
 		}
 	}

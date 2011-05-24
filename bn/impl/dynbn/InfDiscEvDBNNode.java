@@ -287,8 +287,8 @@ class InfDiscEvDBNNode extends DBNNode implements IInfDiscEvDBNNode {
 	@Override
 	public double conditionalLL(int t)
 	{
-		return t==0 && this.init!=null ? this.init.computeBethePotential(this.parentMessages.getIncomingPis(0), this.values[0]) :
-					 					 this.advance.computeBethePotential(this.parentMessages.getIncomingPis(t), this.values[t]);
+		return t==0 && this.init!=null ? this.init.computeObsLL(this.parentMessages.getIncomingPis(0), this.values[0]) :
+					 					 this.advance.computeObsLL(this.parentMessages.getIncomingPis(t), this.values[t]);
 	}
 
 	private DynamicContextManager.DynamicParentManager<FiniteDiscreteMessage> parentMessages;

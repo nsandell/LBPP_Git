@@ -17,12 +17,12 @@ import bn.messages.FiniteDiscreteMessage;
 import bn.messages.FiniteDiscreteMessage.FDiscMessageInterfaceSet;
 import bn.messages.Message.MessageInterfaceSet;
 
-public class CountdownNode2 extends DBNNode implements ICountdownNode {
+public class SwitchingCountdownNode extends DBNNode implements ICountdownNode {
 	
 	//This node will take a single, binary parent that will switch its distribution.
 	//TODO right now this can be used to sample or infer, but not both!
 	
-	public CountdownNode2(DynamicBayesianNetwork net, String name, int maxlen)
+	public SwitchingCountdownNode(DynamicBayesianNetwork net, String name, int maxlen)
 	{
 		super(net,name);
 		this.lambdas = new ArrayList<FiniteDiscreteMessage>();
@@ -59,10 +59,9 @@ public class CountdownNode2 extends DBNNode implements ICountdownNode {
 		
 		double E = 0, H1 = 0, H2 = 0;
 	
-		return 0;
 		// For the moment, treat like a two-state variable 
 		
-		/*if(t==0)
+		if(t==0)
 		{
 			for(int i = 0; i < this.truncation; i++)
 			{
@@ -76,30 +75,53 @@ public class CountdownNode2 extends DBNNode implements ICountdownNode {
 		{
 			FiniteDiscreteMessage incppi = this.interpis.get(t-1);
 			FiniteDiscreteMessage incspi = this.switchingpis.get(t-1);
-			double[][] p = new double[this.truncation][2];
+			double[][][] p = new double[this.truncation][this.truncation][2];
 			double sum = 0;
-			for(int i = 0; i < this.truncation; i++)
+	
+			for(int j = 0; j < this.truncation; j++)
 			{
-				p[i][0] = incppi.getValue(0)*incspi.getValue(0)*dist.distributions[0].getDist()[i]*this.lambdas.get(t).getValue(i);
-				p[i][1] = incppi.getValue(0)*incspi.getValue(1)*dist.distributions[1].getDist()[i]*this.lambdas.get(t).getValue(i);
-				sum += p[i][0] + p[i][1];
+				p[0][j][0] = incppi.getValue(0)*incspi.getValue(0)*dist.distributions[0].getDist()[j]*this.lambdas.get(t).getValue(j);
+				p[0][j][1] = incppi.getValue(0)*incspi.getValue(1)*dist.distributions[1].getDist()[j]*this.lambdas.get(t).getValue(j);
+				sum += p[0][j][0];
+				sum += p[0][j][1];
+			}
+			for(int i = 1; i < this.truncation; i++)
+			{
+				p[i][i-1][0] = incppi.getValue(i)*incspi.getValue(0)*this.lambdas.get(t).getValue(i-1);
+				p[i][i-1][1] = incppi.getValue(i)*incspi.getValue(1)*this.lambdas.get(t).getValue(i-1);
+				sum += p[i][i-1][0];
+				sum += p[i][i-1][1];
 			}
 			for(int i = 0; i < this.truncation; i++)
 			{
-				E -= p[i][0]*Math.log(dist.distributions[0].getDist()[i]);
-				E -= p[i][1]*Math.log(dist.distributions[1].getDist()[i]);
-				H1 += p[i][0]*Math.log(p[i][0]);
-				H1 += p[i][1]*Math.log(p[i][1]);
+				if(dist.distributions[0].getDist()[i] > 0)
+					E -= (p[0][i][0])/sum*Math.log(dist.distributions[0].getDist()[i]);
+				if(dist.distributions[1].getDist()[i] > 0)
+					E -= (p[0][i][1])/sum*Math.log(dist.distributions[1].getDist()[i]);
+			}
+
+			//Boy is this inefficient but at least I'm more convinced it's correct...
+			for(int i = 0; i < this.truncation; i++)
+			{
+				for(int j = 0; j < this.truncation; j++)
+				{
+					if(p[i][j][0] > 0)
+						H1 += p[i][j][0]/sum*Math.log(p[i][j][0]/sum);
+					if(p[i][j][1] > 0)
+						H1 += p[i][j][1]/sum*Math.log(p[i][j][1]/sum);
+				}
 			}
 			FiniteDiscreteMessage marg = this.marginal.get(t);
 			for(int i = 0; i < this.truncation; i++)
-				H2 += marg.getValue(i)*Math.log(marg.getValue(i));
-			H2*= (1+this.intraChildren.size());
-		}*/
-		
-		// For E, only uncertain terms matter, so only zt-1 = 
-		
-		//return E+H1-H2;
+				if(marg.getValue(i) > 0)
+					H2 += marg.getValue(i)*Math.log(marg.getValue(i));
+			if(t<this.bayesNet.T-1)
+				H2 *= (1+this.intraChildren.size());
+			else
+				H2 *= this.intraChildren.size();
+		}
+
+		return E + H1 - H2;
 	}
 
 	@Override
@@ -144,27 +166,7 @@ public class CountdownNode2 extends DBNNode implements ICountdownNode {
 	}
 
 	@Override
-	public void sample() {
-//		if(!this.sample) //TODO This won't work until have parent values
-//			return;
-//		//Sample initial value
-//		double[] dist = this.dist.getDist();
-//		this.values[0] = MathUtil.discreteSample(dist);
-//		int t = 0;
-//		while(t < this.getNetwork().getT()-1)
-//		{
-//			if(values[t]==0)
-//			{
-//				t++;
-//				values[t] = MathUtil.discreteSample(dist);
-//			}
-//			while(t < this.getNetwork().getT()-1 && values[t] > 0)
-//			{
-//				t++;
-//				values[t] = values[t-1]-1;
-//			}
-//		}
-	}
+	public void sample() {}
 
 	@Override
 	public void setSample(boolean sample) {
@@ -215,13 +217,12 @@ public class CountdownNode2 extends DBNNode implements ICountdownNode {
 	@Override
 	protected MessageInterfaceSet<?> newChildInterface(int T)
 			throws BNException {
-		FDiscMessageInterfaceSet ret = new FDiscMessageInterfaceSet(2);
+		FDiscMessageInterfaceSet ret = new FDiscMessageInterfaceSet(this.truncation);
 		for(int i = 0; i < T; i++)
 		{
-			ret.lambda_v.add(FiniteDiscreteMessage.normalMessage(2));
-			FiniteDiscreteMessage pi = new FiniteDiscreteMessage(2);
-			pi.setValue(0, this.marginal.get(i).getValue(0));
-			pi.setValue(1, 1-pi.getValue(0));
+			ret.lambda_v.add(FiniteDiscreteMessage.normalMessage(this.truncation));
+			FiniteDiscreteMessage pi = new FiniteDiscreteMessage(this.truncation);
+			pi.adopt(this.marginal.get(i));
 			ret.pi_v.add(pi);
 		}
 		return ret;
@@ -302,30 +303,16 @@ public class CountdownNode2 extends DBNNode implements ICountdownNode {
 		{
 			//TODO THIS HAS PARALELLIZATION ISSUES WILL JUST GO NONPARALLEL FOR DISSERTATION
 			FiniteDiscreteMessage lambda_now = this.lambdas.get(t);
-
 			DynamicMessageSet<FiniteDiscreteMessage> incLambs = this.childrenMessages.getIncomingLambdas(t);
-			double p0 = 1;
-			double p1 = 1;
-			for(FiniteDiscreteMessage msg : incLambs)
-			{
-				p0 *= msg.getValue(0);
-				p1 *= msg.getValue(1);
-			}
-			p0 = p0/(p0+p1); p1 = 1-p0;
 			
-			if(t==this.bayesNet.T-1)
-			{
-				lambda_now.setValue(0, p0);
-				for(int i = 1; i < this.truncation; i++)
-					lambda_now.setValue(i, p1);
-			}
-			else
+			lambda_now.adopt(incLambs.get(0));
+			for(int i = 1; i < incLambs.size();i++)
+				lambda_now.adopt(lambda_now.multiply(incLambs.get(i)));
+			
+			if(t < this.bayesNet.T-1)
 			{
 				FiniteDiscreteMessage inc_lambda = this.interlambdas.get(t);
-	
-				lambda_now.setValue(0, p0*inc_lambda.getValue(0));
-				for(int i = 1; i < this.truncation; i++)
-					lambda_now.setValue(i, p1*inc_lambda.getValue(i));
+				lambda_now.adopt(lambda_now.multiply(inc_lambda));
 			}
 			lambda_now.normalize();
 		}
@@ -412,47 +399,34 @@ public class CountdownNode2 extends DBNNode implements ICountdownNode {
 		DynamicMessageSet<FiniteDiscreteMessage> outPis = this.childrenMessages.getOutgoingPis(t);
 		//TODO Ignoring cases where we have a value since we have more pressing concerns.,also this is inefficient
 		
-		FiniteDiscreteMessage prod2 = new FiniteDiscreteMessage(2);
+		FiniteDiscreteMessage tmp;
 		if(incLambMe!=null)
-		{
-			FiniteDiscreteMessage tmp = localPi.multiply(incLambMe);tmp.normalize();
-			prod2.setValue(0, tmp.getValue(0));
-			prod2.setValue(1, 1-tmp.getValue(0));
-		}
+			tmp = localPi.multiply(incLambMe);
 		else
 		{
-			prod2.setValue(0, localPi.getValue(0));
-			prod2.setValue(1, localPi.getValue(1));
+			tmp = localPi;
 		}
 		
 		for(int i = 0; i < outPis.size(); i++)
 		{
 			FiniteDiscreteMessage outpi = outPis.get(i);
-			outpi.adopt(prod2);
+			outpi.adopt(tmp);
 			for(int j = 0; j < outPis.size(); j++)
 			{
 				if(i==j) continue;
-				outpi = outpi.multiply(incLambs.get(j));
+				outpi.adopt(outpi.multiply(incLambs.get(j)));
 			}
 			outpi.normalize();
 		}
 		
 		if(t<this.bayesNet.T-1)
 		{
-			double p0 = 1, p1 = 1;
-			for(int i = 0;  i < incLambs.size(); i++)
-			{
-				p0 *= incLambs.get(i).getValue(0);
-				p1 *= incLambs.get(i).getValue(1);
-			}
-			FiniteDiscreteMessage outPiMe = this.interpis.get(t);
-			outPiMe.setValue(0, p0*localPi.getValue(0));
-			for(int i = 1; i < this.truncation; i++)
-				outPiMe.setValue(i, p1*localPi.getValue(i));
+			FiniteDiscreteMessage outPiMe = localPi.copy();
+			for(FiniteDiscreteMessage msg : incLambs)
+				outPiMe.adopt(outPiMe.multiply(msg));
 			outPiMe.normalize();
 		}
 		
-
 		FiniteDiscreteMessage newmarg = this.pis.get(t).multiply(this.lambdas.get(t));
 		newmarg.normalize();
 		FiniteDiscreteMessage marg = this.marginal.get(t);

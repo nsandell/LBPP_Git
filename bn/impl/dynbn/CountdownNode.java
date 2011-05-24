@@ -18,7 +18,6 @@ import bn.impl.dynbn.DynamicContextManager.DynamicMessageSet;
 import bn.messages.FiniteDiscreteMessage;
 import bn.messages.FiniteDiscreteMessage.FDiscMessageInterfaceSet;
 import bn.messages.Message.MessageInterfaceSet;
-import bn.messages.MessageSet;
 
 public class CountdownNode extends DBNNode implements ICountdownNode {
 	

@@ -207,7 +207,7 @@ class DynamicBayesianNetwork extends BayesianNetwork<DBNNode> implements IDynami
 	{
 		if(this.getNode(name)!=null)
 			throw new BNException("Node " + name + " already exists in this DBN.");
-		CountdownNode2 nd = new CountdownNode2(this, name, truncation);
+		SwitchingCountdownNode nd = new SwitchingCountdownNode(this, name, truncation);
 		this.addNodeI(nd);
 		return nd;
 	}

@@ -4,11 +4,7 @@ import java.io.PrintStream;
 
 import java.util.ArrayList;
 
-import util.MathUtil;
-
 import bn.BNException;
-import bn.distributions.CountdownDistribution;
-import bn.distributions.CountdownDistribution.CountdownStatistic;
 import bn.distributions.CountdownDistribution.SwitchingCountdownDistribution;
 import bn.distributions.CountdownDistribution.SwitchingCountdownDistribution.SwitchingCDStat;
 import bn.distributions.Distribution;
@@ -20,7 +16,6 @@ import bn.impl.dynbn.DynamicContextManager.DynamicMessageSet;
 import bn.messages.FiniteDiscreteMessage;
 import bn.messages.FiniteDiscreteMessage.FDiscMessageInterfaceSet;
 import bn.messages.Message.MessageInterfaceSet;
-import bn.messages.MessageSet;
 
 public class CountdownNode2 extends DBNNode implements ICountdownNode {
 	

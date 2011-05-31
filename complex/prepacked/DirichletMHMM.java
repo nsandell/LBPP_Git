@@ -31,20 +31,17 @@ import bn.dynamic.IDynamicBayesNet;
 import bn.impl.dynbn.DynamicNetworkFactory;
 
 import complex.CMException;
-import complex.mixture.FixedMixture;
-import complex.mixture.FixedMixture.FMModelOptions;
+import complex.mixture.DirichletMixture;
+import complex.mixture.DirichletMixture.DMModelOptions;
 import complex.mixture.controllers.MHMMController;
 import complex.mixture.controllers.MHMMChild;
 import complex.mixture.controllers.MHMMController.MHMMParameterPrior;
 import complex.mixture.controllers.MHMMX;
+import complex.prepacked.MHMM.MHMMChildFactory;
+import complex.prepacked.MHMMDiscrete.BDCFactory;
 
-public class MHMM
+public class DirichletMHMM
 {
-	public static interface MHMMChildFactory
-	{
-		public MHMMChild getChild(IDynamicBayesNet net, int nameidx, int ns, int[] observations);
-		public void setArg(String arg) throws CMException;
-	}
 	
 	static class Priors implements MHMMParameterPrior
 	{
@@ -149,21 +146,24 @@ public class MHMM
 		opt.setArgs(1);opt.setArgName("observation type");
 		options.addOption(opt);
 		
+		opt = new Option("initialAssignment", true, "File containing an initial assignment vector.");
+		opt.setArgs(1);opt.setArgName("assignment file");
+		options.addOption(opt);
+		
 		HelpFormatter formatter = new HelpFormatter();
 		
 		CommandLineParser clp = new GnuParser();
 		
 		String[] justArgs = new String[]{""};
 		int[][] o;
-		int N;
 		int Ns;
 		CommandLine line;
 		try {
 			line = clp.parse(options,args);
 			justArgs = line.getArgs();
 			
-			if(justArgs.length!=3)
-				throw new ParseException("Expect 3 arguments, observation file name, number of latent chains, and the size of latent chains state spaces.");
+			if(justArgs.length!=2)
+				throw new ParseException("Expect 3 arguments, observation file name, and the size of latent chains state spaces.");
 			
 			o = loadData(justArgs[0]);
 			if(o==null)
@@ -171,12 +171,11 @@ public class MHMM
 				System.err.println("Error loading observation file - provided dimensions are incorrect.");
 				return;
 			}
-			N = Integer.parseInt(justArgs[1]);
-			Ns = Integer.parseInt(justArgs[2]);
+			Ns = Integer.parseInt(justArgs[1]);
 		}
 		catch ( ParseException exp ) {
 			System.err.println("Invalid options..");
-			formatter.printHelp("mhmm [observation file] [number of latent chains] [cardinality of latent chains' state spaces]", options);
+			formatter.printHelp("mhmm [observation file] [cardinality of latent chains' state spaces]", options);
 			return;
 		} catch(FileNotFoundException e) {
 			System.err.println("Observation file <"+justArgs[0]+"> not found.");
@@ -226,9 +225,36 @@ public class MHMM
 		}
 		else
 			priors = new Priors(Ns);
-
+		
 		MHMMController cont = new MHMMController(network, children, priors, Ns);
-		FMModelOptions<MHMMChild,MHMMX> opts = new FMModelOptions<MHMMChild,MHMMX>(cont, N);
+		//FMModelOptions<MHMMChild,MHMMX> opts = new FMModelOptions<MHMMChild,MHMMX>(cont, N);
+		DMModelOptions<MHMMChild, MHMMX> opts = new DMModelOptions<MHMMChild, MHMMX>(cont, 1.0);
+		
+		int[][] assignm = null;
+		int[] assign = null;
+		if(line.hasOption("initialAssignment"))
+		{
+			try {
+				assignm = loadData(line.getOptionValue("initialAssignment"));
+				if(assignm.length==1 && assignm[0].length==children.size())
+					assign = assignm[0];
+				else if(assignm[0].length==1 && assignm.length==children.size())
+				{
+					assign = new int[assignm.length];
+					for(int i = 0; i < assign.length; i++)
+						assign[i] = assignm[i][0];
+				}
+				else
+				{
+					System.err.println("Invalid assignment vector...");
+					return;
+				}
+				opts.initialAssignment = assign;
+			} catch(FileNotFoundException e) {
+				System.err.println("Initial assignment file not found.");
+				return;
+			}
+		}
 
 		String cno = "";
 		try
@@ -265,12 +291,29 @@ public class MHMM
 			System.err.println("Couldn't write to output file " + line.getOptionValue("output"));
 		}
 		
-		FixedMixture.learnFixedMixture(opts);
+		/*
+		opts.initialAssignment = new int[37];
+		for(int i = 0; i < 19; i++)
+			opts.initialAssignment[i] = 0;
+		for(int i = 0; i < 18; i++)
+			opts.initialAssignment[i+19] = 1;*/
+		//FixedMixture.learnFixedMixture(opts);
+		opts.maxIterations = 1000;
+		DirichletMixture.learnDirichletMixture(opts);
+		
 		if(outfile!=null)
 		{
 			network.print(outfile);
 			outfile.flush();outfile.close();
 		}
+	}
+	
+	public static void main(String[] args) throws Exception
+	{
+		HashMap<String,MHMMChildFactory> childFactories = new HashMap<String,MHMMChildFactory>();
+		childFactories.put("default",new BDCFactory());
+		childFactories.put("basic", new BDCFactory());	
+		DirichletMHMM.mhmm_main(args, childFactories);
 	}
 	
 	private static int[][] loadData(String file) throws FileNotFoundException

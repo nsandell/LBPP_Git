@@ -18,7 +18,7 @@ import complex.prepacked.MHMM.MHMMChildFactory;
 public class MHMMDiscrete
 {
 	
-	private static class BDCFactory implements MHMMChildFactory
+	public static class BDCFactory implements MHMMChildFactory
 	{
 
 		@Override

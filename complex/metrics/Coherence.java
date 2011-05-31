@@ -36,6 +36,8 @@ public class Coherence
 	
 	public static boolean[] partition(Vector<? extends DisagreementMeasure> measures, int T)
 	{
+		//TODO I think I need to add a non-random seeding... Compare every node and pick the
+		// two most different?
 		double[][] normalized = new double[measures.size()][T];
 		double[] centroid1 = new double[T];
 		double[] centroid2 = new double[T];

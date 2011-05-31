@@ -177,7 +177,6 @@ public class FlatNoisyOr extends DiscreteFiniteDistribution {
 			Integer value, int numChildren) throws BNException {
 		double E = 0, H1 = 0, H2 = 0;
 
-
 		double p0 = 1;
 		double HX = 0;
 		for(int i = 0; i < incoming_pis.size(); i++)

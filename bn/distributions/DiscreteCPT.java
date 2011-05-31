@@ -285,11 +285,14 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 		while((indices=incrementIndices(indices, this.dimSizes))!=null);
 	}
 
+	// THIS prior shit is hairy .. need a more rigorous way of ding it.
+	public CPTSufficient2SliceStat prior = null;
+
 	/**
 	 * Sufficient statistic class for a dense CPT
 	 * @author Nils F. Sandell
 	 */
-	private static class CPTSufficient2SliceStat implements DiscreteSufficientStatistic
+	public static class CPTSufficient2SliceStat implements DiscreteSufficientStatistic
 	{
 		/**
 		 * Create a sufficient statistic object
@@ -382,7 +385,7 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 			return this;
 		}
 		
-		double[][] exp_tr;
+		public double[][] exp_tr;
 		double[][] current;
 		private DiscreteCPT cpt;
 	}
@@ -393,6 +396,10 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 		if(!(stat instanceof CPTSufficient2SliceStat))
 			throw new BNException("Failure to optimize CPT parameters : invalid sufficient statistic object used..");
 		CPTSufficient2SliceStat stato = (CPTSufficient2SliceStat)stat;
+		
+		if(prior!=null)
+			stato.update(this.prior);
+		
 		double maxdiff = 0;
 		if(stato.cpt.dimprod!=this.dimprod || stato.cpt.getCardinality() != this.getCardinality())
 			throw new BNException("Failure to optimize CPT parameters : misfitting sufficient statistic object used...");
@@ -427,6 +434,7 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 			for(int j = 0; j < this.getCardinality(); j++)
 				newvalues[i][j] = this.values[i][j];
 		DiscreteCPT copy = new DiscreteCPT(this.dimSizes, this.getCardinality(),newvalues);
+		copy.prior = this.prior;
 		return copy;
 	}
 	
@@ -518,7 +526,7 @@ public class DiscreteCPT extends DiscreteFiniteDistribution
 	
 	private int dimprod;
 	private int[] dimSizes;
-	private double[][] values;
+	public double[][] values;
 
 	private static final long serialVersionUID = 50L;
 }

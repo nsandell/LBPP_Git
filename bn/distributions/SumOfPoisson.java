@@ -117,7 +117,7 @@ public class SumOfPoisson extends InfiniteDiscreteDistribution
 				{
 					if(stat.weighted_sums[i]==0)
 						continue;
-					maxdiff = Math.max(Math.abs(this.means[i]-newmeans.get(0,i)),maxdiff);
+					maxdiff = Math.max(Math.abs(this.means[i]-Math.max(newmeans.get(0,i),minimumMean)),maxdiff);
 					this.means[i] = Math.max(newmeans.get(0,i),minimumMean);
 				}
 			}
@@ -427,6 +427,13 @@ public class SumOfPoisson extends InfiniteDiscreteDistribution
 	}
 
 	boolean all0MeanLocked;
-	private double all0mean = 0;
+	public double all0mean = 0;
 	private double[] means;
+
+	@Override
+	public double computeObsLL(MessageSet<FiniteDiscreteMessage> incoming_pis,
+			int value) {
+		// TODO Auto-generated method stub
+		return 0;
+	}
 }

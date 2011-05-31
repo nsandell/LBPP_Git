@@ -307,4 +307,31 @@ public class SwitchingPoisson extends InfiniteDiscreteDistribution
 	private double[] means;
 	private int[] parentDims;
 
+	@Override
+	public double computeObsLL(MessageSet<FiniteDiscreteMessage> incoming_pis,
+			int value) {
+		Poisson poiss = new Poisson(1,new DRand());
+		double p = 0;
+		int index = 0;
+		int[] indices = initialIndices(this.parentDims.length);
+		
+		double pusum = 0;
+		do
+		{
+			double pu = 1;
+			for(int i = 0; i< incoming_pis.size(); i++)
+				pu *= incoming_pis.get(i).getValue(indices[i]);
+			pusum += pu;
+				
+			poiss.setMean(means[index]);
+			p += pu*poiss.pdf(value);
+			
+			index++;
+		}
+		while((indices = incrementIndices(indices, this.parentDims))!=null);
+		
+		p /= pusum;
+		return -Math.log(p);
+	}
+
 }

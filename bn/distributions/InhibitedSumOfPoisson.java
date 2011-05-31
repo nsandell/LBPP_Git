@@ -20,11 +20,12 @@ import bn.messages.MessageSet;
 public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 {
 	
-	public static double minimumMean = 3;
+	public static double minimumMean = 1e-8;
 	public static double minimumAll0Mean = 1e-8;
 	
-	public InhibitedSumOfPoisson(double[] means)
+	public InhibitedSumOfPoisson(double[] means, double pinhibit)
 	{
+		this.all0Inhibitor = pinhibit;
 		this.all0mean = minimumAll0Mean;
 		this.all0MeanLocked = true;
 		this.means = means.clone();
@@ -33,10 +34,10 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 	}
 	
 	
-	public InhibitedSumOfPoisson(double[] means, double all0mean)
+	public InhibitedSumOfPoisson(double[] means, double all0mean, double pinhibit)
 	{
-		this(means);
-		this.all0mean = all0mean;
+		this(means,pinhibit);
+		this.all0mean = Math.max(all0mean,minimumAll0Mean);
 		this.all0MeanLocked = false;
 	}
 	
@@ -68,9 +69,9 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 	
 	@Override
 	public double optimize(SufficientStatistic obj) throws BNException {
-		if(obj instanceof SumOfPoissonStat)
+		if(obj instanceof InhibitedSumOfPoissonStat)
 		{
-			SumOfPoissonStat stat = (SumOfPoissonStat)obj;
+			InhibitedSumOfPoissonStat stat = (InhibitedSumOfPoissonStat)obj;
 			if(stat.weight_sums.length!=(int)Math.pow(2,this.means.length))
 				throw new BNException("Invalidly sized additive poisson statistic!");
 
@@ -107,9 +108,11 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 				{
 					if(stat.weighted_sums[i]==0)
 						continue;
-					maxdiff = Math.max(Math.abs(this.means[i]-newmeans.get(0,i)),maxdiff);
+					maxdiff = Math.max(Math.abs(this.means[i]-Math.max(newmeans.get(0,i),minimumMean)),maxdiff);
 					this.means[i] = Math.max(newmeans.get(0,i),minimumMean);
 				}
+				if(!this.all0InhibitorLocked)
+					this.all0Inhibitor = stat.inhibitPsum/(stat.inhibitPNsum + stat.inhibitPsum);
 			}
 			
 			if(!this.all0MeanLocked)
@@ -134,47 +137,58 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 	@Override
 	public String getDefinition()
 	{
-		String ret = "AdditivePoisson(" + this.means.length +")\n"+this.all0mean;
+		String ret = "AdditivePoissonInhib(" + this.means.length + "," + this.all0Inhibitor + ")\n"+ this.all0mean;
 		for(int i = 0; i < means.length; i++)
 			ret += " " + this.means[i];
 		ret += "\n";
 		return ret;
+	}
+	
+	public int numParents()
+	{
+		return this.means.length;
+	}
+	
+	public double getMean(int i)
+	{
+		return this.means[i];
 	}
 
 	@Override
 	public int sample(ValueSet<Integer> parentVals) throws BNException {
 		double mean = 0;
 		boolean allZero = true;
-		for(int i = 0; i < parentVals.length(); i++)
+		if(MathUtil.rand.nextDouble() < this.all0Inhibitor)
+			mean = this.all0mean;
+		else
 		{
-			if(parentVals.getValue(i)==1)
+			for(int i = 0; i < parentVals.length(); i++)
 			{
-				allZero = false;
-				mean += this.means[i];
+				if(parentVals.getValue(i)==1)
+				{
+					allZero = false;
+					mean += this.means[i];
+				}
 			}
-		}
-		if(allZero)
-		{
-			if(MathUtil.rand.nextDouble() < this.all0Inhibitor)
-				return 0;
-			else
+			if(allZero)
 				mean = this.all0mean;
 		}
+		
 		Poisson poiss = new Poisson(mean,new DRand(MathUtil.rand.nextInt()));
 		return poiss.nextInt();
 	}
 
 	@Override
 	public InfDiscDistSufficientStat getSufficientStatisticObj() {
-		return new SumOfPoissonStat(this);
+		return new InhibitedSumOfPoissonStat(this);
 	}
 
 	@Override
 	public InhibitedSumOfPoisson copy() throws BNException {
 		if(this.all0MeanLocked)
-			return new InhibitedSumOfPoisson(this.means);
+			return new InhibitedSumOfPoisson(this.means,this.all0Inhibitor);
 		else 
-			return new InhibitedSumOfPoisson(this.means,this.all0mean);
+			return new InhibitedSumOfPoisson(this.means,this.all0mean,this.all0Inhibitor);
 	}
 	
 	@Override
@@ -191,16 +205,14 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 		}
 		if(allZero)
 		{
-			Poisson poiss = new Poisson(minimumAll0Mean, new DRand());
-			double p = this.all0Inhibitor*poiss.pdf(value);
-			poiss.setMean(all0mean);
-			p += (1-this.all0Inhibitor)*poiss.pdf(value);
-			return p;
+			Poisson poiss = new Poisson(this.all0mean, new DRand());
+			return poiss.pdf(value);
 		}
 		else
 		{
-			Poisson poiss = new Poisson(mean, new DRand());
-			return poiss.pdf(value);
+			Poisson poiss1 = new Poisson(mean, new DRand());
+			Poisson poiss2 = new Poisson(this.all0mean, new DRand());
+			return this.all0Inhibitor*poiss2.pdf(value) + (1-this.all0Inhibitor)*poiss1.pdf(value);
 		}
 	}
 
@@ -215,14 +227,15 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 	}
 	
 	private static class 
-	SumOfPoissonStat extends InfDiscDistSufficientStat
+	InhibitedSumOfPoissonStat extends InfDiscDistSufficientStat
 	{
 		
-		public SumOfPoissonStat(InhibitedSumOfPoisson dist)
+		public InhibitedSumOfPoissonStat(InhibitedSumOfPoisson dist)
 		{
 			this.dist = dist;
 			this.weight_sums = new double[(int)Math.pow(2,dist.means.length)];
 			this.weighted_sums = new double[this.weight_sums.length];
+			this.inhibitPsum = 0;
 		}
 
 		@Override
@@ -232,14 +245,15 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 				this.weight_sums[i] = 0;
 				this.weighted_sums[i] = 0;
 			}
+			this.inhibitPsum = 0;
 		}
 
 		@Override
 		public SufficientStatistic update(SufficientStatistic stat)
 				throws BNException {
-			if(stat instanceof SumOfPoissonStat)
+			if(stat instanceof InhibitedSumOfPoissonStat)
 			{
-				SumOfPoissonStat swps = (SumOfPoissonStat)stat;
+				InhibitedSumOfPoissonStat swps = (InhibitedSumOfPoissonStat)stat;
 				if(swps.weight_sums.length!=this.weight_sums.length)
 					throw new BNException("Attempted to update poisson statistic with differently-sized poisson statistic.");
 				
@@ -263,7 +277,8 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 
 			double weights[] = new double[this.weight_sums.length];
 			double weightsums = 0;
-
+			double weightNIsum = 0;
+			
 			if(this.weight_sums.length > 1)
 			{
 				int index = 0;
@@ -277,29 +292,34 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 					double p = 0;
 					if(index==0)
 					{
-						poiss.setMean(minimumAll0Mean);
-						p = this.dist.all0Inhibitor*poiss.pdf(value);
 						poiss.setMean(dist.all0mean);
-						p += (1-this.dist.all0Inhibitor)*poiss.pdf(value);
+						p = poiss.pdf(value);
+						weights[0] = (1-this.dist.all0Inhibitor)*weight*p;
+						weightsums += weights[0];
 					}
 					else
 					{
 						double mean = 0;
 						for(int i = 0; i < this.dist.means.length; i++)
 							if(indices[i]==1)
-								mean += this.dist.means[i];					
+								mean += this.dist.means[i];
 						poiss.setMean(mean);
-						p = poiss.pdf(value);
+						weights[index] = (1-this.dist.all0Inhibitor)*weight*poiss.pdf(value);
+						weightsums += weights[index];
 					}
-
-
-					weight *= p;
-					weights[index] = weight;
-					weightsums += weight;
 					index++;
 				} while((indices = binaryIndicesIncrement(indices))!=null);
-
-				for(int i = 0; i < weight_sums.length; i++)
+				
+				poiss.setMean(this.dist.all0mean);
+				double p_inibited = this.dist.all0Inhibitor*poiss.pdf(value);
+				weightsums += p_inibited;
+				
+				this.weight_sums[0] += p_inibited/weightsums;
+				this.weighted_sums[0] += p_inibited/weightsums*valued;
+				this.inhibitPsum  += p_inibited/weightsums;
+				this.inhibitPNsum += (1-p_inibited/weightsums);
+				
+				for(int i = 0; i < weight_sums.length; i++)  // Statistics assuming not inhibited.
 				{
 					this.weight_sums[i] += weights[i]/weightsums;
 					this.weighted_sums[i] += weights[i]/weightsums*valued;
@@ -315,6 +335,8 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 
 		private InhibitedSumOfPoisson dist;
 		private double weight_sums[], weighted_sums[];
+		private double inhibitPsum;
+		private double inhibitPNsum;
 	}
 
 	@Override
@@ -341,10 +363,11 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 			double p = 0;
 			if(absindex==0)
 			{
-				poiss.setMean(minimumAll0Mean);
-				p = this.all0Inhibitor*poiss.pdf(obsvalue);
+				//poiss.setMean(minimumAll0Mean);
+				//p = this.all0Inhibitor*poiss.pdf(obsvalue);
 				poiss.setMean(this.all0mean);
-				p += (1-this.all0Inhibitor)*poiss.pdf(obsvalue);
+				p = poiss.pdf(obsvalue);
+				//p += (1-this.all0Inhibitor)*poiss.pdf(obsvalue);
 			}
 			else
 			{
@@ -353,7 +376,9 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 					if(indices[i]==1)
 						mean += this.means[i];
 				poiss.setMean(mean);
-				p = poiss.pdf(obsvalue);
+				p = (1-this.all0Inhibitor)*poiss.pdf(obsvalue);
+				poiss.setMean(this.all0mean);
+				p += this.all0Inhibitor*poiss.pdf(obsvalue);
 			}
 			for(int j= 0; j < indices.length; j++)
 			{
@@ -386,10 +411,8 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 			
 			if(index==0)
 			{
-				poiss.setMean(minimumAll0Mean);
-				double p = this.all0Inhibitor*poiss.pdf(value);
 				poiss.setMean(this.all0mean);
-				p += (1-this.all0Inhibitor)*poiss.pdf(value);
+				double p = poiss.pdf(value);
 				pu[index] *= p;
 			}
 			else
@@ -399,7 +422,10 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 					if(indices[i]==1)
 						mean += this.means[i];
 				poiss.setMean(mean);
-				pu[index] *= poiss.pdf(value);
+				double p = (1-this.all0Inhibitor)*poiss.pdf(value);
+				poiss.setMean(this.all0mean);
+				p += this.all0Inhibitor*poiss.pdf(value);
+				pu[index] *= p;
 			}
 			pusum += pu[index];
 			index++;
@@ -413,10 +439,8 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 			double p = 0;
 			if(index==0)
 			{
-				poiss.setMean(minimumAll0Mean);
-				p = this.all0Inhibitor*poiss.pdf(value);
 				poiss.setMean(all0mean);
-				p += (1-this.all0Inhibitor)*poiss.pdf(value);
+				p = poiss.pdf(value);
 			}
 			else
 			{
@@ -425,7 +449,9 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 					if(indices[i]==1)
 						mean += this.means[i];		
 				poiss.setMean(mean);
-				p = poiss.pdf(value);
+				p = (1-this.all0Inhibitor)*poiss.pdf(value);
+				poiss.setMean(this.all0mean);
+				p += this.all0Inhibitor*poiss.pdf(value);
 			}
 			
 			double pun = pu[index]/pusum;
@@ -455,9 +481,71 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 		}
 		return null;
 	}
+	
+	//TODO Verify this method
+	@Override
+	public double computeObsLL(MessageSet<FiniteDiscreteMessage> incoming_pis,
+			int value) {
+		Poisson poiss = new Poisson(1,new DRand());
+		int indices[] = initialIndices(this.means.length);
+		double pu[] = new double[(int)Math.pow(2,this.means.length)];
+		int index = 0;
+		double pusum = 0;
+		do
+		{
+			pu[index] = 1;
+			for(int i = 0; i < indices.length; i++)
+				pu[index] *= incoming_pis.get(i).getValue(indices[i]);
+			
+			/*{
+				double mean = 0;
+				for(int i = 0; i < this.means.length; i++)
+					if(indices[i]==1)
+						mean += this.means[i];
+				poiss.setMean(mean);
+				double p = (1-this.all0Inhibitor)*poiss.pdf(value);
+				poiss.setMean(this.all0mean);
+				p += this.all0Inhibitor*poiss.pdf(value);
+				pu[index] *= p;
+			}*/
+			pusum += pu[index];
+			index++;
+		}
+		while((indices = binaryIndicesIncrement(indices))!=null);
+		
+		poiss.setMean(this.all0mean);
+		double p = this.all0Inhibitor*poiss.pdf(value);
+		index = 0;
+		indices = initialIndices(this.means.length);
+		do
+		{
+			double mean = 0;
+			if(index==0)
+			{
+				mean = this.all0mean;
+			}
+			else
+			{
+				for(int i = 0; i < this.means.length; i++)
+					if(indices[i]==1)
+						mean += this.means[i];
+			}
+			poiss.setMean(mean);
+			p += pu[index]/pusum*(1-this.all0Inhibitor)*poiss.pdf(value);
+			if(Double.isNaN(p))
+			{
+				System.err.println("Error NAN : " + mean + " - " + value);
+			}
+			index++;
+		}
+		while((indices = binaryIndicesIncrement(indices))!=null);
+		
+		return -Math.log(p);
+	}
 
-	private double all0Inhibitor;
-	boolean all0MeanLocked;
-	private double all0mean = 0;
+	public double all0Inhibitor;
+	public boolean all0MeanLocked, all0InhibitorLocked = false;
+	public double all0mean = 0;
 	private double[] means;
+
 }

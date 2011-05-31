@@ -79,6 +79,7 @@ public abstract class DiscreteDistribution implements Distribution {
 		public abstract InfiniteDiscreteDistribution copy() throws BNException;
 		public abstract void computeLambdas(MessageSet<FiniteDiscreteMessage> lambdas_out, MessageSet<FiniteDiscreteMessage> incoming_pis, int value) throws BNException;
 		public abstract double computeBethePotential(MessageSet<FiniteDiscreteMessage> incoming_pis, int value);
+		public abstract double computeObsLL(MessageSet<FiniteDiscreteMessage> incoming_pis, int value);
 	}
 	
 	public static abstract class InfDiscDistSufficientStat implements SufficientStatistic

@@ -53,6 +53,8 @@ public class DynamicCommandLine
 			parser.addHandler(new UniversalCommandHandlers.BNSaver(bn));
 			parser.addHandler(new UniversalCommandHandlers.BNQPRunner(bn));
 			parser.addHandler(new UniversalCommandHandlers.EvidenceClearer(bn));
+			parser.addHandler(new DynamicCommandHandlers.CondProbHandler(bn));
+			parser.addHandler(new DynamicCommandHandlers.CountdownNodeAdder(bn));
 		
 			return parser;
 		}

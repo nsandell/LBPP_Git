@@ -12,6 +12,7 @@ import bn.BNException;
 import bn.IBayesNet;
 import bn.IBayesNet.RunResults;
 import bn.distributions.Distribution;
+import bn.dynamic.IDBNNode;
 import bn.dynamic.IFDiscDBNNode;
 import bn.dynamic.IDynamicBayesNet;
 import bn.messages.FiniteDiscreteMessage;
@@ -101,6 +102,21 @@ public class DynamicCommandHandlers
 				" a discrete node with cardinality 3, named X";}
 	}
 	
+	static class CountdownNodeAdder extends Parser.MethodWrapperHandler<Object>
+	{
+		CountdownNodeAdder(IDynamicBayesNet bn) throws Exception
+		{
+			super(bn,IDynamicBayesNet.class.getMethod("addSwitchingCountdownNode", new Class<?>[]{String.class,int.class}),new String[]{"node name","truncation length"},null);
+		}
+		public int[] getGroups() {return groups;}
+		public Pattern getRegEx() {return patt;}
+		public String getPrompt() {return null;}
+		private static int[] groups = new int[]{1,2};
+		private static Pattern patt = Pattern.compile("^\\s*(\\w+)\\s*:\\s*CountDownNode\\((\\d+)\\)\\s*$");
+		
+		public String name(){return "Discrete";}
+		public String description(){return "Creates a switching countdown node";} 
+	}
 
 	static class InitialDistSetter  extends Parser.MethodWrapperHandler<Distribution>
 	{
@@ -311,6 +327,57 @@ public class DynamicCommandHandlers
 		}
 
 		IDynamicBayesNet net;
+	}
+	
+	static class CondProbHandler implements ParserFunction
+	{
+		
+		public CondProbHandler(IDynamicBayesNet net)
+		{
+			this.net = net;
+		}
+		IDynamicBayesNet net;
+		
+		public ParserFunction parseLine(String[] args, PrintStream str) throws ParserException {
+			String nodeName = args[0];
+			int t0 = 0, te = this.net.getT()-1;
+			if(args[1]!=null)
+			{
+				t0 = Integer.parseInt(args[1]);
+				te = Integer.parseInt(args[2]);
+				if(te < t0)
+					throw new ParserException("End time earlier than start time.");
+				if(te >= net.getT() || t0 < 0)
+					throw new ParserException("Requested range outside of [0,"+net.getT()+"]");
+			}
+
+			try
+			{
+				IDBNNode nd = net.getNode(nodeName);
+				for(int t = t0; t <= te; t++)
+					str.print(nd.conditionalLL(t) + " ");
+				str.println();
+			} catch(BNException e) {
+				throw new ParserException("Problem extracting marginal : " + e.getMessage());
+			}
+			return null;
+		}
+
+
+		public String getPrompt() {return null;}
+		public void finish(){}
+		public int[] getGroups(){return groups;}
+		public Pattern getRegEx(){return patt;}
+
+		private static Pattern patt = Pattern.compile("^\\s*condprob\\(\\s*(\\w+)\\s*(,\\s*(\\d+)\\s*,\\s*(\\d+))?\\s*\\)\\s*$");
+		private static int[] groups = new int[]{1,3,4};
+		
+		public String name(){return "condprob";}
+		public String description(){return "Request the conditional probability of an observednode, for all time or a subset of times. " +
+				"As examples, condprob(X) requests the marginals for node X for all time.  query(X,4,10) requests the marginals " +
+				"for node X from time steps 4 to 10.";}
+
+		
 	}
 
 	static class ObservationHandler implements ParserFunction

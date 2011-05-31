@@ -113,6 +113,9 @@ public interface IDynamicBayesNet extends IBayesNet<IDBNNode>
 	
 	IInfDiscEvDBNNode addDiscreteEvidenceNode(String name, int[] value) throws BNException;
 	
+	ICountdownNode addCountdownNode(String name,int truncation) throws BNException;
+	ICountdownNode addSwitchingCountdownNode(String name,int truncation) throws BNException;
+	
 	/**
 	 * Get the number of time slices in this network
 	 * @return The number of time slices in the network.

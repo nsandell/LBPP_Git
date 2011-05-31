@@ -42,14 +42,15 @@ public abstract class ModelController
 	{
 		try {
 			this.network.run_parallel_block(max_it, conv);
+			//this.network.run(max_it,conv);
 			double ll = this.network.getLogLikelihood();
-			if(Double.isNaN(ll) || ll > 0)
+			if(Double.isNaN(ll))// || ll > 0) //TODO Note that we could have a density and LL could be > 0
 			{
 				System.err.println("Resetting messages, found NAN");
 				this.network.resetMessages();
 				this.network.run(max_it,conv);
 				ll = this.network.getLogLikelihood();
-				if(Double.isNaN(ll) || ll > 0)
+				if(Double.isNaN(ll))// || ll > 0)
 				{
 					this.network.print(System.err);
 					this.network.getLogLikelihood();
@@ -66,6 +67,7 @@ public abstract class ModelController
 	{
 		try {
 			this.network.optimize_parallel(max_learn_it, learn_conv, max_run_it, run_conv);
+			//this.network.optimize(max_learn_it, learn_conv, max_run_it, run_conv);
 			return this.run(max_run_it,run_conv);
 		} catch(BNException e) {
 			throw new CMException("Error optimizing the model : " + e.toString());

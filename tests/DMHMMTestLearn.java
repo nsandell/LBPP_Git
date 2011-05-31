@@ -207,6 +207,11 @@ public class DMHMMTestLearn {
 
 		@Override
 		public void setParent(IParentProcess rent) {}
+
+		@Override
+		public double parameterLL() {
+			return 0;
+		}
 	}
 	
 	/**

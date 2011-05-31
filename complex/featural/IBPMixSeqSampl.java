@@ -10,14 +10,13 @@ import complex.CMException;
 import complex.IParentProcess;
 
 import complex.featural.ProposalAction.UniqueParentAddAction;
-import complex.featural.ProposalGenerator.Proposal;
-
 import util.MathUtil;
 
-public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extends IParentProcess> {
+public class IBPMixSeqSampl<ChildProcess extends IFeaturalChild,ParentProcess extends IParentProcess> {
 	
-	public IBPMixture(Vector<ProposalGenerator<ChildProcess,ParentProcess>> generators, double[] p_gens, double[] p) throws CMException
+	public IBPMixSeqSampl(Vector<ProposalGenerator<ChildProcess,ParentProcess>> generators, double[] p_gens, double[] p) throws CMException
 	{
+		/*
 		if(generators.size()!=p_gens.length)
 			throw new CMException("Provided different number of generators from generator probabilities");
 		double sum = 0;
@@ -27,6 +26,7 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 			throw new CMException("Provided generator probability distribution not summing to one!");
 		if(Math.abs(p[0]+p[1]+p[2]-1) > 1e-12)
 			throw new CMException("Provided move vs vertical vs horizontal distribution not summing to one!");
+			*/
 		
 		this.accepted_genprops = new int[generators.size()];
 		this.generators = generators;
@@ -101,11 +101,11 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 			}
 		}
 		
-		public ShutdownThread(IBPMixture<?,?> mix)
+		public ShutdownThread(IBPMixSeqSampl<?,?> mix)
 		{
 			this.mix = mix;
 		}
-		IBPMixture<?,?> mix;
+		IBPMixSeqSampl<?,?> mix;
 	}
 	
 	private volatile Thread workThr;
@@ -142,126 +142,47 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 		double bestLL = ll;
 		cont.saveInfo(opts.savePath + "/initial_iteration",ll);
 		cont.log("Learning run started: Initial Log Likelihood = " + ll + "   (" + this.structureLL(cont, opts) + " structural).");
+
 		
-		Vector<ChildProcess> childRunQueue = new Vector<ChildProcess>();
-		Vector<ParentProcess> parentRunQueue = new Vector<ParentProcess>();
+		int lastObs = 0;
 		
 		for(int iteration = 0; iteration < opts.maxIterations && keepGoing; iteration++)
 		{
 			System.out.println("Iteration " + iteration + ", log likelihood " + ll);
 			
-			ChildProcess obsSample = null;
-			ParentProcess latSample = null;
-			if(parentRunQueue.size() > 0)
-				latSample = parentRunQueue.remove(0);
-			else if(childRunQueue.size() > 0)
-				obsSample = childRunQueue.remove(0);
-			
-			int choice;
-			if(obsSample!=null)
-				choice = 0;
-			else if(latSample!=null)
-				choice = 1;
-			else
-				choice = MathUtil.discreteSample(this.main_probs);
-			
-			if(choice==0)
+			ChildProcess hsn = obs.get(lastObs);
+			lastObs++;
+			if(obs.size()==lastObs)
+				lastObs = 0;
+
+			cont.log("Starting horizontal sample run for node : " + hsn.getName());
+
+			HashSet<ParentProcess> parents = cont.getParents(hsn);
+
+			for(ParentProcess latNd : lats)
 			{
-				ChildProcess hsn;
-				if(obsSample==null)
-				{
-					choice = MathUtil.rand.nextInt(obs.size());
-					hsn = obs.get(choice);
-				}
-				else 
-				{
-					hsn = obsSample;
-					obsSample = null;
-				}
-				cont.log("Starting horizontal sample run for node : " + hsn.getName());
-				
-				HashSet<ParentProcess> parents = cont.getParents(hsn);
-				
-				for(ParentProcess latNd : lats)
-				{
-					if(parents.contains(latNd))
-						ll = this.attemptDisconnect(latNd, hsn, cont, opts, ll);
-					else
-						ll = this.attemptConnect(latNd, hsn, cont, opts, ll);
-				}
-				
-				//Attempt to add unique parent
-				if(MathUtil.rand.nextDouble() < 1)
-				{	
-					cont.log("Attempting to add unique parent to node " + hsn.getName());
-					UniqueParentAddAction<ChildProcess,ParentProcess> act = new UniqueParentAddAction<ChildProcess,ParentProcess>(hsn,false);
-					cont.backupParameters();
-					act.perform(cont);
-					//double newLL = cont.run(opts.max_run_it, opts.run_conv) + structureLL(cont,opts);
-					double newLL = cont.learn(opts.max_learn_it,opts.learn_conv,opts.max_run_it, opts.run_conv) + structureLL(cont,opts) + cont.parameterPosteriorLL();
-					if(accept(newLL,this.main_probs[0],ll,this.main_probs[0]+this.main_probs[1],cont,opts))
-					{
-						ll = newLL;
-						parentRunQueue.add(act.uniqParent);
-					}
-					else
-					{
-						act.undo(cont);
-						cont.restoreParameters();
-					}
-				}
-			}
-			else if(choice==1 && lats.size() > 0)
-			{
-				ParentProcess vsn;
-				if(latSample==null)
-				{
-					choice = MathUtil.rand.nextInt(lats.size());
-					vsn = lats.get(choice);
-				}
+				if(parents.contains(latNd))
+					ll = this.attemptDisconnect(latNd, hsn, cont, opts, ll);
 				else
-				{
-					vsn = latSample;
-					latSample = null;
-					if(!lats.contains(vsn))
-						continue;
-				}
-				cont.log("Starting vertical sample run for node : " + vsn.getName());
-
-				HashSet<ChildProcess> children = cont.getChildren(vsn);
-
-				for(ChildProcess obsNode : obs)
-				{
-					if(children.contains(obsNode))
-						ll = this.attemptDisconnect(vsn, obsNode, cont, opts, ll);
-					else
-						ll = this.attemptConnect(vsn, obsNode, cont, opts, ll);
-				}
+					ll = this.attemptConnect(latNd, hsn, cont, opts, ll);
 			}
-			else
-			{
-				choice = MathUtil.discreteSample(this.generator_probs);
-				Proposal<ChildProcess,ParentProcess> proposal = generators.get(choice).generate(cont);
-				
-				
-				if(proposal==null)
-					continue;
-				
+
+			//Attempt to add unique parent
+			if(MathUtil.rand.nextDouble() < 1)
+			{	
+				cont.log("Attempting to add unique parent to node " + hsn.getName());
+				UniqueParentAddAction<ChildProcess,ParentProcess> act = new UniqueParentAddAction<ChildProcess,ParentProcess>(hsn,false);
 				cont.backupParameters();
-				proposal.action().perform(cont);
-				double newSLL = structureLL(cont,opts);
-				double newLL = cont.learn(opts.max_learn_it, opts.learn_conv, opts.max_run_it, opts.run_conv) + newSLL + cont.parameterPosteriorLL();
-				
-				if(accept(newLL,proposal.forwardP(),ll,proposal.backwardP(),cont,opts))
+				act.perform(cont);
+				//double newLL = cont.run(opts.max_run_it, opts.run_conv) + structureLL(cont,opts);
+				double newLL = cont.learn(opts.max_learn_it,opts.learn_conv,opts.max_run_it, opts.run_conv) + structureLL(cont,opts) + cont.parameterPosteriorLL();
+				if(accept(newLL,this.main_probs[0],ll,this.main_probs[0]+this.main_probs[1],cont,opts))
 				{
-					this.accepted_genprops[choice]++;
 					ll = newLL;
-					childRunQueue.addAll(proposal.action().getChangedChildren());
-					parentRunQueue.addAll(proposal.action().getChangedParents());
 				}
 				else
 				{
-					proposal.action().undo(cont);
+					act.undo(cont);
 					cont.restoreParameters();
 				}
 			}
@@ -274,20 +195,7 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 		
 			if(iteration%25==0)
 			{
-				//cont.resetMessages();
-				//ll = cont.learn(30,0,50,1e-6) + structureLL(cont, opts) + cont.parameterPosteriorLL();
-				//double oldll = ll;
-				//System.err.println("Iteration " + iteration + " model LL: " + cont.run(1,0));
-				//cont.saveInfo(opts.savePath + "/trace"+iteration,ll);
-				//double mll1 = cont.run(1,0);
 				ll = cont.learn(opts.max_learn_it, opts.learn_conv, opts.max_run_it, opts.run_conv) + structureLL(cont, opts) + cont.parameterPosteriorLL();
-				//ll = cont.learn(30,0,50,1e-6) + structureLL(cont, opts) + cont.parameterPosteriorLL();
-				//double mll2 = cont.run(1,0);
-				//cont.saveInfo(opts.savePath + "/trace"+iteration+"_2", ll);
-				//if(ll < oldll)
-				//	System.err.println("Ehh? |" + oldll + " > " + ll + ", iteration " + iteration + "  --  " + mll1+"/"+mll2);
-				//else
-				//	System.err.println("Normal");
 			}
 	
 			if(opts.savePath!=null)

@@ -115,25 +115,31 @@ public class DirichletMixture {
 			for(ChildProcess cchild : childProcs)
 			{
 				System.err.println("Testing " + cchild.getName() + " against:");
-				for(ParentProcess parent : latentProcs)
+
+				Vector<ParentProcess> subset = new Vector<ParentProcess>(latentProcs);
+				subset.remove(opts.controller.getParent(cchild));
+
+				int parenti = MathUtil.rand.nextInt(subset.size()+1);
+				if(parenti < subset.size())
 				{
+					ParentProcess parent = latentProcs.get(parenti);
 					ParentProcess currentParent = opts.controller.getParent(cchild);
 					if(parent==currentParent)
 						continue;
 					System.err.println("\t" + parent.getName());
-					
+
 					opts.controller.backupChildrenParameters(currentParent);
 					opts.controller.backupChildrenParameters(parent);
-					
+
 					opts.controller.setParent(cchild, parent);
 					opts.controller.optimizeChildParameters(cchild);
 
 					opts.controller.learnChain(currentParent,opts.maxRunIterations,opts.runConv,opts.maxLearnIterations,opts.learnConv);
 					double llprop = opts.controller.learnChain(parent,opts.maxRunIterations,opts.runConv,opts.maxLearnIterations,opts.learnConv);
-					
+
 					double llprop_struct = llDP(opts);
 					double llparam = 0; //TODO get parameter prior ll in here
-					
+
 					if(MathUtil.rand.nextDouble() > Math.exp(llprop + llprop_struct - ll))
 					{
 						opts.controller.setParent(cchild, currentParent);
@@ -143,27 +149,29 @@ public class DirichletMixture {
 					else
 						ll = llprop + llprop_struct + llparam;
 				}
-				
-				//Propose new parent
-				ParentProcess currentParent = opts.controller.getParent(cchild);
-				opts.controller.backupChildrenParameters(currentParent);
-
-				ParentProcess newParent = opts.controller.newParent();
-				opts.controller.setParent(cchild, newParent);
-				
-				opts.controller.learnChain(currentParent,opts.maxRunIterations,opts.runConv,opts.maxLearnIterations,opts.learnConv);
-				double llprop = opts.controller.learnChain(newParent, opts.maxRunIterations, opts.runConv, opts.maxLearnIterations, opts.learnConv);
-				double llprop_struct = llDP(opts);
-				double llparam = 0; //TODO get parameter prior ll in here
-					
-				if(MathUtil.rand.nextDouble() > Math.exp(llprop + llprop_struct - ll))
-				{
-					opts.controller.setParent(cchild, currentParent);
-					opts.controller.restoreChildrenParameters(currentParent);
-					opts.controller.deleteParent(newParent);
-				}
 				else
-					ll = llprop + llprop_struct + llparam;
+				{
+					System.err.println("\tNew Parent.");
+					ParentProcess currentParent = opts.controller.getParent(cchild);
+					opts.controller.backupChildrenParameters(currentParent);
+
+					ParentProcess newParent = opts.controller.newParent();
+					opts.controller.setParent(cchild, newParent);
+
+					opts.controller.learnChain(currentParent,opts.maxRunIterations,opts.runConv,opts.maxLearnIterations,opts.learnConv);
+					double llprop = opts.controller.learnChain(newParent, opts.maxRunIterations, opts.runConv, opts.maxLearnIterations, opts.learnConv);
+					double llprop_struct = llDP(opts);
+					double llparam = 0; //TODO get parameter prior ll in here
+
+					if(MathUtil.rand.nextDouble() > Math.exp(llprop + llprop_struct - ll))
+					{
+						opts.controller.setParent(cchild, currentParent);
+						opts.controller.restoreChildrenParameters(currentParent);
+						opts.controller.deleteParent(newParent);
+					}
+					else
+						ll = llprop + llprop_struct + llparam;
+				}
 				
 				Vector<ParentProcess> removes = new Vector<ParentProcess>();
 				for(ParentProcess proc : opts.controller.getAllParents())

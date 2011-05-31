@@ -119,6 +119,11 @@ public class TwitterMFHMM {
 		ArrayList<IParentProcess> rents = new ArrayList<IParentProcess>();
 		SumOfPoisson sop, backup = null;
 		IInfDiscEvDBNNode y;
+		@Override
+		public double parameterLL() {
+			// TODO Auto-generated method stub
+			return 0;
+		}
 	}
 	
 	public static class ParamGen implements MFHMMInitialParamGenerator
@@ -137,6 +142,16 @@ public class TwitterMFHMM {
 			{
 				return new DiscreteCPTUC(new double[]{.7,.3});
 			} catch(BNException e){return null;}
+		}
+
+		@Override
+		public double getA_LL(DiscreteCPT A) {
+			return 0;
+		}
+
+		@Override
+		public double getPi_LL(DiscreteCPTUC pi) {
+			return 0;
 		}
 	}
 
@@ -220,7 +235,7 @@ public class TwitterMFHMM {
 		cont.setLogger(System.out);
 
 		IBPMModelOptions<IFeaturalChild,FHMMX> opts = new IBPMModelOptions<IFeaturalChild,FHMMX>(cont, ass);
-		opts.maxIterations = 50000; 
+		opts.maxIterations = 900;
 		opts.alpha = 1;
 		opts.learn_conv = 1e-5;
 		opts.max_learn_it = 2;

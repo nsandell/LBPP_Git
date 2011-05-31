@@ -30,7 +30,7 @@ import complex.featural.proposal_generators.RandomMergeGenerator;
 import complex.featural.proposal_generators.RandomSplitGenerator;
 import complex.featural.proposal_generators.SimilarityMerger;
 
-public class MFHMMLearnText {
+public class CrawdadMFHMMLearnText {
 	
 	public static class YWrapper implements IFeaturalChild
 	{
@@ -82,12 +82,11 @@ public class MFHMMLearnText {
 	{
 		public YORWrapper(String name, IDynamicBayesNet net) throws BNException
 		{
-			this.y = net.addDiscreteNode(name, 3);
+			this.y = net.addDiscreteNode(name, 2);
 			this.yor = net.addDiscreteNode(name+"_OR",2);
 			net.addIntraEdge(this.yor, this.y);
 			this.yor.setAdvanceDistribution(TrueOr.getInstance());
-			//this.y.setAdvanceDistribution(new DiscreteCPT(new double[][]{{.9,.1},{.1,.9}},2));
-			this.y.setAdvanceDistribution(new DiscreteCPT(new double[][]{{.9,.05, .05},{.05, .05,.9}},3));
+			this.y.setAdvanceDistribution(new DiscreteCPT(new double[][]{{.9,.1},{.1,.9}},2));
 			this.backup = this.y.getAdvanceDistribution().copy();
 		}
 	
@@ -146,11 +145,12 @@ public class MFHMMLearnText {
 			}
 		}
 
-		IFDiscDBNNode y, yor;
 		@Override
 		public double parameterLL() {
 			return 0;
 		}
+
+		IFDiscDBNNode y, yor;
 	}
 	
 	public static class YORFWrapper implements IFeaturalChild
@@ -253,7 +253,7 @@ public class MFHMMLearnText {
 					{0,0,0,0,0,0,1,1,1,0,0,0,0,0,0,0,1,1,1,0}};
 			for(int i = 0; i < 9; i++)
 			{
-				YORWrapper child = new YORWrapper("Y"+i, net);
+				YORFWrapper child = new YORFWrapper("Y"+i, net);
 				child.y.setValue(o[i], 0);
 				children.add(child);
 			}
@@ -286,7 +286,7 @@ public class MFHMMLearnText {
 			net = DynamicNetworkFactory.newDynamicBayesNet(o[0].length);
 			for(int i = 0; i < o.length; i++)
 			{
-				YORWrapper child = new YORWrapper("Y"+i, net);
+				YORFWrapper child = new YORFWrapper("Y"+i, net);
 				child.y.setValue(o[i], 0);
 				children.add(child);
 			}
@@ -298,28 +298,26 @@ public class MFHMMLearnText {
 
 		MFHMMController cont = new MFHMMController(net,children,new ParamGen(),2);
 		Vector<ProposalGenerator<IFeaturalChild, FHMMX>> gens = new Vector<ProposalGenerator<IFeaturalChild,FHMMX>>();
-		gens.add(new RandomAbsorbGenerator<IFeaturalChild,FHMMX>(.25*.5, .25*.5));
-		gens.add(new RandomExpungeGenerator<IFeaturalChild,FHMMX>(.25*.5, .25*.5));
-		gens.add(new RandomMergeGenerator<IFeaturalChild,FHMMX>(.25*.5, .25*.5));
-		gens.add(new RandomSplitGenerator<IFeaturalChild,FHMMX>(.25*.5, .25*.5));
-		gens.add(new RandomAdderGenerator<IFeaturalChild,FHMMX>(0,.0));
+		gens.add(new RandomAbsorbGenerator<IFeaturalChild,FHMMX>(.05, .05));
+		gens.add(new RandomExpungeGenerator<IFeaturalChild,FHMMX>(.05, .05));
+		gens.add(new RandomMergeGenerator<IFeaturalChild,FHMMX>(.1, .1));
+		gens.add(new RandomSplitGenerator<IFeaturalChild,FHMMX>(.1, .1));
+		gens.add(new RandomAdderGenerator<IFeaturalChild,FHMMX>(.1, .1));
 		gens.add(new CoherenceSplitter<IFeaturalChild,FHMMX>(.25, .0, .0, .25));
 		gens.add(new SimilarityMerger<IFeaturalChild,FHMMX>(.25, .0, .25, .0));
 		gens.add(new CoherenceAdder<IFeaturalChild,FHMMX>(.25, .0, .0, .25));
 		gens.add(new CoherenceUniqueParenter<IFeaturalChild,FHMMX>(.25, .0, .0, .25));
 		IBPMixture<IFeaturalChild,FHMMX> mix = new IBPMixture<IFeaturalChild,FHMMX>(gens,
 				//new double[] {.05,.05,.1,.1,.2,.15,.35},
-				//new double[] {.25,.25,.25,.25,.0,0,0,0,0},
+				//new double[] {.2,.2,.2,.2,.2,0,0,0,0},
 				new double[] {0,0,0,0,0,.25,.25,.25,.25},
-				new double[]{.05, .05, .9});
+				new double[]{.19, .01, .8});
 		cont.setLogger(System.out);
 
 		IBPMModelOptions<IFeaturalChild,FHMMX> opts = new IBPMModelOptions<IFeaturalChild,FHMMX>(cont, ass);
-		opts.maxIterations =0; 
-		opts.alpha = .1;
+		opts.maxIterations = 500; 
+		opts.alpha = 1;
 		opts.savePath = out;
-		opts.finalize = true;
-		opts.max_finalize_iterations = 3;
 		mix.learn(opts);
 	}
 	

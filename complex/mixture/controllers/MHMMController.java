@@ -196,6 +196,12 @@ public class MHMMController extends MixtureModelController<MHMMChild,MHMMX> {
 			throw new CMException(e.toString());
 		}
 	}
+	
+	@Override
+	public double parameterPosteriorLL() {
+		double ll = 0;
+		return ll;
+	}
 
 	private int nextID()
 	{

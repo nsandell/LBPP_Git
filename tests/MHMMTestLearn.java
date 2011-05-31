@@ -178,6 +178,12 @@ public class MHMMTestLearn {
 
 		@Override
 		public void setParent(IParentProcess rent) {}
+
+		@Override
+		public double parameterLL() {
+			// TODO Auto-generated method stub
+			return 0;
+		}
 	}
 	
 	/**

@@ -16,7 +16,6 @@ import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.distributions.DiscreteDistribution;
 import bn.distributions.InhibitedSumOfPoisson;
-import bn.distributions.SumOfPoisson;
 import bn.distributions.SwitchingPoisson;
 import bn.distributions.TrueOr;
 import bn.distributions.DiscreteDistribution.InfiniteDiscreteDistribution;
@@ -39,7 +38,7 @@ import complex.featural.proposal_generators.CoherenceSplitter;
 import complex.featural.proposal_generators.CoherenceUniqueParenter;
 import complex.featural.proposal_generators.SimilarityMerger;
 
-public class TwitterMFHMM2 {
+public class TwitterMFHMM2_finalize {
 	
 	public static class YTwitterAddWrapper implements IFeaturalChild
 	{
@@ -47,8 +46,7 @@ public class TwitterMFHMM2 {
 		{
 			this.y = net.addDiscreteEvidenceNode(name, values);
 			//SumOfPoisson sop = new SumOfPoisson(new double[]{}, 1.0);
-			InhibitedSumOfPoisson sop = new InhibitedSumOfPoisson(new double[]{}, 1.0,.1);
-			sop.all0InhibitorLocked = true; //TODO try this out
+			InhibitedSumOfPoisson sop = new InhibitedSumOfPoisson(new double[]{}, 1.0,.5);
 			this.y.setAdvanceDistribution(sop);
 		}
 		
@@ -82,7 +80,6 @@ public class TwitterMFHMM2 {
 					for(Entry<IParentProcess, Integer> ent : this.indices.entrySet())
 						means[ent.getValue()] = meanBackups.get(ent.getKey().getName());
 					InhibitedSumOfPoisson sop = new InhibitedSumOfPoisson(means, this.p0meanbackup, this.p_ihib_backup);
-					sop.all0InhibitorLocked = true;
 					this.y.setAdvanceDistribution(sop);
 				}
 			} catch (BNException e) {
@@ -141,115 +138,6 @@ public class TwitterMFHMM2 {
 					indices.put(par, pari-1);
 			}
 			InhibitedSumOfPoisson dist = (InhibitedSumOfPoisson)this.y.getAdvanceDistribution();
-			try {
-				dist.killParent(index);
-			} catch(BNException e) {
-				System.err.println("Error " + e.toString());
-			}
-		}
-	
-		Gamma gamma = new Gamma(3, 2.0, new DRand());
-		
-		HashMap<IParentProcess, Integer> indices = new HashMap<IParentProcess, Integer>();
-		InfiniteDiscreteDistribution backup;
-		IInfDiscEvDBNNode y;
-	}
-	
-	public static class YTwitterNIAddWrapper implements IFeaturalChild
-	{
-		public YTwitterNIAddWrapper(String name, int[] values, IDynamicBayesNet net) throws BNException
-		{
-			this.y = net.addDiscreteEvidenceNode(name, values);
-			SumOfPoisson sop = new SumOfPoisson(new double[]{}, 1.0);
-			this.y.setAdvanceDistribution(sop);
-		}
-		
-		HashMap<String,Double> meanBackups = null;
-		Double p0meanbackup = null;
-		
-		public void backupParameters() {
-			SumOfPoisson sop = (SumOfPoisson)this.y.getAdvanceDistribution();
-			meanBackups = new HashMap<String, Double>();
-			for(Entry<IParentProcess, Integer> idex : this.indices.entrySet())
-				meanBackups.put(idex.getKey().getName(), sop.getMean(idex.getValue()));
-			this.p0meanbackup = sop.all0mean;
-		}
-		
-		public void printDist()
-		{
-			System.err.println(this.y.getName() + " dist");
-			SumOfPoisson sop = (SumOfPoisson)this.y.getAdvanceDistribution();
-			for(Entry<IParentProcess, Integer> idex : this.indices.entrySet())
-				System.err.println(idex.getKey().getName() + " => " + sop.getMean(idex.getValue()));
-			System.err.println();
-		}
-		
-		public void restoreParameters() {
-			try {
-				if(this.meanBackups!=null)
-				{
-					double [] means = new double[this.indices.size()];
-					for(Entry<IParentProcess, Integer> ent : this.indices.entrySet())
-						means[ent.getValue()] = meanBackups.get(ent.getKey().getName());
-					SumOfPoisson sop = new SumOfPoisson(means, this.p0meanbackup);
-					this.y.setAdvanceDistribution(sop);
-				}
-			} catch (BNException e) {
-				System.err.println("ERROR: " + e.toString());
-			}
-		}
-		
-		public double getDisagreement(int t)
-		{
-			return this.y.conditionalLL(t);
-		}
-		
-		@Override
-		public String getName() {
-			return this.y.getName();
-		}
-
-		@Override
-		public double parameterLL() {
-			SumOfPoisson dist = (SumOfPoisson)this.y.getAdvanceDistribution();
-			double ll = 0;
-			for(int i = 0; i < dist.numParents(); i++)
-				ll += Math.log(this.gamma.pdf(dist.getMean(i)));
-			return ll;//return 0;
-		}
-
-		@Override
-		public void optimize() {
-			try {
-				this.y.optimizeParameters();
-			} catch(BNException e) {
-				System.err.println("Error " + e.toString());
-			}
-		}
-
-		@Override
-		public IDBNNode hook() {
-			return this.y;
-		}
-
-		@Override
-		public void addParent(IParentProcess parent) {
-			SumOfPoisson dist = (SumOfPoisson)this.y.getAdvanceDistribution();
-			dist.newParent(gamma.nextDouble());
-			indices.put(parent, indices.size());
-		}
-
-		@Override
-		public void killParent(IParentProcess parent) {
-			int index = indices.get(parent);
-			indices.remove(parent);
-			for(IParentProcess par : indices.keySet())
-			{
-				int pari = indices.get(par);
-				if(pari > index)
-					indices.put(par, pari-1);
-			}
-			SumOfPoisson dist = (SumOfPoisson)this.y.getAdvanceDistribution();
 			try {
 				dist.killParent(index);
 			} catch(BNException e) {
@@ -458,20 +346,18 @@ public class TwitterMFHMM2 {
 		gens.add(new CoherenceUniqueParenter<IFeaturalChild, FHMMX>(1, 1, 1, 1));
 		IBPMixture<IFeaturalChild,FHMMX> mix = new IBPMixture<IFeaturalChild,FHMMX>(gens,
 				new double[]{.25,.25,.25,.25},
-				new double[]{.05, .05, .9});
+				new double[]{.00, 1.0, .0});
 		cont.setLogger(System.out);
 
 		IBPMModelOptions<IFeaturalChild,FHMMX> opts = new IBPMModelOptions<IFeaturalChild,FHMMX>(cont, ass);
 		opts.maxIterations = 1000;
+		opts.temperature = 0;
 		opts.alpha = 1;
 		opts.learn_conv = 1e-5;
 		opts.max_learn_it = 10;
 		opts.run_conv = 1e-5;
 		opts.max_run_it = 20;
 		opts.savePath = out;
-		
-		opts.finalize = true;
-		opts.max_finalize_iterations = 1;
 		mix.learn(opts);
 	}
 	

@@ -4,6 +4,9 @@ import java.util.Collection;
 
 import java.util.Vector;
 
+import cern.jet.random.Beta;
+import cern.jet.random.engine.DRand;
+
 import bn.BNException;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
@@ -87,6 +90,8 @@ public class CrawdadMHMMFixedARG {
 			this.node = node;
 		}
 		IFDiscDBNNode node;
+		DiscreteCPT Aback;
+		DiscreteCPT piback;
 		
 		public Collection<String> constituentNodeNames()
 		{
@@ -121,13 +126,47 @@ public class CrawdadMHMMFixedARG {
 		}
 
 		@Override
-		public void backupParameters() {}
+		public void backupParameters()
+		{
+			try {
+			this.Aback = (DiscreteCPT)this.node.getAdvanceDistribution().copy();
+			this.piback = (DiscreteCPT)this.node.getInitialDistribution().copy();
+			} catch(BNException e) 
+			{
+				System.err.println("ERROR : " + e.toString());
+			}
+		}
 
 		@Override
-		public void restoreParameters() {}
+		public void restoreParameters()
+		{
+			try {
+			this.node.setAdvanceDistribution(this.Aback);
+			this.node.setInitialDistribution(this.piback);
+			} catch(BNException e)
+			{
+				System.err.println("ERROR " + e.toString());
+			}
+		}
 
 		@Override
 		public void setParent(IParentProcess rent) {}
+
+		@Override
+		public double parameterLL() {
+			DiscreteCPT cpt = (DiscreteCPT)this.node.getAdvanceDistribution();
+			Beta beta = new Beta(99, .1, new DRand());
+			System.out.println(this.node.getName());
+			System.out.println(cpt.values.length + " " + cpt.values[0].length);
+			double ll = 0;
+			ll += beta.pdf(cpt.values[0][0]);
+			ll += beta.pdf(cpt.values[1][0]);
+			beta.setState(1, 1);
+			ll += beta.pdf(cpt.values[2][0]);
+			beta.setState(1, 2);
+			ll += beta.pdf(cpt.values[3][0]);
+			return ll;
+		}
 	}
 	
 	/**
@@ -147,13 +186,22 @@ public class CrawdadMHMMFixedARG {
 		{
 			IFDiscDBNNode nd = network.addDiscreteNode("Y"+i, 2);
 			network.addInterEdge(nd, nd);
-			nd.setAdvanceDistribution(new DiscreteCPT(new int[]{2,2},2,new double[][]{{1-1e-9,1e-9},{1-1e-7,1e-7},{.5,.5},{.3,.7}}));
+			DiscreteCPT adva = new DiscreteCPT(new int[]{2,2},2,new double[][]{{1-1e-9,1e-9},{1-1e-7,1e-7},{.5,.5},{.3,.7}});
+			adva.prior = new DiscreteCPT.CPTSufficient2SliceStat(adva);
+			adva.prior.exp_tr[0][0] = 99;
+			adva.prior.exp_tr[0][0] = .1;
+			adva.prior.exp_tr[1][0] = 99;
+			adva.prior.exp_tr[1][1] = .1;
+			adva.prior.exp_tr[2][0] = 1;
+			adva.prior.exp_tr[2][1] = 1;
+			adva.prior.exp_tr[3][0] = 1;
+			adva.prior.exp_tr[3][1] = 2;
+			nd.setAdvanceDistribution(adva);
 			nd.setInitialDistribution(new DiscreteCPT(new double[][]{{1-1e-9,1e-9},{.5,.5}},2));
 			nd.setValue(o[i], 0);
-			nd.lockParameters();
 			children.add(new ARCrawTest(nd));
 		}
-		MHMMController controller = new MHMMController(network, children, new Prior(), 2, true);
+		MHMMController controller = new MHMMController(network, children, new Prior(), 2);
 		DMModelOptions<MHMMChild,MHMMX> opts = new DMModelOptions<MHMMChild, MHMMX>(controller, 1.0);
 		opts.modelBaseName = fileoutbase;
 		opts.controller.setLogger(System.out);

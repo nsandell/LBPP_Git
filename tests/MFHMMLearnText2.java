@@ -13,24 +13,15 @@ import bn.dynamic.IFDiscDBNNode;
 import bn.dynamic.IDynamicBayesNet;
 import bn.impl.dynbn.DynamicNetworkFactory;
 import complex.IParentProcess;
-import complex.featural.IBPMixture;
+import complex.featural.IBPMixSeqSampl;
 import complex.featural.IFeaturalChild;
-import complex.featural.IBPMixture.IBPMModelOptions;
+import complex.featural.IBPMixSeqSampl.IBPMModelOptions;
 import complex.featural.ProposalGenerator;
 import complex.featural.controllers.FHMMX;
 import complex.featural.controllers.MFHMMController;
 import complex.featural.controllers.MFHMMController.MFHMMInitialParamGenerator;
-import complex.featural.proposal_generators.CoherenceAdder;
-import complex.featural.proposal_generators.CoherenceSplitter;
-import complex.featural.proposal_generators.CoherenceUniqueParenter;
-import complex.featural.proposal_generators.RandomAbsorbGenerator;
-import complex.featural.proposal_generators.RandomAdderGenerator;
-import complex.featural.proposal_generators.RandomExpungeGenerator;
-import complex.featural.proposal_generators.RandomMergeGenerator;
-import complex.featural.proposal_generators.RandomSplitGenerator;
-import complex.featural.proposal_generators.SimilarityMerger;
 
-public class MFHMMLearnText {
+public class MFHMMLearnText2 {
 	
 	public static class YWrapper implements IFeaturalChild
 	{
@@ -298,28 +289,18 @@ public class MFHMMLearnText {
 
 		MFHMMController cont = new MFHMMController(net,children,new ParamGen(),2);
 		Vector<ProposalGenerator<IFeaturalChild, FHMMX>> gens = new Vector<ProposalGenerator<IFeaturalChild,FHMMX>>();
-		gens.add(new RandomAbsorbGenerator<IFeaturalChild,FHMMX>(.25*.5, .25*.5));
-		gens.add(new RandomExpungeGenerator<IFeaturalChild,FHMMX>(.25*.5, .25*.5));
-		gens.add(new RandomMergeGenerator<IFeaturalChild,FHMMX>(.25*.5, .25*.5));
-		gens.add(new RandomSplitGenerator<IFeaturalChild,FHMMX>(.25*.5, .25*.5));
-		gens.add(new RandomAdderGenerator<IFeaturalChild,FHMMX>(0,.0));
-		gens.add(new CoherenceSplitter<IFeaturalChild,FHMMX>(.25, .0, .0, .25));
-		gens.add(new SimilarityMerger<IFeaturalChild,FHMMX>(.25, .0, .25, .0));
-		gens.add(new CoherenceAdder<IFeaturalChild,FHMMX>(.25, .0, .0, .25));
-		gens.add(new CoherenceUniqueParenter<IFeaturalChild,FHMMX>(.25, .0, .0, .25));
-		IBPMixture<IFeaturalChild,FHMMX> mix = new IBPMixture<IFeaturalChild,FHMMX>(gens,
-				//new double[] {.05,.05,.1,.1,.2,.15,.35},
-				//new double[] {.25,.25,.25,.25,.0,0,0,0,0},
-				new double[] {0,0,0,0,0,.25,.25,.25,.25},
+		IBPMixSeqSampl<IFeaturalChild,FHMMX> mix = new IBPMixSeqSampl<IFeaturalChild,FHMMX>(gens,
+				new double[] {},
 				new double[]{.05, .05, .9});
 		cont.setLogger(System.out);
 
+		
 		IBPMModelOptions<IFeaturalChild,FHMMX> opts = new IBPMModelOptions<IFeaturalChild,FHMMX>(cont, ass);
-		opts.maxIterations =0; 
-		opts.alpha = .1;
+		opts.maxIterations = 0; 
+		opts.alpha = 1;
 		opts.savePath = out;
 		opts.finalize = true;
-		opts.max_finalize_iterations = 3;
+		opts.max_finalize_iterations = 2;
 		mix.learn(opts);
 	}
 	

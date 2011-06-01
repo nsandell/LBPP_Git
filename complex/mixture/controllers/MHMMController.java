@@ -6,86 +6,55 @@ import java.util.HashSet;
 import java.util.Vector;
 
 import bn.BNException;
-import bn.distributions.DiscreteCPT;
-import bn.distributions.DiscreteCPTUC;
 import bn.dynamic.IDynamicBayesNet;
-import bn.dynamic.IFDiscDBNNode;
 import complex.CMException;
+import complex.IParentProcess;
+import complex.latents.LatentFactory;
+import complex.mixture.IMixtureChild;
 import complex.mixture.MixtureModelController;
 
-public class MHMMController extends MixtureModelController<MHMMChild,MHMMX> {
+public class MHMMController extends MixtureModelController {
 	
 
-	public MHMMController(IDynamicBayesNet network, Vector<MHMMChild> children, MHMMParameterPrior priors, int ns)
+	public MHMMController(IDynamicBayesNet network, Vector<? extends IMixtureChild> children, LatentFactory lf)
 	{
 		super(children);
 		this.network = network;
-		this.priors = priors;
-		this.ns = ns;
 	}
 	
-	public MHMMController(IDynamicBayesNet network, Vector<MHMMChild> children, MHMMParameterPrior priors, int ns, boolean lockMCParams)
-	{
-		this(network,children,priors,ns);
-		this.lockMCParams = lockMCParams;
-	}
-	private boolean lockMCParams =  false;
-
-	public static interface MHMMParameterPrior
-	{
-		public double evaluate(DiscreteCPT A);
-		public double evaluate(DiscreteCPTUC pi);
-
-		public DiscreteCPT initialSampleA();
-		public DiscreteCPTUC initialSamplePi();
-		public DiscreteCPT posteriorSampleA(DiscreteCPT A, int T);
-		public DiscreteCPTUC posteriorSamplePi(DiscreteCPTUC pi);
-	}
-
 	@Override
-	protected void deleteParentI(MHMMX parent) throws CMException
+	protected void deleteParentI(IParentProcess parent) throws CMException
 	{
 		if(this.getChildren(parent).size()!=0)
 			throw new CMException("Cannot have an orphaned observation sequence in an mHMM!");
 		try {
 			this.network.removeNode(parent.getName());
 			this.parentNames.remove(parent.getName());
-			this.killID(((MHMMX)parent).ID);
+			this.killID(parent.id());
 		} catch(BNException e) {
 			throw new CMException("Failed to remove node " + parent.getName() + " : " + e.toString());
 		}
 	}
 
 	@Override
-	protected MHMMX newParentI() throws CMException {
-		try {
-			int id = this.nextID();
-			IFDiscDBNNode newp = network.addDiscreteNode("X"+id, this.ns);
-			newp.setInitialDistribution(this.priors.initialSamplePi());
-			newp.setAdvanceDistribution(this.priors.initialSampleA());
-			this.network.addInterEdge(newp, newp);
-			MHMMX parent = new MHMMX(newp, id);
-			this.parentNames.add("X"+id);
-			if(this.lockMCParams)
-				parent.xnd.lockParameters();
-			return parent;
-		} catch(BNException e) {
-			throw new CMException("Failed to add a new node to network!");
-		}
+	protected IParentProcess newParentI() throws CMException {
+		int id = this.nextID();
+		//TODO  There's some ugliness as far as IDs/names... need to solidify where name is actually specified...
+		IParentProcess parent = this.lf.newLatent("X"+id,id,this.network);
+		this.parentNames.add("X"+id);
+		return parent;
 	}
 
 	@Override
-	protected void setParentI(MHMMChild child, MHMMX parent)
+	protected void setParentI(IMixtureChild child, IParentProcess parent)
 	throws CMException
 	{
 		try {
-			MHMMChild mchild = (MHMMChild)child;
-			MHMMX mp = (MHMMX)parent;
 
-			if(parents.containsKey(mchild))
-				this.network.removeIntraEdge(parents.get(mchild).xnd.getName(),mchild.hook().getName());
-			this.network.addIntraEdge(mp.xnd.getName(), mchild.hook().getName());
-			this.parents.put(mchild,mp);
+			if(parents.containsKey(child))
+				this.network.removeIntraEdge(parents.get(child).hook().getName(),child.hook().getName());
+			this.network.addIntraEdge(parent.hook().getName(), child.hook().getName());
+			this.parents.put(child,parent);
 		} catch(BNException e) {
 			throw new CMException("Error changing parent for node " + child.getName() + " : " + e.toString());
 		}
@@ -127,25 +96,24 @@ public class MHMMController extends MixtureModelController<MHMMChild,MHMMX> {
 		}
 	}
 
-	private HashMap<MHMMChild,MHMMX> parents = new HashMap<MHMMChild, MHMMX>();
+	private HashMap<IMixtureChild,IParentProcess> parents = new HashMap<IMixtureChild, IParentProcess>();
 	private Vector<String> parentNames = new Vector<String>();
 
 	@Override
-	public void optimizeChildParameters(MHMMChild child)
+	public void optimizeChildParameters(IMixtureChild child)
 	{
 		child.optimize();
 	}
 
-	public double runChain(MHMMX proc, int maxit, double conv) throws CMException
+	public double runChain(IParentProcess proc, int maxit, double conv) throws CMException
 	{
 		Vector<String> nodes = new Vector<String>();
-		nodes.add(proc.xnd.getName());
-		Vector<MHMMChild> children = this.getChildren(proc);
-		for(MHMMChild child : children)
+		nodes.add(proc.hook().getName());
+		Vector<IMixtureChild> children = this.getChildren(proc);
+		for(IMixtureChild child : children)
 			nodes.addAll(child.constituentNodeNames());
 
 		try {
-			//this.network.run_parallel_block(nodes,maxit,conv);
 			this.network.run_parallel_queue(maxit,conv,nodes);
 			double ll = this.network.getLogLikelihood();
 
@@ -167,11 +135,11 @@ public class MHMMController extends MixtureModelController<MHMMChild,MHMMX> {
 		}
 	}
 	
-	public double learnChain(MHMMX proc, int maxrun, double runconv, int maxlearn, double learnconv) throws CMException
+	public double learnChain(IParentProcess proc, int maxrun, double runconv, int maxlearn, double learnconv) throws CMException
 	{
 		Vector<String> nodes = new Vector<String>();
-		nodes.add(proc.xnd.getName());
-		for(MHMMChild child : this.getChildren(proc))
+		nodes.add(proc.hook().getName());
+		for(IMixtureChild child : this.getChildren(proc))
 			nodes.addAll(child.constituentNodeNames());
 		
 		try {
@@ -224,9 +192,7 @@ public class MHMMController extends MixtureModelController<MHMMChild,MHMMX> {
 			this.minimum_available_id = id;
 	}
 
-	private int ns;
 	private HashSet<Integer> usedIDs = new HashSet<Integer>();
 	private int minimum_available_id = 0;
-	private MHMMParameterPrior priors;
-
+	private LatentFactory lf;
 }

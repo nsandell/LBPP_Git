@@ -9,21 +9,21 @@ import complex.CMException;
 import complex.IParentProcess;
 
 public class DirichletMixture {
-	public static class DMModelOptions<ChildProcess extends IMixtureChild, ParentProcess extends IParentProcess>
+	
+	public static class DMModelOptions
 	{
-		public DMModelOptions(MixtureModelController<ChildProcess,ParentProcess> model, double alpha)
+		public DMModelOptions(MixtureModelController model, double alpha)
 		{
 			this.controller = model;
 			this.alpha = alpha;
 		}
 		
-		public int maxAssignmentIterations = 1000;
 		public int maxRunIterations = 10, maxLearnIterations = 7;
 		public double runConv = 1e-5, learnConv = 1e-4;
 		
 		public String modelBaseName = null;
 		
-		public MixtureModelController<ChildProcess, ParentProcess> controller;
+		public MixtureModelController controller;
 		public double alpha;
 		public int[] initialAssignment;					// Initial assignment matrix (optional)
 		public int maxIterations = Integer.MAX_VALUE;   // maximum possible number of iterations
@@ -38,12 +38,10 @@ public class DirichletMixture {
 	 * @param obsConnectors Vector of nodes that will be used to connect the latent 
 	 * processes to the observed processes.
 	 */
-	public static <ChildProcess extends IMixtureChild, ParentProcess extends IParentProcess> 
-		void learnDirichletMixture(DMModelOptions<ChildProcess,ParentProcess> opts) throws CMException
+	public static void learnDirichletMixture(DMModelOptions opts) throws CMException
 	{
-
 		
-		Vector<ChildProcess> childProcs = opts.controller.getAllChildren();
+		Vector<IMixtureChild> childProcs = opts.controller.getAllChildren();
 		int M = opts.controller.getAllChildren().size();
 		if(opts.initialAssignment==null)
 		{
@@ -82,7 +80,7 @@ public class DirichletMixture {
 				throw new CMException("Initial assignment contains invalid assignment!");
 		}
 		
-		Vector<ParentProcess> latentProcs = opts.controller.getAllParents();
+		Vector<IParentProcess> latentProcs = opts.controller.getAllParents();
 		for(int i = 0; i < N; i++)
 			opts.controller.newParent();
 		
@@ -90,9 +88,9 @@ public class DirichletMixture {
 			opts.controller.setParent(childProcs.get(i),latentProcs.get(opts.initialAssignment[i]));
 		
 		opts.controller.trace("Initial Assigments: ");
-		for(ParentProcess parent : opts.controller.getAllParents())
+		for(IParentProcess parent : opts.controller.getAllParents())
 		{
-			for(ChildProcess child : opts.controller.getChildren(parent))
+			for(IMixtureChild child : opts.controller.getChildren(parent))
 				opts.controller.trace(parent.getName() + " -> " + child.getName());
 		}
 		opts.controller.trace("\n");
@@ -106,24 +104,24 @@ public class DirichletMixture {
 		opts.controller.trace("Starting:");
 			
 		int iteration = 1;
-		while(iteration <= opts.maxAssignmentIterations)
+		while(iteration <= opts.maxIterations)
 		{
 			
 			if(opts.modelBaseName!=null)
 				opts.controller.printNetwork(opts.modelBaseName+iteration+".lbp");
 			
-			for(ChildProcess cchild : childProcs)
+			for(IMixtureChild cchild : childProcs)
 			{
 				System.err.println("Testing " + cchild.getName() + " against:");
 
-				Vector<ParentProcess> subset = new Vector<ParentProcess>(latentProcs);
+				Vector<IParentProcess> subset = new Vector<IParentProcess>(latentProcs);
 				subset.remove(opts.controller.getParent(cchild));
 
 				int parenti = MathUtil.rand.nextInt(subset.size()+1);
 				if(parenti < subset.size())
 				{
-					ParentProcess parent = latentProcs.get(parenti);
-					ParentProcess currentParent = opts.controller.getParent(cchild);
+					IParentProcess parent = latentProcs.get(parenti);
+					IParentProcess currentParent = opts.controller.getParent(cchild);
 					if(parent==currentParent)
 						continue;
 					System.err.println("\t" + parent.getName());
@@ -152,10 +150,10 @@ public class DirichletMixture {
 				else
 				{
 					System.err.println("\tNew Parent.");
-					ParentProcess currentParent = opts.controller.getParent(cchild);
+					IParentProcess currentParent = opts.controller.getParent(cchild);
 					opts.controller.backupChildrenParameters(currentParent);
 
-					ParentProcess newParent = opts.controller.newParent();
+					IParentProcess newParent = opts.controller.newParent();
 					opts.controller.setParent(cchild, newParent);
 
 					opts.controller.learnChain(currentParent,opts.maxRunIterations,opts.runConv,opts.maxLearnIterations,opts.learnConv);
@@ -173,17 +171,17 @@ public class DirichletMixture {
 						ll = llprop + llprop_struct + llparam;
 				}
 				
-				Vector<ParentProcess> removes = new Vector<ParentProcess>();
-				for(ParentProcess proc : opts.controller.getAllParents())
+				Vector<IParentProcess> removes = new Vector<IParentProcess>();
+				for(IParentProcess proc : opts.controller.getAllParents())
 				{
 					if(opts.controller.getChildren(proc).size()==0)
 						removes.add(proc);
 				}
-				for(ParentProcess proc : removes)
+				for(IParentProcess proc : removes)
 					opts.controller.deleteParent(proc);
 
 				
-				for(ChildProcess child : childProcs)
+				for(IMixtureChild child : childProcs)
 					System.out.print(opts.controller.getParent(child).getName() + " " );
 				System.out.println();
 			}
@@ -191,19 +189,18 @@ public class DirichletMixture {
 			iteration++;
 		}
 		opts.controller.log("\nFinal Assigments: ");
-		for(ParentProcess parent : opts.controller.getAllParents())
+		for(IParentProcess parent : opts.controller.getAllParents())
 		{
-			for(ChildProcess child : opts.controller.getChildren(parent))
+			for(IMixtureChild child : opts.controller.getChildren(parent))
 				opts.controller.log(parent.getName() + " -> " + child.getName());
 		}
 	}
 	
-	private static <ChildProcess extends IMixtureChild, ParentProcess extends IParentProcess>
-		double llDP(DMModelOptions<ChildProcess, ParentProcess> opts)
+	private static double llDP(DMModelOptions opts)
 	{
 		double ll = 0;
 
-		for(ParentProcess par : opts.controller.getAllParents())
+		for(IParentProcess par : opts.controller.getAllParents())
 		{
 			for(int i = 2; i < opts.controller.getChildren(par).size(); i++)
 				ll += Math.log(i);

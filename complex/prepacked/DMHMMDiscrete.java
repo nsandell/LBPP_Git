@@ -6,16 +6,14 @@ import bn.BNException;
 
 import complex.CMException;
 import complex.prepacked.MHMM.IMixtureChildFactory;
+import complex.prepacked.MHMMDiscrete.BDCFactory;
 
-public class DMHMMPoisson
-{
+public class DMHMMDiscrete {
 	public static void main(String[] args) throws BNException, CMException
 	{
 		HashMap<String,IMixtureChildFactory> factories = new HashMap<String,IMixtureChildFactory>();
-		factories.put("default",new MHMMPoisson.BPCFactory());
-		factories.put("basic", new MHMMPoisson.BPCFactory());
-		factories.put("ar", new MHMMPoisson.ARCFactory());
-		factories.put("twit", new MHMMPoisson.TCFactory());
+		factories.put("default",new BDCFactory());
+		factories.put("basic", new BDCFactory());
 		DirichletMHMM.mhmm_main(args, factories);
 	}
 }

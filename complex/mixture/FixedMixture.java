@@ -9,9 +9,9 @@ import util.MathUtil;
 
 public class FixedMixture
 {
-	public static class FMModelOptions<ChildProcess extends IMixtureChild, ParentProcess extends IParentProcess>
+	public static class FMModelOptions
 	{
-		public FMModelOptions(MixtureModelController<ChildProcess,ParentProcess> model, int N)
+		public FMModelOptions(MixtureModelController model, int N)
 		{
 			this.controller = model;
 			this.N = N;
@@ -25,7 +25,7 @@ public class FixedMixture
 		
 		public String modelBaseName = null;
 		
-		public MixtureModelController<ChildProcess, ParentProcess> controller;
+		public MixtureModelController controller;
 		public int N;									// Number of latent processes
 		public int[] initialAssignment;					// Initial assignment matrix (optional)
 		public int maxIterations = Integer.MAX_VALUE;   // maximum possible number of iterations
@@ -40,14 +40,13 @@ public class FixedMixture
 	 * @param obsConnectors Vector of nodes that will be used to connect the latent 
 	 * processes to the observed processes.
 	 */
-	public static <ChildProcess extends IMixtureChild, ParentProcess extends IParentProcess> 
-		void learnFixedMixture(FMModelOptions<ChildProcess,ParentProcess> opts) throws CMException
+	public static void learnFixedMixture(FMModelOptions opts) throws CMException
 	{
-		Vector<ParentProcess> latentProcs = new Vector<ParentProcess>();
+		Vector<IParentProcess> latentProcs = new Vector<IParentProcess>();
 		for(int i = 0; i < opts.N; i++)
 			latentProcs.add(opts.controller.newParent());
 		
-		Vector<ChildProcess> childProcs = opts.controller.getAllChildren();
+		Vector<IMixtureChild> childProcs = opts.controller.getAllChildren();
 		
 		int N = opts.N;
 		int M = opts.controller.getAllChildren().size();
@@ -70,9 +69,9 @@ public class FixedMixture
 		}
 		
 		opts.controller.trace("Initial Assigments: ");
-		for(ParentProcess parent : opts.controller.getAllParents())
+		for(IParentProcess parent : opts.controller.getAllParents())
 		{
-			for(ChildProcess child : opts.controller.getChildren(parent))
+			for(IMixtureChild child : opts.controller.getChildren(parent))
 				opts.controller.trace(parent.getName() + " -> " + child.getName());
 		}
 		opts.controller.trace("\n");
@@ -97,14 +96,14 @@ public class FixedMixture
 			
 			changed = false;
 			
-			for(ChildProcess cchild : childProcs)
+			for(IMixtureChild cchild : childProcs)
 			{
-				ParentProcess originalParent = opts.controller.getParent(cchild);
-				ParentProcess bestParent = originalParent;
+				IParentProcess originalParent = opts.controller.getParent(cchild);
+				IParentProcess bestParent = originalParent;
 				cchild.backupParameters();
 				double bestLL = ll;
 				
-				for(ParentProcess parent : latentProcs)
+				for(IParentProcess parent : latentProcs)
 				{
 					if(parent==originalParent)
 						continue;
@@ -149,9 +148,9 @@ public class FixedMixture
 				break;
 		}
 		opts.controller.log("\nFinal Assigments: ");
-		for(ParentProcess parent : opts.controller.getAllParents())
+		for(IParentProcess parent : opts.controller.getAllParents())
 		{
-			for(ChildProcess child : opts.controller.getChildren(parent))
+			for(IMixtureChild child : opts.controller.getChildren(parent))
 				opts.controller.log(parent.getName() + " -> " + child.getName());
 		}
 	}

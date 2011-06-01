@@ -11,7 +11,6 @@ import bn.distributions.DiscreteCPTUC;
 import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
 import bn.distributions.DiscreteDistribution.InfiniteDiscreteDistribution;
 import bn.distributions.DiscreteCPT;
-import bn.distributions.Distribution;
 import bn.distributions.SwitchingPoisson;
 import bn.dynamic.IDBNNode;
 import bn.dynamic.IDynamicBayesNet;
@@ -19,13 +18,13 @@ import bn.dynamic.IFDiscDBNNode;
 import bn.dynamic.IInfDiscEvDBNNode;
 import complex.CMException;
 import complex.IParentProcess;
-import complex.mixture.controllers.MHMMChild;
-import complex.prepacked.MHMM.MHMMChildFactory;
+import complex.mixture.IMixtureChild;
+import complex.prepacked.MHMM.IMixtureChildFactory;
 
 public class MHMMPoisson
 {
 	
-	private static class ARCFactory implements MHMMChildFactory
+	public static class ARCFactory implements IMixtureChildFactory
 	{
 		public void setArg(String arg) throws CMException
 		{
@@ -34,7 +33,7 @@ public class MHMMPoisson
 		int nsar = 2;
 		
 		@Override
-		public MHMMChild getChild(IDynamicBayesNet net, int nameidx, int ns,
+		public IMixtureChild getChild(IDynamicBayesNet net, int nameidx, int ns,
 				int[] observations) {
 			try {
 				return new HiddenARPoiss(net, nameidx, ns, nsar, observations);
@@ -45,11 +44,11 @@ public class MHMMPoisson
 		}
 	}
 	
-	private static class BPCFactory implements MHMMChildFactory
+	public static class BPCFactory implements IMixtureChildFactory
 	{
 
 		@Override
-		public MHMMChild getChild(IDynamicBayesNet net, int nameidx, int ns,
+		public IMixtureChild getChild(IDynamicBayesNet net, int nameidx, int ns,
 				int[] observations) {
 			try {
 				IInfDiscEvDBNNode nd = net.addDiscreteEvidenceNode("Y"+nameidx, observations);
@@ -71,11 +70,11 @@ public class MHMMPoisson
 		
 	}
 	
-	private static class TCFactory implements MHMMChildFactory
+	public static class TCFactory implements IMixtureChildFactory
 	{
 
 		@Override
-		public MHMMChild getChild(IDynamicBayesNet net, int nameidx, int ns,
+		public IMixtureChild getChild(IDynamicBayesNet net, int nameidx, int ns,
 				int[] observations) {
 			try {
 				return new Twitter(net, nameidx, observations);
@@ -91,7 +90,7 @@ public class MHMMPoisson
 		
 	}
 	
-	private static class Twitter implements MHMMChild
+	public static class Twitter implements IMixtureChild
 	{
 		public Twitter(IDynamicBayesNet net, int id, int[] obs) throws BNException
 		{
@@ -186,10 +185,7 @@ public class MHMMPoisson
 		}
 	}
 	
-	
-	//TODO This isn't a well thought out child.  Individual chains might as well be responsible
-	// for observations as much as the shared chains!
-	private static class HiddenARPoiss implements MHMMChild
+	public static class HiddenARPoiss implements IMixtureChild
 	{
 		public HiddenARPoiss(IDynamicBayesNet net, int id, int nsx, int nsar, int[] observations) throws BNException
 		{
@@ -291,71 +287,12 @@ public class MHMMPoisson
 		}
 	}
 	
-	private static class BasicPoissChild implements MHMMChild
+	public static class BasicPoissChild extends IMixtureChild.MixtureSingleNodeChild
 	{
 		public BasicPoissChild(IInfDiscEvDBNNode node)
 		{
-			this.node = node;
+			super(node);
 		}
-		private IInfDiscEvDBNNode node;
-		
-		@Override
-		public String getName() {
-			return node.getName();
-		}
-
-		@Override
-		public double getDisagreement(int t) {
-			return node.conditionalLL(t);
-		}
-		
-		public Collection<String> constituentNodeNames()
-		{
-			Vector<String> names = new Vector<String>();
-			names.add(node.getName());
-			return names;
-		}
-
-		@Override
-		public IDBNNode hook() {
-			return node;
-		}
-
-		@Override
-		public void optimize()
-		{
-			try {
-				this.node.optimizeParameters();
-			} catch(BNException e) {
-				System.err.println("Failed to optimize node " + this.getName() + ":" + e.toString());
-			}
-		}
-
-		@Override
-		public void backupParameters() throws CMException{
-			try {
-				this.backupDist = this.node.getAdvanceDistribution().copy();
-			} catch(BNException e) {
-				throw new CMException("Failed to backup distribution for node " + this.getName() + " : " + e.toString());
-			}
-		}
-
-		@Override
-		public void restoreParameters() throws CMException {
-			if(this.backupDist!=null)
-			{
-				try {
-					this.node.setAdvanceDistribution(this.backupDist);
-				} catch(BNException e) {
-					throw new CMException("Failed to backup distribution for node " + this.getName() + " : " + e.toString());
-				}
-			}
-		}
-	
-		@Override
-		public void setParent(IParentProcess rent) {}
-		
-		Distribution backupDist = null;
 
 		@Override
 		public double parameterLL() {
@@ -365,7 +302,7 @@ public class MHMMPoisson
 
 	public static void main(String[] args) throws BNException, CMException
 	{
-		HashMap<String,MHMMChildFactory> factories = new HashMap<String,MHMMChildFactory>();
+		HashMap<String,IMixtureChildFactory> factories = new HashMap<String,IMixtureChildFactory>();
 		factories.put("default",new BPCFactory());
 		factories.put("basic", new BPCFactory());
 		factories.put("ar", new ARCFactory());

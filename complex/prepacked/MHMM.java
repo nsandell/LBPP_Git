@@ -1,11 +1,8 @@
 package complex.prepacked;
 
-import java.io.BufferedReader;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -19,103 +16,28 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import util.Parser;
-
-
 import bn.BNException;
-import bn.commandline.distributions.CPDCreator;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
-import bn.distributions.Distribution;
 import bn.dynamic.IDynamicBayesNet;
 import bn.impl.dynbn.DynamicNetworkFactory;
 
 import complex.CMException;
+import complex.latents.FiniteMarkovChain;
 import complex.mixture.FixedMixture;
 import complex.mixture.FixedMixture.FMModelOptions;
+import complex.mixture.IMixtureChild;
 import complex.mixture.controllers.MHMMController;
-import complex.mixture.controllers.MHMMChild;
-import complex.mixture.controllers.MHMMController.MHMMParameterPrior;
-import complex.mixture.controllers.MHMMX;
 
 public class MHMM
 {
-	public static interface MHMMChildFactory
+	public static interface IMixtureChildFactory
 	{
-		public MHMMChild getChild(IDynamicBayesNet net, int nameidx, int ns, int[] observations);
+		public IMixtureChild getChild(IDynamicBayesNet net, int nameidx, int ns, int[] observations);
 		public void setArg(String arg) throws CMException;
 	}
 	
-	static class Priors implements MHMMParameterPrior
-	{
-		
-		public Priors(String filename) throws IOException, CMException
-		{
-			Parser parse = new Parser(new BufferedReader(new FileReader(filename)), System.err, System.err, true, true);
-			HashMap<String, Distribution> dists = new HashMap<String, Distribution>();
-			parse.addHandler(CPDCreator.getCreator(dists));
-			parse.go();
-			if(!dists.containsKey("A") || !dists.containsKey("pi") || !(dists.get("A") instanceof DiscreteCPT) || !(dists.get("pi") instanceof DiscreteCPTUC))
-				throw new CMException("Expected priors file to contain a definition of an A Matrix and a Pi Vector.");
-			this.pi= (DiscreteCPTUC)dists.get("pi");
-			this.A = (DiscreteCPT)dists.get("A");
-		}
-		
-		public Priors(int Ns) throws BNException
-		{
-			double[] piv = new double[Ns]; piv[0] = .9;
-			for(int j = 1; j < piv.length; j++)
-				piv[j] = (.1)/(piv.length-1);
-			double[][] Av = new double[Ns][Ns];
-			for(int i = 0; i < Ns; i++)
-			{
-				for(int j = 0; j < Ns; j++)
-				{
-					if(i==j)
-						Av[i][j] = .9;
-					else
-						Av[i][j] = .1/(Ns-1);
-				}
-			}
-			this.pi = new DiscreteCPTUC(piv);
-			this.A = new DiscreteCPT(Av, Ns);
-		}
-
-		@Override
-		public double evaluate(DiscreteCPT A) {
-			return 1;
-		}
-
-		@Override
-		public double evaluate(DiscreteCPTUC pi) {
-			return 1;
-		}
-
-		@Override
-		public DiscreteCPT initialSampleA() {
-			return  this.A;
-		}
-
-		@Override
-		public DiscreteCPTUC initialSamplePi() {
-			return this.pi;
-		}
-
-		@Override
-		public DiscreteCPT posteriorSampleA(DiscreteCPT A, int T) {
-			return A;
-		}
-
-		@Override
-		public DiscreteCPTUC posteriorSamplePi(DiscreteCPTUC pi) {
-			return pi;
-		}
-		
-		DiscreteCPT A;
-		DiscreteCPTUC pi;
-	}
-	
-	public static void mhmm_main(String[] args, HashMap<String, MHMMChildFactory> childFactories) throws BNException, CMException
+	public static void mhmm_main(String[] args, HashMap<String, IMixtureChildFactory> childFactories) throws BNException, CMException
 	{
 		Options options = new Options();
 		options.addOption("v", "verbose", false, "Use verbose mode.");
@@ -208,15 +130,19 @@ public class MHMM
 			childFactories.get(ctype).setArg(carg);
 		
 		IDynamicBayesNet network = DynamicNetworkFactory.newDynamicBayesNet(o[0].length);
-		Vector<MHMMChild> children = new Vector<MHMMChild>();
+		Vector<IMixtureChild> children = new Vector<IMixtureChild>();
 		for(int i = 0; i < o.length; i++)
 		{
-			MHMMChild child = childFactories.get(ctype).getChild(network,i,Ns,o[i]);
+			IMixtureChild child = childFactories.get(ctype).getChild(network,i,Ns,o[i]);
 			if(child==null)
 				return;
 			children.add(child);
 		}
 		
+		FiniteMarkovChain.FiniteMCPrior prior = null;
+		
+		//TODO Allow for specification of priors...
+		/*
 		Priors priors;
 		if(line.hasOption("priorFile"))
 		{
@@ -226,9 +152,32 @@ public class MHMM
 		}
 		else
 			priors = new Priors(Ns);
-
-		MHMMController cont = new MHMMController(network, children, priors, Ns);
-		FMModelOptions<MHMMChild,MHMMX> opts = new FMModelOptions<MHMMChild,MHMMX>(cont, N);
+		*/
+		
+		// Default prior uniform with this starting point
+		if(prior==null)
+		{
+			double[] piv = new double[Ns]; piv[0] = .9;
+			for(int j = 1; j < piv.length; j++)
+				piv[j] = (.1)/(piv.length-1);
+			double[][] Av = new double[Ns][Ns];
+			for(int i = 0; i < Ns; i++)
+			{
+				for(int j = 0; j < Ns; j++)
+				{
+					if(i==j)
+						Av[i][j] = .9;
+					else
+						Av[i][j] = .1/(Ns-1);
+				}
+			}
+			
+			prior = new FiniteMarkovChain.UniformFiniteMCPrior(
+					new DiscreteCPT(Av, Ns),new DiscreteCPTUC(piv),Ns);
+		}
+		
+		MHMMController cont = new MHMMController(network, children, new FiniteMarkovChain.FiniteMarkovChainFactory(prior));
+		FMModelOptions opts = new FMModelOptions(cont, N);
 
 		String cno = "";
 		try

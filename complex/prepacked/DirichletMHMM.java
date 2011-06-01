@@ -1,11 +1,8 @@
 package complex.prepacked;
 
-import java.io.BufferedReader;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
 import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -19,30 +16,24 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
-import util.Parser;
-
-
 import bn.BNException;
-import bn.commandline.distributions.CPDCreator;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
-import bn.distributions.Distribution;
 import bn.dynamic.IDynamicBayesNet;
 import bn.impl.dynbn.DynamicNetworkFactory;
 
 import complex.CMException;
+import complex.latents.FiniteMarkovChain;
 import complex.mixture.DirichletMixture;
 import complex.mixture.DirichletMixture.DMModelOptions;
+import complex.mixture.IMixtureChild;
 import complex.mixture.controllers.MHMMController;
-import complex.mixture.controllers.MHMMChild;
-import complex.mixture.controllers.MHMMController.MHMMParameterPrior;
-import complex.mixture.controllers.MHMMX;
-import complex.prepacked.MHMM.MHMMChildFactory;
+import complex.prepacked.MHMM.IMixtureChildFactory;
 import complex.prepacked.MHMMDiscrete.BDCFactory;
 
 public class DirichletMHMM
 {
-	
+	/*
 	static class Priors implements MHMMParameterPrior
 	{
 		
@@ -110,9 +101,9 @@ public class DirichletMHMM
 		
 		DiscreteCPT A;
 		DiscreteCPTUC pi;
-	}
+	}*/
 	
-	public static void mhmm_main(String[] args, HashMap<String, MHMMChildFactory> childFactories) throws BNException, CMException
+	public static void mhmm_main(String[] args, HashMap<String, IMixtureChildFactory> childFactories) throws BNException, CMException
 	{
 		Options options = new Options();
 		options.addOption("v", "verbose", false, "Use verbose mode.");
@@ -207,15 +198,19 @@ public class DirichletMHMM
 			childFactories.get(ctype).setArg(carg);
 		
 		IDynamicBayesNet network = DynamicNetworkFactory.newDynamicBayesNet(o[0].length);
-		Vector<MHMMChild> children = new Vector<MHMMChild>();
+		Vector<IMixtureChild> children = new Vector<IMixtureChild>();
 		for(int i = 0; i < o.length; i++)
 		{
-			MHMMChild child = childFactories.get(ctype).getChild(network,i,Ns,o[i]);
+			IMixtureChild child = childFactories.get(ctype).getChild(network,i,Ns,o[i]);
 			if(child==null)
 				return;
 			children.add(child);
 		}
-		
+	
+		FiniteMarkovChain.FiniteMCPrior prior = null;
+
+		//TODO Allow for specification of priors...
+		/*
 		Priors priors;
 		if(line.hasOption("priorFile"))
 		{
@@ -225,10 +220,32 @@ public class DirichletMHMM
 		}
 		else
 			priors = new Priors(Ns);
+		*/
 		
-		MHMMController cont = new MHMMController(network, children, priors, Ns);
-		//FMModelOptions<MHMMChild,MHMMX> opts = new FMModelOptions<MHMMChild,MHMMX>(cont, N);
-		DMModelOptions<MHMMChild, MHMMX> opts = new DMModelOptions<MHMMChild, MHMMX>(cont, 1.0);
+		// Default prior uniform with this starting point
+		if(prior==null)
+		{
+			double[] piv = new double[Ns]; piv[0] = .9;
+			for(int j = 1; j < piv.length; j++)
+				piv[j] = (.1)/(piv.length-1);
+			double[][] Av = new double[Ns][Ns];
+			for(int i = 0; i < Ns; i++)
+			{
+				for(int j = 0; j < Ns; j++)
+				{
+					if(i==j)
+						Av[i][j] = .9;
+					else
+						Av[i][j] = .1/(Ns-1);
+				}
+			}
+			
+			prior = new FiniteMarkovChain.UniformFiniteMCPrior(
+					new DiscreteCPT(Av, Ns),new DiscreteCPTUC(piv),Ns);
+		}
+		
+		MHMMController cont = new MHMMController(network, children, new FiniteMarkovChain.FiniteMarkovChainFactory(prior));
+		DMModelOptions opts = new DMModelOptions(cont, 1.0);
 		
 		int[][] assignm = null;
 		int[] assign = null;
@@ -267,7 +284,7 @@ public class DirichletMHMM
 				opts.learnConv = Double.parseDouble(line.getOptionValue("emconvergence"));
 			cno = "maxiterations";
 			if(line.hasOption("maxiterations"))
-				opts.maxAssignmentIterations = Integer.parseInt(line.getOptionValue("maxiterations"));
+				opts.maxIterations = Integer.parseInt(line.getOptionValue("maxiterations"));
 		} catch(NumberFormatException nfe) {
 			System.err.println("Invalid option "+cno+"="+line.getOptionValue(cno));
 		}
@@ -291,16 +308,7 @@ public class DirichletMHMM
 			System.err.println("Couldn't write to output file " + line.getOptionValue("output"));
 		}
 		
-		/*
-		opts.initialAssignment = new int[37];
-		for(int i = 0; i < 19; i++)
-			opts.initialAssignment[i] = 0;
-		for(int i = 0; i < 18; i++)
-			opts.initialAssignment[i+19] = 1;*/
-		//FixedMixture.learnFixedMixture(opts);
-		opts.maxIterations = 1000;
 		DirichletMixture.learnDirichletMixture(opts);
-		
 		if(outfile!=null)
 		{
 			network.print(outfile);
@@ -310,7 +318,7 @@ public class DirichletMHMM
 	
 	public static void main(String[] args) throws Exception
 	{
-		HashMap<String,MHMMChildFactory> childFactories = new HashMap<String,MHMMChildFactory>();
+		HashMap<String,IMixtureChildFactory> childFactories = new HashMap<String,IMixtureChildFactory>();
 		childFactories.put("default",new BDCFactory());
 		childFactories.put("basic", new BDCFactory());	
 		DirichletMHMM.mhmm_main(args, childFactories);

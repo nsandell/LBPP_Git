@@ -8,7 +8,7 @@ import bn.commandline.StaticNetCommandLine;
  * the arguments.
  * @author Nils F. Sandell
  */
-public class MainWrapper {
+public class CommandLine {
 	
 	public static void main(String[] args)
 	{

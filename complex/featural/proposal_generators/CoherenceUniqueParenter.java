@@ -4,24 +4,17 @@ import java.util.Vector;
 
 import util.MathUtil;
 
-import complex.IParentProcess;
 import complex.featural.FeaturalModelController;
 import complex.featural.IFeaturalChild;
 import complex.featural.ProposalAction;
 import complex.featural.ProposalGenerator;
 
-public class CoherenceUniqueParenter<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> implements ProposalGenerator<ChildProcess,ParentProcess> {
+public class CoherenceUniqueParenter implements ProposalGenerator {
 	
-	public CoherenceUniqueParenter(double pcspl, double prspl, double prmerge, double pdmerge)
-	{
-		this.pcspl = pcspl; this.prspl = prspl; this.prmerge = prmerge; this.pdmerge = pdmerge;
-	}
-	double pcspl; double prspl; double prmerge; double pdmerge;
-
 	@Override
-	public Proposal<ChildProcess,ParentProcess> generate(FeaturalModelController<ChildProcess,ParentProcess> cont) {
+	public Proposal generate(FeaturalModelController cont) {
 		
-		Vector<ChildProcess> children = cont.getObservedNodes();
+		Vector<IFeaturalChild> children = cont.getObservedNodes();
 		double[] coherence = new double[children.size()];
 		double sum = 0;
 		for(int i = 0; i < coherence.length; i++) {
@@ -37,10 +30,8 @@ public class CoherenceUniqueParenter<ChildProcess extends IFeaturalChild, Parent
 		
 		int selection = MathUtil.discreteSample(coherence);
 		System.out.println("Attempting to give " + children.get(selection).getName() + " a unique parent based on incoherence.");
-		double fp = 1;//this.pcspl*coherence[selection] + this.prspl/coherence.length;
-		double bp = 1;//this.prmerge/coherence.length/(coherence.length+1); //TODO determine if we want to exactly determine reverse move probability
 	
-		return new Proposal<ChildProcess,ParentProcess>(fp,bp,new ProposalAction.UniqueParentAddAction<ChildProcess, ParentProcess>(children.get(selection),true));
+		return new Proposal(new ProposalAction.UniqueParentAddAction(children.get(selection),true));
 	}
 
 	@Override

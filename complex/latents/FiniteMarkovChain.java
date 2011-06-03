@@ -1,17 +1,17 @@
 package complex.latents;
 
+import java.io.PrintStream;
+
 import bn.BNException;
 import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
-import bn.distributions.DiscreteDistribution.DiscreteFiniteDistribution;
-import bn.dynamic.IDBNNode;
 import bn.dynamic.IDynamicBayesNet;
 import bn.dynamic.IFDiscDBNNode;
 import bn.messages.FiniteDiscreteMessage;
 import complex.CMException;
 import complex.IParentProcess;
 
-public class FiniteMarkovChain implements IParentProcess {
+public class FiniteMarkovChain extends SingleNodeParent<IFDiscDBNNode> {
 	
 	public static abstract class FiniteMCPrior
 	{
@@ -119,43 +119,34 @@ public class FiniteMarkovChain implements IParentProcess {
 		
 		@Override
 		public IParentProcess newLatent(String name, int id, IDynamicBayesNet net) throws CMException {
-			return new FiniteMarkovChain(net,name,this.prior,id);
+			try {
+				return new FiniteMarkovChain(net,name,this.prior,id);
+			} catch(BNException e) {
+				throw new CMException("Failed to create new finite markov chain latent : " + e.toString());
+			}
 		}
 		
 		FiniteMCPrior prior;
 	}
 
-	FiniteMarkovChain(IDynamicBayesNet net, String name, FiniteMCPrior prior, int id) throws CMException
+	private FiniteMarkovChain(IDynamicBayesNet net, String name, FiniteMCPrior prior, int id) throws CMException, BNException //TODO Find a better fix for this??
 	{
+		super(net.addDiscreteNode(name, prior.ns), id);
 		try {
-			this.id = id;
-			this.xnd = net.addDiscreteNode(name, prior.ns);
 			this.prior = prior;
-			this.xnd.setInitialDistribution(prior.initialPi());
-			this.xnd.setAdvanceDistribution(prior.initialA());
-			net.addInterEdge(this.xnd, this.xnd);
+			this.nd.setInitialDistribution(prior.initialPi());
+			this.nd.setAdvanceDistribution(prior.initialA());
+			net.addInterEdge(this.nd, this.nd);
 		} catch(BNException e) {
 			throw new CMException("Failed to create finite markov chain latent process : " + e.toString());
 		}
-	}
-	int id;//TODO push ID up an inheritance level
-	
-	public int id()
-	{
-		return this.id;
-	}
-	
-	@Override
-	public String getName()
-	{
-		return this.xnd.getName();
 	}
 	
 	@Override
 	public FiniteDiscreteMessage marginal(int t)
 	{
 		try {
-			return this.xnd.getMarginal(t);
+			return this.nd.getMarginal(t);
 		} catch(BNException e) {
 			System.err.println("Error : " + e.toString());
 			return null;
@@ -163,37 +154,35 @@ public class FiniteMarkovChain implements IParentProcess {
 	}
 	
 	@Override
-	public void backupParameters() {
-		if(!this.xnd.isLocked())
-		{
-			this.Abackup = xnd.getAdvanceDistribution();
-			this.pibackup = xnd.getInitialDistribution();
-		}
-	}
-	
-	@Override
-	public void restoreParameters() {
-		try {
-		if(!this.xnd.isLocked() && this.Abackup != null && this.pibackup !=null)
-		{
-			this.xnd.setAdvanceDistribution(this.Abackup);
-			this.xnd.setInitialDistribution(this.pibackup);
-		}
-		} catch(BNException e) {
-			System.err.println("Failed to restore parameters for node " + this.getName());
-		}
-	}
-	
-	public IDBNNode hook() {
-		return this.xnd;
-	}
-	
-	@Override
 	public double parameterLL() {
-		return this.prior.parameterLL((DiscreteCPT)this.xnd.getAdvanceDistribution(), (DiscreteCPTUC)this.xnd.getInitialDistribution());
+		return this.prior.parameterLL((DiscreteCPT)this.nd.getAdvanceDistribution(), (DiscreteCPTUC)this.nd.getInitialDistribution());
 	}
 	
-	private IFDiscDBNNode xnd;
-	private DiscreteFiniteDistribution Abackup = null, pibackup = null;
+	@Override
+	public void printMarginal(PrintStream ps) throws CMException {
+		try {
+			for(int j = 0; j < this.nd.getCardinality(); j++)
+			{
+				ps.print(this.nd.getMarginal(0).getValue(j));
+				for(int i = 1; i < this.nd.getNetwork().getT(); i++)
+				{
+					ps.print(" " + this.nd.getMarginal(i).getValue(j));
+				}
+				ps.println();
+			}
+		} catch(BNException e) {
+			throw new CMException("Error while printing marginal for latent Markov chain: " + e.toString());
+		}
+	}
+	
+	public void kill() throws CMException
+	{
+		try {
+			this.nd.getNetwork().removeNode(this.nd);
+		} catch(BNException e) {
+			throw new CMException("Failure to remove latent parent " + this.getName() + ": " + e.toString());
+		}
+	}
+	
 	private FiniteMCPrior prior;
 }

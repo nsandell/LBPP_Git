@@ -6,10 +6,10 @@ import util.MathUtil;
 import complex.IParentProcess;
 import complex.featural.FeaturalModelController;
 import complex.featural.IFeaturalChild;
+import complex.featural.MHProposalGenerator;
 import complex.featural.ProposalAction;
-import complex.featural.ProposalGenerator;
 
-public class RandomAdderGenerator<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> implements ProposalGenerator<ChildProcess,ParentProcess>
+public class RandomAdderGenerator implements MHProposalGenerator
 {
 	public RandomAdderGenerator(double pmerge, double psplit)
 	{
@@ -22,15 +22,15 @@ public class RandomAdderGenerator<ChildProcess extends IFeaturalChild, ParentPro
 		return "Random coparenter";
 	}
 	
-	public Proposal<ChildProcess,ParentProcess> generate(FeaturalModelController<ChildProcess,ParentProcess> cont)
+	public MHProposal generate(FeaturalModelController cont)
 	{
 		int N = cont.getLatentNodes().size();
 		if(N < 1)
 			return null;
-		ParentProcess lat = cont.randomLatent();
-		HashSet<ChildProcess> children = cont.getChildren(lat);
-		HashSet<ChildProcess> splits = new HashSet<ChildProcess>();
-		for(ChildProcess child : children)
+		IParentProcess lat = cont.randomLatent();
+		HashSet<IFeaturalChild> children = cont.getChildren(lat);
+		HashSet<IFeaturalChild> splits = new HashSet<IFeaturalChild>();
+		for(IFeaturalChild child : children)
 			if(MathUtil.rand.nextDouble() < .5)
 				splits.add(child);
 		
@@ -42,7 +42,7 @@ public class RandomAdderGenerator<ChildProcess extends IFeaturalChild, ParentPro
 		
 		cont.log("Proposing adding coparent to node " + lat.getName());
 		
-		return new Proposal<ChildProcess,ParentProcess>(fp, bp, new ProposalAction.MultiUniqueParentAddAction<ChildProcess,ParentProcess>(splits,true));
+		return new MHProposal(fp, bp, new ProposalAction.MultiUniqueParentAddAction(splits,true));
 	}
 
 	

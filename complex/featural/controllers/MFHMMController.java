@@ -11,10 +11,12 @@ import bn.distributions.DiscreteCPT;
 import bn.distributions.DiscreteCPTUC;
 import bn.dynamic.IDynamicBayesNet;
 import complex.CMException;
+import complex.IParentProcess;
 import complex.featural.IFeaturalChild;
 import complex.featural.FeaturalModelController;
+import complex.latents.LatentFactory;
 
-public class MFHMMController extends FeaturalModelController<IFeaturalChild, FHMMX> {
+public class MFHMMController extends FeaturalModelController {
 	
 	public static interface MFHMMInitialParamGenerator
 	{
@@ -24,28 +26,26 @@ public class MFHMMController extends FeaturalModelController<IFeaturalChild, FHM
 		public double getPi_LL(DiscreteCPTUC pi);
 	}
 	
-	public MFHMMController(IDynamicBayesNet network, Vector<IFeaturalChild> observations, MFHMMInitialParamGenerator paramgen, int Ns) throws BNException
+	public MFHMMController(IDynamicBayesNet network, Vector<IFeaturalChild> observations, LatentFactory lf) throws BNException
 	{
 		super(observations);
 		this.network = network;
 		for(IFeaturalChild child : observations)
 			this.observables.add(child);
-		this.paramgen = paramgen;
-		this.ns = Ns;
+		this.lf = lf;
 	}
 
-	public MFHMMController(IDynamicBayesNet network, Vector<IFeaturalChild> observations, MFHMMInitialParamGenerator paramgen, int Ns, boolean lockParameters) throws BNException
+	public MFHMMController(IDynamicBayesNet network, Vector<IFeaturalChild> observations, LatentFactory lf, boolean lockParameters) throws BNException
 	{
-		this(network,observations,paramgen,Ns);
+		this(network,observations,lf);
 		this.lockXParameters = lockParameters;
 	}
 	
 	public double parameterPosteriorLL()
 	{
 		double ll = 0;
-		for(FHMMX lat : this.getLatentNodes())
-			ll += this.paramgen.getA_LL((DiscreteCPT)lat.xnd.getAdvanceDistribution())
-				+ this.paramgen.getPi_LL((DiscreteCPTUC)lat.xnd.getInitialDistribution());
+		for(IParentProcess lat : this.getLatentNodes())
+			ll += lat.parameterLL();
 		for(IFeaturalChild child : this.getObservedNodes())
 			ll += child.parameterLL();
 		return ll;
@@ -54,56 +54,39 @@ public class MFHMMController extends FeaturalModelController<IFeaturalChild, FHM
 	@Override
 	public void saveStates(String dir) throws CMException
 	{
-		for(FHMMX par : this.latents)
+		for(IParentProcess par : this.latents)
 		{
 			try {
-			PrintStream ps = new PrintStream(dir+"/"+par.getName()+".dat");
-			for(int j = 0; j < ns; j++)
-			{
-				ps.print(par.xnd.getMarginal(0).getValue(j));
-				for(int i = 1; i < this.network.getT(); i++)
-				{
-					ps.print(" " + par.xnd.getMarginal(i).getValue(j));
-				}
-				ps.println();
-			}
+				PrintStream ps = new PrintStream(dir+"/"+par.getName()+".dat");
+				par.printMarginal(ps);
 			} catch(FileNotFoundException e) {
 				System.err.println("Failed to create state file: " + e.toString());
-			} catch(BNException e) {
-				System.err.println("Failed to create state file: " + e.toString());
-			}
+			} 
 		}
 	}
 
 	@Override
-	protected void killLatentModelI(FHMMX node) throws CMException {
+	protected void killLatentModelI(IParentProcess node) throws CMException {
 		try {
 			this.network.removeNode(node.getName());
-			this.killID(node.ID);
+			this.killID(node.id());
 		} catch(BNException e) { throw new CMException(e.getMessage()); }
 		catch(ClassCastException e) {throw new CMException("MFHMM Controller got invalid state ... really shouldn't happen.");}
 	}
 
 	@Override
-	protected FHMMX newLatentModelI() throws CMException {
-		try {
-			
-			int id = this.nextID();
-			FHMMX newNode = new FHMMX(this.network.addDiscreteNode("X"+id, this.ns),id);
+	protected IParentProcess newLatentModelI() throws CMException {
+		int id = this.nextID();
+		IParentProcess newNode = lf.newLatent("X"+id, id, this.network);
 
-			if(this.lockXParameters)
-				newNode.xnd.lockParameters();
-			
-			this.network.addInterEdge(newNode.xnd, newNode.xnd);
-			newNode.xnd.setInitialDistribution(this.paramgen.getInitialPi());
-			newNode.xnd.setAdvanceDistribution(this.paramgen.getInitialA());
-			
-			return newNode;
-		} catch(BNException e) { throw new CMException(e.getMessage()); }
+		if(this.lockXParameters)
+			newNode.lockParameters();
+
+		return newNode;
 	}
 
 	@Override
-	protected void disconnectI(FHMMX latent, IFeaturalChild observed)
+	protected void disconnectI(IParentProcess latent, IFeaturalChild observed)
 			throws CMException {
 		try {
 			this.network.removeIntraEdge(latent.getName(), observed.hook().getName());
@@ -111,7 +94,7 @@ public class MFHMMController extends FeaturalModelController<IFeaturalChild, FHM
 	}
 
 	@Override
-	protected void connectI(FHMMX latent, IFeaturalChild observed)
+	protected void connectI(IParentProcess latent, IFeaturalChild observed)
 			throws CMException {
 		try {
 			this.network.addIntraEdge(latent.getName(), observed.hook().getName());
@@ -138,30 +121,8 @@ public class MFHMMController extends FeaturalModelController<IFeaturalChild, FHM
 			this.minimum_available_id = id;
 	}
 	
-	@Override
-	protected void backupLatentModelParameters(FHMMX latent, LatentBackup<IFeaturalChild, FHMMX> backup) {
-		try {
-			backup.advance = latent.xnd.getAdvanceDistribution().copy();
-			backup.init = latent.xnd.getInitialDistribution().copy();
-		} catch(BNException e) {
-			System.err.println("Failed to backup parameters for latent node " + latent.getName());
-		}
-	}
-
-	@Override
-	protected void restoreLatentModelParameters(FHMMX latent, LatentBackup<IFeaturalChild, FHMMX> backup) {
-		try {
-			latent.xnd.setAdvanceDistribution(backup.advance);
-			latent.xnd.setInitialDistribution(backup.init);
-		} catch(BNException e) {
-			System.err.println("Failed to backup parameters for latent node " + latent.getName());
-		}
-	}
-	
 	private boolean lockXParameters = false;
 	private HashSet<Integer> usedIDs = new HashSet<Integer>();
 	private int minimum_available_id = 0;
-	private int ns;
-	private MFHMMInitialParamGenerator paramgen;
-	
+	private LatentFactory lf;
 }

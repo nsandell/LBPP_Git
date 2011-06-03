@@ -6,18 +6,16 @@ import util.MathUtil;
 
 import complex.IParentProcess;
 import complex.featural.FeaturalModelController;
-import complex.featural.IFeaturalChild;
 import complex.featural.ProposalAction;
 import complex.featural.ProposalGenerator;
 import complex.metrics.UsageProvider;
 
-public class LowUseDeleter<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> implements ProposalGenerator<ChildProcess,ParentProcess> {
+public class LowUseDeleter implements ProposalGenerator {
 
 	@Override
-	public complex.featural.ProposalGenerator.Proposal<ChildProcess, ParentProcess> generate(
-			FeaturalModelController<ChildProcess, ParentProcess> cont) {
+	public Proposal generate(FeaturalModelController cont) {
 		
-		Vector<ParentProcess> parents = cont.getLatentNodes();
+		Vector<IParentProcess> parents = cont.getLatentNodes();
 		double[] dist = new double[parents.size()];
 	
 		double sum = 0;
@@ -33,7 +31,7 @@ public class LowUseDeleter<ChildProcess extends IFeaturalChild, ParentProcess ex
 		
 		System.out.println("Proposing deletion of " + parents.get(selection).getName());
 		
-		return new Proposal<ChildProcess, ParentProcess>(1, 1, new ProposalAction.DeleteAction<ChildProcess,ParentProcess>(parents.get(selection)));
+		return new Proposal(new ProposalAction.DeleteAction(parents.get(selection)));
 	}
 
 	@Override

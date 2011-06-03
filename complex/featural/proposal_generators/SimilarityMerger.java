@@ -3,29 +3,18 @@ package complex.featural.proposal_generators;
 import java.util.Vector;
 
 import util.MathUtil;
-
 import complex.IParentProcess;
 import complex.featural.FeaturalModelController;
-import complex.featural.IFeaturalChild;
 import complex.featural.ProposalAction;
 import complex.featural.ProposalGenerator;
 import complex.metrics.FinDiscMarginalDivergence;
 
-public class SimilarityMerger<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> implements ProposalGenerator<ChildProcess,ParentProcess> {
+public class SimilarityMerger implements ProposalGenerator {
 	
-	public SimilarityMerger(double smp, double rmp, double csp, double rsp)
-	{
-		this.smp = smp;
-		this.rmp = rmp;
-		this.csp = csp;
-		this.rsp = rsp;
-	}
-	double smp, rmp, csp, rsp;
-
 	@Override
-	public Proposal<ChildProcess,ParentProcess> generate(FeaturalModelController<ChildProcess,ParentProcess> cont)
+	public Proposal generate(FeaturalModelController cont)
 	{
-		Vector<ParentProcess> latents = cont.getLatentNodes();
+		Vector<IParentProcess> latents = cont.getLatentNodes();
 		if(latents.size()<2)
 			return null;
 		double[][] divergences = new double[latents.size()][latents.size()];
@@ -54,10 +43,7 @@ public class SimilarityMerger<ChildProcess extends IFeaturalChild, ParentProcess
 		
 		System.out.println("Proposing the merge of latent processes " + latents.get(row).getName() + " and " + latents.get(col).getName() + " based on similarity");
 		
-		double fp = 1;//this.smp*rowsum[row]*divergences[row][col] + this.rmp/latents.size()/(latents.size()-1);
-		double bp = 1;//this.rsp/(latents.size()+1)/latents.size(); //TODO decide whether we want exact backwards probabilities
-		
-		return new Proposal<ChildProcess,ParentProcess>(fp, bp, new ProposalAction.MergeAction<ChildProcess,ParentProcess>(latents.get(row),latents.get(col),true));
+		return new Proposal(new ProposalAction.MergeAction(latents.get(row),latents.get(col),true));
 	}
 
 	public static double smoother = 0;

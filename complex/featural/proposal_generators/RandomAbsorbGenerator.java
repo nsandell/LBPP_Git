@@ -2,14 +2,13 @@ package complex.featural.proposal_generators;
 
 import java.util.Vector;
 
-import complex.IParentProcess;
 import complex.featural.FeaturalModelController;
 import complex.featural.FeaturalModelController.LatentPair;
 import complex.featural.IFeaturalChild;
+import complex.featural.MHProposalGenerator;
 import complex.featural.ProposalAction;
-import complex.featural.ProposalGenerator;
 
-public class RandomAbsorbGenerator<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> implements ProposalGenerator<ChildProcess,ParentProcess>
+public class RandomAbsorbGenerator implements MHProposalGenerator
 {
 	public RandomAbsorbGenerator(double pabs, double pexp)
 	{
@@ -22,21 +21,21 @@ public class RandomAbsorbGenerator<ChildProcess extends IFeaturalChild, ParentPr
 		return "Random Absorbs";
 	}
 	
-	public Proposal<ChildProcess,ParentProcess> generate(FeaturalModelController<ChildProcess,ParentProcess> cont)
+	public MHProposal generate(FeaturalModelController cont)
 	{
 		int N = cont.getLatentNodes().size();
 		if(N < 2)
 			return null;
 		
-		LatentPair<ChildProcess,ParentProcess> pair = cont.randomLatentPair();
+		LatentPair pair = cont.randomLatentPair();
 		
 		if(pair==null)
 			return null;
 		
 		cont.log("Proposing that node " + pair.l1.getName() + " adds all the children of node " + pair.l2.getName());
 		
-		Vector<ChildProcess> newNds = new Vector<ChildProcess>();
-		for(ChildProcess child : cont.getChildren(pair.l2))
+		Vector<IFeaturalChild> newNds = new Vector<IFeaturalChild>();
+		for(IFeaturalChild child : cont.getChildren(pair.l2))
 			if(!cont.getChildren(pair.l1).contains(child))
 				newNds.add(child);
 		
@@ -48,7 +47,7 @@ public class RandomAbsorbGenerator<ChildProcess extends IFeaturalChild, ParentPr
 		double fp = this.pabs/((double)(N-1)*N);
 		double bp = this.pexp/((double)(N-1)*N);
 		
-		return new Proposal<ChildProcess,ParentProcess>(fp,bp,new ProposalAction.ConnectAction<ChildProcess,ParentProcess>(pair.l1, newNds));
+		return new MHProposal(fp,bp,new ProposalAction.ConnectAction(pair.l1, newNds));
 	}
 	
 	double pabs, pexp;

@@ -1,26 +1,10 @@
 package complex.featural;
 
 
-public interface ProposalGenerator
+public interface MHProposalGenerator extends ProposalGenerator
 {
-	public Proposal generate(FeaturalModelController cont);
+	public MHProposal generate(FeaturalModelController cont);
 	public String name();
-	
-	public static class Proposal
-	{
-		public Proposal(ProposalAction act)
-		{
-			this.act = act;
-		}
-		
-
-		ProposalAction action()
-		{
-			return this.act;
-		}
-		
-		private ProposalAction act;
-	}
 	
 	public static class MHProposal extends Proposal
 	{

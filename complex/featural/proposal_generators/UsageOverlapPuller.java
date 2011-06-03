@@ -6,17 +6,15 @@ import util.MathUtil;
 
 import complex.IParentProcess;
 import complex.featural.FeaturalModelController;
-import complex.featural.IFeaturalChild;
 import complex.featural.ProposalAction;
 import complex.featural.ProposalGenerator;
 import complex.metrics.UsageProvider;
 
-public class UsageOverlapPuller<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> implements ProposalGenerator<ChildProcess,ParentProcess> {
+public class UsageOverlapPuller implements ProposalGenerator {
 
 	@Override
-	public complex.featural.ProposalGenerator.Proposal<ChildProcess, ParentProcess> generate(
-			FeaturalModelController<ChildProcess, ParentProcess> cont) {
-		Vector<ParentProcess> parents = cont.getLatentNodes();
+	public Proposal generate(FeaturalModelController cont) {
+		Vector<IParentProcess> parents = cont.getLatentNodes();
 		double [][] overlap = new double[parents.size()][parents.size()];
 		double [] rowdist = new double[parents.size()];
 		double [] rowsum = new double[parents.size()];
@@ -36,13 +34,11 @@ public class UsageOverlapPuller<ChildProcess extends IFeaturalChild, ParentProce
 			rowsum[i] = 0;
 			for(int j = 0; j < parents.size(); j++)
 			{
-				if(j==i){/*System.err.print("0 ");*/ continue;}
+				if(j==i){continue;}
 				overlap[i][j] = overlap(ts[i],ts[j]);
 				rowsum[i] += overlap[i][j];
 				sum += overlap[i][j];
-				//System.err.print(overlap[i][j] + " ");
 			}
-			//System.err.println();
 		}
 		for(int i = 0; i < parents.size(); i++)
 			rowdist[i] = rowsum[i]/sum;
@@ -53,7 +49,7 @@ public class UsageOverlapPuller<ChildProcess extends IFeaturalChild, ParentProce
 			coldist[i] /= rowsum[row];
 		int col = MathUtil.discreteSample(coldist);
 
-		return new Proposal<ChildProcess, ParentProcess>(1, 1, new ProposalAction.SwitchProposerAction<ChildProcess, ParentProcess>(parents.get(row),parents.get(col)));
+		return new Proposal(new ProposalAction.SwitchProposerAction(parents.get(row),parents.get(col)));
 	}
 
 	private static double overlap(double[] t1, double[] t2)  // This is how much of t1 contains t2

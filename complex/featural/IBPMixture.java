@@ -9,14 +9,16 @@ import java.util.Vector;
 import complex.CMException;
 import complex.IParentProcess;
 
+import complex.featural.MHProposalGenerator.MHProposal;
 import complex.featural.ProposalAction.UniqueParentAddAction;
 import complex.featural.ProposalGenerator.Proposal;
 
 import util.MathUtil;
 
-public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extends IParentProcess> {
+public class IBPMixture {
 	
-	public IBPMixture(Vector<ProposalGenerator<ChildProcess,ParentProcess>> generators, double[] p_gens, double[] p) throws CMException
+	
+	public IBPMixture(Vector<ProposalGenerator> generators, double[] p_gens, double[] p, boolean mh) throws CMException
 	{
 		if(generators.size()!=p_gens.length)
 			throw new CMException("Provided different number of generators from generator probabilities");
@@ -32,11 +34,12 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 		this.generators = generators;
 		this.generator_probs = p_gens;
 		this.main_probs = p;
+		this.mh = mh;
 	}
 	
-	public static class IBPMModelOptions<ChildProcess extends IFeaturalChild,ParentProcess extends IParentProcess>
+	public static class IBPMModelOptions
 	{
-		public IBPMModelOptions(FeaturalModelController<ChildProcess,ParentProcess> controller, boolean[][] initAssign)
+		public IBPMModelOptions(FeaturalModelController controller, boolean[][] initAssign)
 		{
 			this.controller = controller;
 			this.initialAssignments = initAssign;
@@ -81,7 +84,7 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 		public boolean finalize = false;
 		public int max_finalize_iterations = 10;
 		
-		public FeaturalModelController<ChildProcess,ParentProcess> controller;
+		public FeaturalModelController controller;
 
 		public double alpha = 1;						// Indian Buffet
 		public boolean[][] initialAssignments;			// Feature matrix initialization
@@ -101,34 +104,34 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 			}
 		}
 		
-		public ShutdownThread(IBPMixture<?,?> mix)
+		public ShutdownThread(IBPMixture mix)
 		{
 			this.mix = mix;
 		}
-		IBPMixture<?,?> mix;
+		IBPMixture mix;
 	}
 	
 	private volatile Thread workThr;
 	private volatile boolean keepGoing = true;
 
 	
-	public void learn(IBPMModelOptions<ChildProcess,ParentProcess> opts) throws CMException
+	public void learn(IBPMModelOptions opts) throws CMException
 	{
 		this.keepGoing = true;
 		this.workThr = Thread.currentThread();
 		Runtime.getRuntime().addShutdownHook(new ShutdownThread(this));
-		FeaturalModelController<ChildProcess,ParentProcess> cont = opts.controller;
+		FeaturalModelController cont = opts.controller;
 		int M = opts.initialAssignments[0].length;	// The number of latent processes
 		
-		Vector<ChildProcess> obs = cont.getObservedNodes();
-		Vector<ParentProcess> lats = cont.getLatentNodes();
+		Vector<IFeaturalChild> obs = cont.getObservedNodes();
+		Vector<IParentProcess> lats = cont.getLatentNodes();
 		
 	
 		for(int i = 0; i < M; i++)
 		{
-			ParentProcess latent = cont.newLatentModel();
+			IParentProcess latent = cont.newLatentModel();
 			int counter = 0;
-			for(ChildProcess child : cont.getObservedNodes())
+			for(IFeaturalChild child : cont.getObservedNodes())
 			{
 				if(opts.initialAssignments[counter][i])
 					cont.connect(latent, child);
@@ -143,15 +146,15 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 		cont.saveInfo(opts.savePath + "/initial_iteration",ll);
 		cont.log("Learning run started: Initial Log Likelihood = " + ll + "   (" + this.structureLL(cont, opts) + " structural).");
 		
-		Vector<ChildProcess> childRunQueue = new Vector<ChildProcess>();
-		Vector<ParentProcess> parentRunQueue = new Vector<ParentProcess>();
+		Vector<IFeaturalChild> childRunQueue = new Vector<IFeaturalChild>();
+		Vector<IParentProcess> parentRunQueue = new Vector<IParentProcess>();
 		
 		for(int iteration = 0; iteration < opts.maxIterations && keepGoing; iteration++)
 		{
 			System.out.println("Iteration " + iteration + ", log likelihood " + ll);
 			
-			ChildProcess obsSample = null;
-			ParentProcess latSample = null;
+			IFeaturalChild obsSample = null;
+			IParentProcess latSample = null;
 			if(parentRunQueue.size() > 0)
 				latSample = parentRunQueue.remove(0);
 			else if(childRunQueue.size() > 0)
@@ -167,7 +170,7 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 			
 			if(choice==0)
 			{
-				ChildProcess hsn;
+				IFeaturalChild hsn;
 				if(obsSample==null)
 				{
 					choice = MathUtil.rand.nextInt(obs.size());
@@ -180,9 +183,9 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 				}
 				cont.log("Starting horizontal sample run for node : " + hsn.getName());
 				
-				HashSet<ParentProcess> parents = cont.getParents(hsn);
+				HashSet<IParentProcess> parents = cont.getParents(hsn);
 				
-				for(ParentProcess latNd : lats)
+				for(IParentProcess latNd : lats)
 				{
 					if(parents.contains(latNd))
 						ll = this.attemptDisconnect(latNd, hsn, cont, opts, ll);
@@ -194,12 +197,17 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 				if(MathUtil.rand.nextDouble() < 1)
 				{	
 					cont.log("Attempting to add unique parent to node " + hsn.getName());
-					UniqueParentAddAction<ChildProcess,ParentProcess> act = new UniqueParentAddAction<ChildProcess,ParentProcess>(hsn,false);
+					UniqueParentAddAction act = new UniqueParentAddAction(hsn,false);
 					cont.backupParameters();
 					act.perform(cont);
 					//double newLL = cont.run(opts.max_run_it, opts.run_conv) + structureLL(cont,opts);
 					double newLL = cont.learn(opts.max_learn_it,opts.learn_conv,opts.max_run_it, opts.run_conv) + structureLL(cont,opts) + cont.parameterPosteriorLL();
-					if(accept(newLL,this.main_probs[0],ll,this.main_probs[0]+this.main_probs[1],cont,opts))
+					if(this.mh && accept_mh(newLL,this.main_probs[0],ll,this.main_probs[0]+this.main_probs[1],cont,opts))
+					{
+						ll = newLL;
+						parentRunQueue.add(act.uniqParent);
+					}
+					else if(!this.mh && accept_sa(newLL,ll,cont,opts))
 					{
 						ll = newLL;
 						parentRunQueue.add(act.uniqParent);
@@ -213,7 +221,7 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 			}
 			else if(choice==1 && lats.size() > 0)
 			{
-				ParentProcess vsn;
+				IParentProcess vsn;
 				if(latSample==null)
 				{
 					choice = MathUtil.rand.nextInt(lats.size());
@@ -228,9 +236,9 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 				}
 				cont.log("Starting vertical sample run for node : " + vsn.getName());
 
-				HashSet<ChildProcess> children = cont.getChildren(vsn);
+				HashSet<IFeaturalChild> children = cont.getChildren(vsn);
 
-				for(ChildProcess obsNode : obs)
+				for(IFeaturalChild obsNode : obs)
 				{
 					if(children.contains(obsNode))
 						ll = this.attemptDisconnect(vsn, obsNode, cont, opts, ll);
@@ -241,7 +249,7 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 			else
 			{
 				choice = MathUtil.discreteSample(this.generator_probs);
-				Proposal<ChildProcess,ParentProcess> proposal = generators.get(choice).generate(cont);
+				Proposal proposal = generators.get(choice).generate(cont);
 				
 				
 				if(proposal==null)
@@ -252,7 +260,7 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 				double newSLL = structureLL(cont,opts);
 				double newLL = cont.learn(opts.max_learn_it, opts.learn_conv, opts.max_run_it, opts.run_conv) + newSLL + cont.parameterPosteriorLL();
 				
-				if(accept(newLL,proposal.forwardP(),ll,proposal.backwardP(),cont,opts))
+				if(accept(newLL,ll,proposal,cont,opts))
 				{
 					this.accepted_genprops[choice]++;
 					ll = newLL;
@@ -273,22 +281,7 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 			}
 		
 			if(iteration%25==0)
-			{
-				//cont.resetMessages();
-				//ll = cont.learn(30,0,50,1e-6) + structureLL(cont, opts) + cont.parameterPosteriorLL();
-				//double oldll = ll;
-				//System.err.println("Iteration " + iteration + " model LL: " + cont.run(1,0));
-				//cont.saveInfo(opts.savePath + "/trace"+iteration,ll);
-				//double mll1 = cont.run(1,0);
 				ll = cont.learn(opts.max_learn_it, opts.learn_conv, opts.max_run_it, opts.run_conv) + structureLL(cont, opts) + cont.parameterPosteriorLL();
-				//ll = cont.learn(30,0,50,1e-6) + structureLL(cont, opts) + cont.parameterPosteriorLL();
-				//double mll2 = cont.run(1,0);
-				//cont.saveInfo(opts.savePath + "/trace"+iteration+"_2", ll);
-				//if(ll < oldll)
-				//	System.err.println("Ehh? |" + oldll + " > " + ll + ", iteration " + iteration + "  --  " + mll1+"/"+mll2);
-				//else
-				//	System.err.println("Normal");
-			}
 	
 			if(opts.savePath!=null)
 			{
@@ -308,13 +301,13 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 			for(int i = 0; i < opts.max_finalize_iterations; i++)
 			{
 				double startll = cont.run(1, 0) + structureLL(cont,opts) + cont.parameterPosteriorLL();
-				for(ParentProcess lat : lats)
+				for(IParentProcess lat : lats)
 				{
 					cont.log("Starting vertical sample run for node : " + lat.getName());
 
-					HashSet<ChildProcess> children = cont.getChildren(lat);
+					HashSet<IFeaturalChild> children = cont.getChildren(lat);
 
-					for(ChildProcess obsNode : obs)
+					for(IFeaturalChild obsNode : obs)
 					{
 						if(children.contains(obsNode))
 							ll = this.attemptDisconnect(lat, obsNode, cont, opts, ll);
@@ -357,59 +350,80 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 		}
 	}
 	
-	private double attemptDisconnect(ParentProcess latent, ChildProcess observed, FeaturalModelController<ChildProcess,ParentProcess> cont, IBPMModelOptions<ChildProcess,ParentProcess> opts, double ll) throws CMException
+	private double attemptDisconnect(IParentProcess latent, IFeaturalChild observed, FeaturalModelController cont, IBPMModelOptions opts, double ll) throws CMException
 	{
 		if(!cont.getChildren(latent).contains(observed))
 			throw new CMException("Attempted to disconnect a latent node from an observed that was not its child!");
 		cont.log("Attempting to disconnect observation " + observed.getName() + " from latent sequence " + latent.getName());
 		
+		//TODO Verify I don't have to "cont.backupParameters()"
 		observed.backupParameters();
-		cont.backupParameters();
 		cont.disconnect(latent, observed);
 		observed.optimize();
 		
 		double newLL = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont,opts) + cont.parameterPosteriorLL();
-		//double newLL = cont.learn(opts.max_learn_it,opts.learn_conv,opts.max_run_it,opts.run_conv) + structureLL(cont,opts) + cont.parameterPosteriorLL();
-		if(accept(newLL,this.main_probs[1]+this.main_probs[0],ll,this.main_probs[1]+this.main_probs[0],cont,opts))
+		if(this.mh && accept_mh(newLL,this.main_probs[1]+this.main_probs[0],ll,this.main_probs[1]+this.main_probs[0],cont,opts))
+			ll = newLL;
+		else if(!this.mh && accept_sa(newLL,ll,cont,opts))
 			ll = newLL;
 		else
 		{
 			cont.connect(latent, observed);
-			//observed.restoreParameters();
-			cont.restoreParameters();
+			observed.restoreParameters();
 		}
-		
 		return ll;
 	}
 	
-	private double attemptConnect(ParentProcess latent, ChildProcess observed, FeaturalModelController<ChildProcess,ParentProcess> cont, IBPMModelOptions<ChildProcess,ParentProcess> opts, double ll) throws CMException
+	private double attemptConnect(IParentProcess latent, IFeaturalChild observed, FeaturalModelController cont, IBPMModelOptions opts, double ll) throws CMException
 	{
 		if(cont.getChildren(latent).contains(opts))
 			throw new CMException("Attempted to connect parent " + latent.getName() + " to child " + observed.getName() + " when they already are connected.");
 		cont.log("Attempting to connect observation " + observed.getName() + " to latent sequence " + latent.getName());
 		
-		//observed.backupParameters();
-		cont.backupParameters();
+		observed.backupParameters();
 		cont.connect(latent, observed);
 		observed.optimize();
 		
 		double newLL = cont.run(opts.max_run_it,opts.run_conv) + structureLL(cont,opts) + cont.parameterPosteriorLL();
-		//double newLL = cont.learn(opts.max_learn_it,opts.learn_conv,opts.max_run_it,opts.run_conv) + structureLL(cont,opts) + cont.parameterPosteriorLL();
-		if(accept(newLL,this.main_probs[1]+this.main_probs[0],ll,this.main_probs[1]+this.main_probs[0],cont,opts))
+		if(this.mh && accept_mh(newLL,this.main_probs[1]+this.main_probs[0],ll,this.main_probs[1]+this.main_probs[0],cont,opts))
+			ll = newLL;
+		else if(!this.mh && accept_sa(newLL,ll,cont,opts))
 			ll = newLL;
 		else
 		{
 			cont.disconnect(latent, observed);
-			//observed.restoreParameters();
-			cont.restoreParameters();
+			observed.restoreParameters();
 		}
 		
 		return ll;
 	}
 	
-	private boolean accept(double newLL, double pf, double oldLL, double pb, FeaturalModelController<ChildProcess,ParentProcess> cont, IBPMModelOptions<ChildProcess, ParentProcess> opts) throws CMException
+	
+	private boolean accept(double newLL, double oldLL, Proposal prop, FeaturalModelController cont, IBPMModelOptions opts) throws CMException
 	{
-		//boolean ret = (MathUtil.rand.nextDouble() < Math.exp(newLL+Math.log(pb)-oldLL-Math.log(pf)));
+		if(this.mh && prop instanceof MHProposal)
+		{
+			MHProposal mhprop = (MHProposal)prop;
+			return accept_mh(newLL,mhprop.forwardP(),oldLL,mhprop.backwardP(),cont,opts);
+		}
+		else if(this.mh)
+			throw new CMException("Non MH Proposal in MH sampling.");
+		else return accept_sa(newLL,oldLL,cont,opts);
+	}
+	
+	private boolean accept_sa(double newLL, double oldLL, FeaturalModelController cont, IBPMModelOptions opts) throws CMException
+	{
+		boolean ret = (newLL > oldLL) || (opts.temperature > 0 && (MathUtil.rand.nextDouble() < Math.exp((newLL-oldLL)/opts.temperature)));
+		if(ret)
+			cont.log("Proposal accepted, new Log Likelihood : " + newLL);
+		else
+			cont.log("Proposal rejected: Proposed LL: " + newLL + "  Old LL " + oldLL);
+		return ret;
+	}
+	
+	//TODO make accept_mh
+	private boolean accept_mh(double newLL, double pf, double oldLL, double pb, FeaturalModelController cont, IBPMModelOptions opts) throws CMException
+	{
 		boolean ret = (newLL > oldLL) || (opts.temperature > 0 && (MathUtil.rand.nextDouble() < Math.exp((newLL+Math.log(pb)-oldLL-Math.log(pf))/opts.temperature)));
 		if(ret)
 			cont.log("Proposal accepted, new Log Likelihood : " + newLL);
@@ -417,13 +431,15 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 			cont.log("Proposal rejected: Proposed LL: " + newLL + "  Old LL " + oldLL + "  MH Adjust: " + (Math.log(pb)-Math.log(pf)));
 		return ret;
 	}
-
-	double cachedLNF = 0;
-	double cachedAHN = 0;
-	double cachedAHN_alpha = -1;
-	int cachedAHN_id = -1;
 	
-	private double structureLL(FeaturalModelController<ChildProcess,ParentProcess> cont, IBPMModelOptions<ChildProcess,ParentProcess> opts)
+	private boolean mh;
+
+	private double cachedLNF = 0;
+	private double cachedAHN = 0;
+	private double cachedAHN_alpha = -1;
+	private int cachedAHN_id = -1;
+	
+	private double structureLL(FeaturalModelController cont, IBPMModelOptions opts)
 	{
 		int N = cont.observables.size();
 		int K = cont.latents.size();
@@ -444,12 +460,12 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 		
 		double lladj = K*Math.log(opts.alpha);
 		
-		HashMap<HashSet<ChildProcess>, Integer> KNs = new HashMap<HashSet<ChildProcess>, Integer>();
+		HashMap<HashSet<IFeaturalChild>, Integer> KNs = new HashMap<HashSet<IFeaturalChild>, Integer>();
 		for(int i = 0; i < K; i++)
 		{
-			HashSet<ChildProcess> set = cont.getChildren(cont.getLatentNodes().get(i));
+			HashSet<IFeaturalChild> set = cont.getChildren(cont.getLatentNodes().get(i));
 			boolean dupe = false;
-			for(HashSet<ChildProcess> otherSet : KNs.keySet())
+			for(HashSet<IFeaturalChild> otherSet : KNs.keySet())
 			{
 				if(otherSet.containsAll(set) && set.containsAll(otherSet))
 				{
@@ -461,7 +477,7 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 			if(!dupe)
 				KNs.put(set, 1);
 		}
-		for(Map.Entry<HashSet<ChildProcess>, Integer> ent : KNs.entrySet())
+		for(Map.Entry<HashSet<IFeaturalChild>, Integer> ent : KNs.entrySet())
 			lladj -= (ent.getValue() > 1 ? Math.log(ent.getValue()) : 0);
 		
 		lladj -= cachedAHN;
@@ -483,7 +499,7 @@ public class IBPMixture<ChildProcess extends IFeaturalChild,ParentProcess extend
 		return lladj;
 	}
 	
-	private Vector<ProposalGenerator<ChildProcess,ParentProcess>> generators;
+	private Vector<ProposalGenerator> generators;
 	private double[] generator_probs;
 	private int[] accepted_genprops;
 	private double[] main_probs;

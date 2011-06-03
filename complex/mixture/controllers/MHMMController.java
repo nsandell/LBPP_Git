@@ -27,13 +27,9 @@ public class MHMMController extends MixtureModelController {
 	{
 		if(this.getChildren(parent).size()!=0)
 			throw new CMException("Cannot have an orphaned observation sequence in an mHMM!");
-		try {
-			this.network.removeNode(parent.getName());
-			this.parentNames.remove(parent.getName());
-			this.killID(parent.id());
-		} catch(BNException e) {
-			throw new CMException("Failed to remove node " + parent.getName() + " : " + e.toString());
-		}
+		parent.kill();
+		this.parentNames.remove(parent.getName());
+		this.killID(parent.id());
 	}
 
 	@Override
@@ -49,15 +45,10 @@ public class MHMMController extends MixtureModelController {
 	protected void setParentI(IMixtureChild child, IParentProcess parent)
 	throws CMException
 	{
-		try {
-
-			if(parents.containsKey(child))
-				this.network.removeIntraEdge(parents.get(child).hook().getName(),child.hook().getName());
-			this.network.addIntraEdge(parent.hook().getName(), child.hook().getName());
-			this.parents.put(child,parent);
-		} catch(BNException e) {
-			throw new CMException("Error changing parent for node " + child.getName() + " : " + e.toString());
-		}
+		if(parents.containsKey(child))
+			parents.get(child).removeChild(child);
+		parent.addChild(child);
+		this.parents.put(child,parent);
 	}
 
 	@Override
@@ -108,7 +99,7 @@ public class MHMMController extends MixtureModelController {
 	public double runChain(IParentProcess proc, int maxit, double conv) throws CMException
 	{
 		Vector<String> nodes = new Vector<String>();
-		nodes.add(proc.hook().getName());
+		nodes.addAll(proc.constituentNodeNames());
 		Vector<IMixtureChild> children = this.getChildren(proc);
 		for(IMixtureChild child : children)
 			nodes.addAll(child.constituentNodeNames());
@@ -138,7 +129,7 @@ public class MHMMController extends MixtureModelController {
 	public double learnChain(IParentProcess proc, int maxrun, double runconv, int maxlearn, double learnconv) throws CMException
 	{
 		Vector<String> nodes = new Vector<String>();
-		nodes.add(proc.hook().getName());
+		nodes.addAll(proc.constituentNodeNames());
 		for(IMixtureChild child : this.getChildren(proc))
 			nodes.addAll(child.constituentNodeNames());
 		

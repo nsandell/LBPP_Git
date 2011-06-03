@@ -6,10 +6,10 @@ import util.MathUtil;
 import complex.IParentProcess;
 import complex.featural.FeaturalModelController;
 import complex.featural.IFeaturalChild;
-import complex.featural.ProposalGenerator;
+import complex.featural.MHProposalGenerator;
 import complex.featural.ProposalAction.SplitAction;
 
-public class RandomSplitGenerator<ChildProcess extends IFeaturalChild, ParentProcess extends IParentProcess> implements ProposalGenerator<ChildProcess,ParentProcess>
+public class RandomSplitGenerator implements MHProposalGenerator
 {
 	public RandomSplitGenerator(double pmerge, double psplit)
 	{
@@ -22,15 +22,15 @@ public class RandomSplitGenerator<ChildProcess extends IFeaturalChild, ParentPro
 		return "Random splits";
 	}
 	
-	public Proposal<ChildProcess,ParentProcess> generate(FeaturalModelController<ChildProcess,ParentProcess> cont)
+	public MHProposal generate(FeaturalModelController cont)
 	{
 		int N = cont.getLatentNodes().size();
 		if(N < 1)
 			return null;
-		ParentProcess lat = cont.randomLatent();
-		HashSet<ChildProcess> children = cont.getChildren(lat);
-		HashSet<ChildProcess> splits = new HashSet<ChildProcess>();
-		for(ChildProcess child : children)
+		IParentProcess lat = cont.randomLatent();
+		HashSet<IFeaturalChild> children = cont.getChildren(lat);
+		HashSet<IFeaturalChild> splits = new HashSet<IFeaturalChild>();
+		for(IFeaturalChild child : children)
 			if(MathUtil.rand.nextDouble() < .5)
 				splits.add(child);
 		
@@ -42,7 +42,7 @@ public class RandomSplitGenerator<ChildProcess extends IFeaturalChild, ParentPro
 		
 		cont.log("Proposing split of node " + lat.getName());
 		
-		return new Proposal<ChildProcess,ParentProcess>(fp, bp, new SplitAction<ChildProcess,ParentProcess>(lat,splits,true));
+		return new MHProposal(fp, bp, new SplitAction(lat,splits,true));
 	}
 
 	

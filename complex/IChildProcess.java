@@ -58,8 +58,10 @@ public interface IChildProcess extends DisagreementMeasure{
 		@Override
 		public void backupParameters() throws CMException {
 			try {
-				this.initial_backup = this.node.getInitialDistribution().copy();
-				this.advance_backup = this.node.getAdvanceDistribution().copy();
+				if(this.initial_backup!=null)
+					this.initial_backup = this.node.getInitialDistribution().copy();
+				if(this.advance_backup!=null)
+					this.advance_backup = this.node.getAdvanceDistribution().copy();
 			} catch(BNException e) {
 				throw new CMException("Failed to backup parameters for node " + this.getName() + ": " + e.getMessage());
 			}

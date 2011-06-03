@@ -19,6 +19,7 @@ public class MHMMController extends MixtureModelController {
 	public MHMMController(IDynamicBayesNet network, Vector<? extends IMixtureChild> children, LatentFactory lf)
 	{
 		super(children);
+		this.lf = lf;
 		this.network = network;
 	}
 	

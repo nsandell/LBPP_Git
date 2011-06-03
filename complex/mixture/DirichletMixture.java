@@ -112,7 +112,7 @@ public class DirichletMixture {
 			
 			for(IMixtureChild cchild : childProcs)
 			{
-				System.err.println("Testing " + cchild.getName() + " against:");
+				opts.controller.trace("Testing " + cchild.getName() + " against:\n");
 
 				Vector<IParentProcess> subset = new Vector<IParentProcess>(latentProcs);
 				subset.remove(opts.controller.getParent(cchild));
@@ -124,7 +124,7 @@ public class DirichletMixture {
 					IParentProcess currentParent = opts.controller.getParent(cchild);
 					if(parent==currentParent)
 						continue;
-					System.err.println("\t" + parent.getName());
+					opts.controller.trace("\t" + parent.getName()+"\n");
 
 					opts.controller.backupChildrenParameters(currentParent);
 					opts.controller.backupChildrenParameters(parent);
@@ -149,7 +149,7 @@ public class DirichletMixture {
 				}
 				else
 				{
-					System.err.println("\tNew Parent.");
+					opts.controller.trace("\tNew Parent.\n");
 					IParentProcess currentParent = opts.controller.getParent(cchild);
 					opts.controller.backupChildrenParameters(currentParent);
 
@@ -180,12 +180,13 @@ public class DirichletMixture {
 				for(IParentProcess proc : removes)
 					opts.controller.deleteParent(proc);
 
-				
+	
+				opts.controller.trace("\n\nCurrent Status:\n");
 				for(IMixtureChild child : childProcs)
-					System.out.print(opts.controller.getParent(child).getName() + " " );
-				System.out.println();
+					opts.controller.trace(opts.controller.getParent(child).getName() + " " );
+				opts.controller.trace("\n");
 			}
-			opts.controller.trace("Iteration " + iteration + " completed with log likelihood : " + ll);
+			opts.controller.log("Iteration " + iteration + " completed with log likelihood : " + ll);
 			iteration++;
 		}
 		opts.controller.log("\nFinal Assigments: ");

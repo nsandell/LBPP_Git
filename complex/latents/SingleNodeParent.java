@@ -65,7 +65,7 @@ public abstract class SingleNodeParent<NdType extends IDBNNode> implements IPare
 	@Override
 	public final void removeChild(IChildProcess child) throws CMException {
 		try {
-			this.nd.getNetwork().removeInterEdge(this.nd, child.hook());
+			this.nd.getNetwork().removeIntraEdge(this.nd, child.hook());
 		} catch(BNException e) {
 			throw new CMException("Failed to remove child " + child.getName() + " from parent " + this.getName() + ": " + e.toString());
 		}

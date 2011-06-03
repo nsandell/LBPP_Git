@@ -277,7 +277,6 @@ public class InhibitedSumOfPoisson extends InfiniteDiscreteDistribution
 
 			double weights[] = new double[this.weight_sums.length];
 			double weightsums = 0;
-			double weightNIsum = 0;
 			
 			if(this.weight_sums.length > 1)
 			{
